@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <title>테스트 페이지</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f0f0f0;
+      }
+      h1 {
+        color: #333;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>테스트용 웹페이지</h1>
+    <p>이 페이지는 테스트 목적으로 만들어졌습니다.</p>
+    <button onclick="alert('버튼이 클릭되었습니다!')">클릭하세요</button>
+    <div id="randomNumber"></div>
+
+    <script>
+      document.getElementById('randomNumber').innerHTML =
+        '랜덤 숫자: ' + Math.floor(Math.random() * 100);
+    </script>
+  </body>
+</html>

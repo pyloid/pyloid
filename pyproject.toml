@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pylon-desktop"
+version = "0.2.0"
+description = ""
+authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
+readme = "README.md"
+packages = [
+    { include = "pylon", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+pyside6 = "^6.7.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
