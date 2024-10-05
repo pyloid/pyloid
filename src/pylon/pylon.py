@@ -27,7 +27,7 @@ class WindowAPI(PylonAPI):
 
     @Bridge(result=str)
     def getWindowId(self):
-        """Returns the window ID."""
+        """Returns the current window ID."""
         return self.window_id
 
     @Bridge()

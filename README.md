@@ -9,6 +9,7 @@ Pylon is a framework that allows you to easily create desktop applications using
 - Multi-window management 🪟
 - Bridge API between Python and JavaScript 🌉
 - Single instance application support
+- Cross-platform support for Windows, macOS, and Linux 🌍
 
 ## Installation 📦
 
@@ -17,6 +18,8 @@ Pylon is a framework that allows you to easily create desktop applications using
 ```bash
 pip install pylon-app
 ```
+
+Package URL: [https://pypi.org/project/pylon-app/](https://pypi.org/project/pylon-app/)
 
 ### Creating a React + Pylon Project
 
@@ -92,39 +95,34 @@ window = app.create_window(
 
 ```javascript
 // CustomAPI method usage example
-document.addEventListener('pylonReady', function () {
-  // Using the echo method
-  pylon.CustomAPI.echo('Hello', 42).then((result) => {
-    console.log(result); // "Message received in Python: Hello, 42" output
-  });
 
-  // Using the getAppVersion method
-  pylon.CustomAPI.getAppVersion().then((version) => {
-    console.log('App version:', version); // "App version: 1.0.0" output
-  });
+// Using the echo method
+pylon.CustomAPI.echo('Hello', 42).then((result) => {
+  console.log(result); // "Message received in Python: Hello, 42" output
+});
 
+// Using the getAppVersion method
+pylon.CustomAPI.getAppVersion().then((version) => {
+  console.log('App version:', version); // "App version: 1.0.0" output
+});
+
+// Example using async/await syntax
+async function useCustomAPI() {
+  const echoResult = await pylon.CustomAPI.echo('Test', 100);
+  console.log(echoResult);
+
+  const appVersion = await pylon.CustomAPI.getAppVersion();
+  console.log('Current app version:', appVersion);
+}
+
+useCustomAPI();
+
+// Button click event binding
+document.getElementById('myButton').addEventListener('click', function () {
   // Using the create_window method
   pylon.CustomAPI.create_window().then((windowId) => {
     console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
   });
-
-  // Example using async/await syntax
-  async function useCustomAPI() {
-    try {
-      const echoResult = await pylon.CustomAPI.echo('Test', 100);
-      console.log(echoResult);
-
-      const appVersion = await pylon.CustomAPI.getAppVersion();
-      console.log('Current app version:', appVersion);
-
-      const newWindowId = await pylon.CustomAPI.create_window();
-      console.log('Newly created window ID:', newWindowId);
-    } catch (error) {
-      console.error('Error occurred during API call:', error);
-    }
-  }
-
-  useCustomAPI();
 });
 ```
 
@@ -164,7 +162,7 @@ function App() {
 - `set_tray_menu_items(items)`: Sets tray menu items.
 - `setup_tray()`: Sets up the system tray.
 - `get_windows()`: Returns a list of all browser windows.
-- `show_main_window()`: Shows the first window.
+- `show_main_window()`: Shows and focuses the first window.
 - `get_window_by_id(window_id)`: Returns the window with the given ID.
 - `hide_window_by_id(window_id)`: Hides the window with the given ID.
 - `show_window_by_id(window_id)`: Shows the window with the given ID.
@@ -179,13 +177,10 @@ function App() {
 ### BrowserWindow
 
 - `__init__(app, title, url, frame, context_menu, js_apis, enable_dev_tools, width, height, x, y)`: Initializes a new browser window.
-- `load_html_file(file_path)`: Loads a local HTML file into the web view.
-- `_on_load_finished(ok)`: Handles the event when the web page load is finished.
 - `open_dev_window()`: Opens the developer tools window.
 - `get_window_properties()`: Returns the properties of the window.
-- `closeEvent(event)`: Handles the event when the window is closed.
 - `hide_window()`: Hides the window.
-- `show_window()`: Shows the window.
+- `show_window()`: Shows and focuses the window.
 - `close_window()`: Closes the window.
 - `toggle_fullscreen()`: Toggles fullscreen mode for the window.
 - `minimize_window()`: Minimizes the window.
@@ -199,6 +194,40 @@ Used to define bridge APIs for communication between Python and JavaScript.
 - `@Bridge(*arg_types, result=return_type)`: Converts a Python method into a function callable from JavaScript.
   - `arg_types`: Types of function arguments (multiple possible)
   - `result`: Type of return value (optional)
+
+## Basic Bridge window.WindowAPI Functions
+
+### getWindowId
+
+- `window.WindowAPI.getWindowId() -> str`: Returns the current window ID.
+
+### closeWindow
+
+- `window.WindowAPI.closeWindow()`: Closes the window with the given window ID.
+
+### hideWindow
+
+- `window.WindowAPI.hideWindow()`: Hides the window with the given window ID.
+
+### showWindow
+
+- `window.WindowAPI.showWindow()`: Shows and focuses the window with the given window ID.
+
+### toggleFullscreen
+
+- `window.WindowAPI.toggleFullscreen()`: Toggles fullscreen mode for the window with the given window ID.
+
+### minimizeWindow
+
+- `window.WindowAPI.minimizeWindow()`: Minimizes the window with the given window ID.
+
+### maximizeWindow
+
+- `window.WindowAPI.maximizeWindow()`: Maximizes the window with the given window ID.
+
+### restoreWindow
+
+- `window.WindowAPI.restoreWindow()`: Restores the window with the given window ID to its normal state.
 
 ## License 📄
 
