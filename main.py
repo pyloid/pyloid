@@ -35,7 +35,7 @@ app.set_tray_menu_items(
 
 app.setup_tray()
 
-class custom(PylonAPI):
+class CustomAPI(PylonAPI):
     @Bridge(str, int, result=str)
     def echo(self, message, message2):
         print(type(message), type(message2))
@@ -52,7 +52,7 @@ class custom(PylonAPI):
             title="Pylon Browser4",
             frame=True,
             context_menu=False,
-            js_apis=[custom(), custom2()],
+            js_apis=[CustomAPI()],
             enable_dev_tools=True,
             width=1200,
             height=800,
@@ -62,39 +62,12 @@ class custom(PylonAPI):
         return window.id
 
 
-class custom2(PylonAPI):
-    @Bridge(str, int, result=str)
-    def echo(self, message, message2):
-        print(type(message), type(message2))
-        return f"파이썬에서 받은 메시지: {message}, {message2}"
-
-    @Bridge(result=str)
-    def getAppVersion(self):
-        return "1.0.0"
-
-    @Bridge(result=int)
-    def create_window(self):
-        window = app.create_window(
-            "file/index.html",
-            title="Pylon Browser4",
-            frame=True,
-            context_menu=False,
-            js_apis=[custom(), custom2()],
-            enable_dev_tools=True,
-            width=1200,
-            height=800,
-            x=100,
-            y=100,
-        )
-        return len(app.get_windows())
-
-
 window = app.create_window(
     "file/index.html",
     title="Pylon Browser1",
     frame=True,
     context_menu=False,
-    js_apis=[custom()],
+    js_apis=[CustomAPI()],
     enable_dev_tools=True,
     width=1200,
     height=800,

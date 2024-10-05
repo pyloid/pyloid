@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "pylon-desktop"
-version = "0.2.0"
+name = "pylon-app"
+version = "0.3.4"
 description = ""
 authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
 readme = "README.md"
@@ -9,7 +9,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.9,<3.13"
 pyside6 = "^6.7.3"
 
 

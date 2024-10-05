@@ -16,6 +16,7 @@ from PySide6.QtWebEngineCore import QWebEnginePage
 from .utils import get_resource_path, is_production
 from .api import PylonAPI, Bridge
 import uuid
+from typing import List, Optional
 
 
 class WindowAPI(PylonAPI):
@@ -45,7 +46,7 @@ class WindowAPI(PylonAPI):
 
     @Bridge()
     def showWindow(self):
-        """Shows the window with the given window ID."""
+        """Shows and focuses the window with the given window ID."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.show_window()
@@ -108,10 +109,8 @@ class BrowserWindow:
         self.url = url
         self.frame = frame
         self.context_menu = context_menu
-        if (is_production()):
-            self.enable_dev_tools = False
-        else:
-            self.enable_dev_tools = enable_dev_tools
+   
+        self.enable_dev_tools = enable_dev_tools
         self.width = width
         self.height = height
         self.x = x
@@ -180,12 +179,22 @@ class BrowserWindow:
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
                 new QWebChannel(qt.webChannelTransport, function (channel) {
+
                     window.pylon = {};
+
                     %s
+                    // Dispatch a custom event to signal that the initialization is ready
+                    const event = new CustomEvent('pylonReady');
+
+                    document.dispatchEvent(event);
                 });
+
             } else {
+
                 console.error('QWebChannel is not defined.');
+
             }
+
             """
             js_api_init = "\n".join(
                 [
@@ -243,8 +252,12 @@ class BrowserWindow:
         self._window.hide()
 
     def show_window(self):
-        """Shows the window."""
+        """Shows and focuses the window."""
         self._window.show()
+        self._window.activateWindow()
+        self._window.raise_()
+        self._window.setWindowState(self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+
 
     def close_window(self):
         """Closes the window."""
@@ -414,21 +427,24 @@ class PylonApp(QApplication):
     ###########################################################################################
     # App windows
     ###########################################################################################
-    def get_windows(self) -> list[BrowserWindow]:
+    def get_windows(self) -> List[BrowserWindow]:
         """Returns a list of all browser windows."""
         return self.windows
 
     def show_main_window(self):
-        """Shows the first window."""
+        """Shows and focuses the first window."""
         if self.windows:
             main_window = self.windows[0]
             main_window._window.show()
+            main_window._window.activateWindow()
+            main_window._window.raise_()
+            main_window._window.setWindowState(main_window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
 
     ###########################################################################################
     # Window management in the app (ID required)
     ###########################################################################################
 
-    def get_window_by_id(self, window_id: str) -> BrowserWindow | None:
+    def get_window_by_id(self, window_id: str) -> Optional[BrowserWindow]:
         """Returns the window with the given ID."""
         for window in self.windows:
             if window.id == window_id:
@@ -442,10 +458,13 @@ class PylonApp(QApplication):
             window._window.hide()
 
     def show_window_by_id(self, window_id: str):
-        """Shows the window with the given ID."""
+        """Shows and focuses the window with the given ID."""
         window = self.get_window_by_id(window_id)
         if window:
             window._window.show()
+            window._window.activateWindow()
+            window._window.raise_()
+            window._window.setWindowState(window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
 
     def close_window_by_id(self, window_id: str):
         """Closes the window with the given ID."""
