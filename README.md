@@ -95,33 +95,34 @@ window = app.create_window(
 
 ```javascript
 // CustomAPI method usage example
+document.addEventListener('pylonReady', function () {
+  // Using the echo method
+  pylon.CustomAPI.echo('Hello', 42).then((result) => {
+    console.log(result); // "Message received in Python: Hello, 42" output
+  });
 
-// Using the echo method
-pylon.CustomAPI.echo('Hello', 42).then((result) => {
-  console.log(result); // "Message received in Python: Hello, 42" output
-});
+  // Using the getAppVersion method
+  pylon.CustomAPI.getAppVersion().then((version) => {
+    console.log('App version:', version); // "App version: 1.0.0" output
+  });
 
-// Using the getAppVersion method
-pylon.CustomAPI.getAppVersion().then((version) => {
-  console.log('App version:', version); // "App version: 1.0.0" output
-});
+  // Example using async/await syntax
+  async function useCustomAPI() {
+    const echoResult = await pylon.CustomAPI.echo('Test', 100);
+    console.log(echoResult);
 
-// Example using async/await syntax
-async function useCustomAPI() {
-  const echoResult = await pylon.CustomAPI.echo('Test', 100);
-  console.log(echoResult);
+    const appVersion = await pylon.CustomAPI.getAppVersion();
+    console.log('Current app version:', appVersion);
+  }
 
-  const appVersion = await pylon.CustomAPI.getAppVersion();
-  console.log('Current app version:', appVersion);
-}
+  useCustomAPI();
 
-useCustomAPI();
-
-// Button click event binding
-document.getElementById('myButton').addEventListener('click', function () {
-  // Using the create_window method
-  pylon.CustomAPI.create_window().then((windowId) => {
-    console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
+  // Button click event binding
+  document.getElementById('myButton').addEventListener('click', function () {
+    // Using the create_window method
+    pylon.CustomAPI.create_window().then((windowId) => {
+      console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
+    });
   });
 });
 ```
@@ -178,6 +179,7 @@ function App() {
 
 - `__init__(app, title, url, frame, context_menu, js_apis, enable_dev_tools, width, height, x, y)`: Initializes a new browser window.
 - `open_dev_window()`: Opens the developer tools window.
+  - When enable_dev_tools=True, pressing F12 will open the dev tools window.
 - `get_window_properties()`: Returns the properties of the window.
 - `hide_window()`: Hides the window.
 - `show_window()`: Shows and focuses the window.
@@ -186,6 +188,7 @@ function App() {
 - `minimize_window()`: Minimizes the window.
 - `maximize_window()`: Maximizes the window.
 - `restore_window()`: Restores the window to its normal state.
+- `set_url(url)`: Sets the URL of the window.
 
 ### PylonAPI
 
@@ -229,9 +232,15 @@ Used to define bridge APIs for communication between Python and JavaScript.
 
 - `window.WindowAPI.restoreWindow()`: Restores the window with the given window ID to its normal state.
 
+### setUrl
+
+- `window.WindowAPI.setUrl(url)`: Sets the URL of the window.
+
 ## License 📄
 
 This project is licensed under the terms of the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
+
+This project uses PySide6, which is licensed under the LGPL (Lesser General Public License).
 
 ## Contributing 🤝
 

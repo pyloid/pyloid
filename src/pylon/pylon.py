@@ -11,7 +11,7 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtGui import QIcon, QKeySequence, QShortcut
 from PySide6.QtCore import Qt, Signal, QUrl, QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
-from PySide6.QtWebEngineCore import QWebEnginePage
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .utils import get_resource_path, is_production
 from .api import PylonAPI, Bridge
 import uuid
@@ -44,52 +44,59 @@ class WindowAPI(PylonAPI):
 
     @Bridge()
     def closeWindow(self):
-        """Closes the window with the given window ID."""
+        """Closes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.close_window()
 
     @Bridge()
     def hideWindow(self):
-        """Hides the window with the given window ID."""
+        """Hides the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.hide_window()
 
     @Bridge()
     def showWindow(self):
-        """Shows and focuses the window with the given window ID."""
+        """Shows and focuses the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.show_window()
 
     @Bridge()
     def toggleFullscreen(self):
-        """Toggles fullscreen mode for the window with the given window ID."""
+        """Toggles fullscreen mode for the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.toggle_fullscreen()
 
     @Bridge()
     def minimizeWindow(self):
-        """Minimizes the window with the given window ID."""
+        """Minimizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.minimize_window()
 
     @Bridge()
     def maximizeWindow(self):
-        """Maximizes the window with the given window ID."""
+        """Maximizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.maximize_window()
 
     @Bridge()
     def restoreWindow(self):
-        """Restores the window with the given window ID to its normal state."""
+        """Restores the window to its normal state."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.restore_window()
+
+    @Bridge(str)
+    def setUrl(self, url):
+        """Sets the URL of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.set_url(url)
 
 
 class BrowserWindow:
@@ -128,6 +135,9 @@ class BrowserWindow:
         self.x = x
         self.y = y
 
+        # allow local file access to remote urls
+        self.web_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+
         # Set icon
         self._window.setWindowIcon(self.app.icon)
 
@@ -160,7 +170,7 @@ class BrowserWindow:
 
         # Load web page
         # Check if URL is a local HTML file
-        if url.startswith("file://") or os.path.isfile(url):
+        if url.startswith("file://") or os.path.isfile(url) or url.endswith(".html"):
             self.load_html_file(url)
         else:
             self.web_view.setUrl(url)
@@ -255,6 +265,14 @@ class BrowserWindow:
             self.app.windows.remove(self)
         if not self.app.windows:
             self.app.quit()  # Quit the app if all windows are closed
+
+    def set_url(self, url):
+        """Sets the URL of the window."""
+        self.url = url
+        if url.startswith("file://") or os.path.isfile(url) or url.endswith(".html"):
+            self.load_html_file(url)
+        else:
+            self.web_view.setUrl(QUrl(url))
 
     ###########################################################################################
     # Window management (no ID required)
@@ -359,11 +377,11 @@ class PylonApp(QApplication):
     ) -> BrowserWindow:
         """Creates a new browser window."""
         # Add 'file://' prefix if URL is a local file path ending with .html
-        if os.path.isfile(url) and url.lower().endswith(".html"):
+        if os.path.isfile(url) or url.lower().endswith(".html"):
             url = f"file://{os.path.abspath(url)}"
 
         if is_production():
-            url = f"file://{get_resource_path(url)}"
+            url = f"file://{get_resource_path(url)}" # TODO : THINKING OTHER METHODS...
 
         self.controller.create_window_signal.emit(
             self,

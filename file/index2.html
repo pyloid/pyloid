@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script>
+      document.addEventListener('pylonReady', function () {
+        // Load index.js script after pylon bridge functions are initialized
+        const script = document.createElement('script');
+        script.src = 'index.js';
+        document.head.appendChild(script);
+      });
+    </script>
+    <title>Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f0f0f0;
+      }
+      h1 {
+        color: #333;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Webpage 2222222222222222222222</h1>
+    <p>This page is created for testing purposes.</p>
+    <button id="myButton">Create Window!</button>
+  </body>
+</html>
