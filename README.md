@@ -173,7 +173,7 @@ function App() {
 - `toggle_fullscreen_by_id(window_id)`: Toggles fullscreen mode for the window with the given ID.
 - `minimize_window_by_id(window_id)`: Minimizes the window with the given ID.
 - `maximize_window_by_id(window_id)`: Maximizes the window with the given ID.
-- `restore_window_by_id(window_id)`: Restores the window with the given ID to its normal state.
+- `restore_window_by_id(window_id)`: Restores the window with the given ID to its normal state.'
 
 ### BrowserWindow
 

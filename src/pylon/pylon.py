@@ -12,10 +12,9 @@ from PySide6.QtGui import QIcon, QKeySequence, QShortcut
 from PySide6.QtCore import Qt, Signal, QUrl, QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
-from .utils import get_resource_path, is_production
 from .api import PylonAPI, Bridge
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Dict, Callable
 from PySide6.QtCore import qInstallMessageHandler
 
 # for linux debug
@@ -43,25 +42,25 @@ class WindowAPI(PylonAPI):
         return self.window_id
 
     @Bridge()
-    def closeWindow(self):
+    def close(self):
         """Closes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.close_window()
+            window.close()
 
     @Bridge()
-    def hideWindow(self):
+    def hide(self):
         """Hides the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.hide_window()
+            window.hide()
 
     @Bridge()
-    def showWindow(self):
+    def show(self):
         """Shows and focuses the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.show_window()
+            window.show()
 
     @Bridge()
     def toggleFullscreen(self):
@@ -71,75 +70,77 @@ class WindowAPI(PylonAPI):
             window.toggle_fullscreen()
 
     @Bridge()
-    def minimizeWindow(self):
+    def minimize(self):
         """Minimizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.minimize_window()
+            window.minimize()
 
     @Bridge()
-    def maximizeWindow(self):
+    def maximize(self):
         """Maximizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.maximize_window()
+            window.maximize()
 
     @Bridge()
-    def restoreWindow(self):
+    def unmaximize(self):
         """Restores the window to its normal state."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.restore_window()
+            window.unmaximize()
 
-    @Bridge(str)
-    def setUrl(self, url):
-        """Sets the URL of the window."""
-        window = self.app.get_window_by_id(self.window_id)
-        if window:
-            window.set_url(url)
 
 
 class BrowserWindow:
     def __init__(
         self,
         app,
-        title,
-        url,
-        frame,
-        context_menu,
-        js_apis=[],
-        enable_dev_tools=False,
-        width=1200,
-        height=800,
-        x=100,
-        y=100,
+        title: str="pylon app",
+        width: int=800,
+        height: int=600,
+        x: int=200,
+        y: int=200,
+        frame: bool=True,
+        context_menu: bool=False,
+        dev_tools: bool=False,
+        js_apis: List[PylonAPI]=[],
     ):
+        ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
-        self.app = app  # Store PylonApp instance
-        self.js_apis = [WindowAPI(self.id, self.app)]
 
         self._window = QMainWindow()
-        self._window.closeEvent = self.closeEvent  # Override closeEvent method
-        self._window.setWindowTitle(title)
-        self._window.setGeometry(x, y, width, height)
-
         self.web_view = QWebEngineView()
+
+        self._window.closeEvent = self.closeEvent  # Override closeEvent method 
+        ###########################################################################################
+        self.app = app 
         self.title = title
-        self.url = url
-        self.frame = frame
-        self.context_menu = context_menu
-   
-        self.enable_dev_tools = enable_dev_tools
         self.width = width
         self.height = height
         self.x = x
         self.y = y
+        self.frame = frame
+        self.context_menu = context_menu
+        self.dev_tools = dev_tools
+        self.js_apis = [WindowAPI(self.id, self.app)]
+        for js_api in js_apis:
+            self.js_apis.append(js_api)
+        ###########################################################################################
+    
+    def _load(self):
+        self._window.setWindowTitle(self.title)
+
+        self._window.setGeometry(self.x, self.y, self.width, self.height)
 
         # allow local file access to remote urls
         self.web_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         # Set icon
-        self._window.setWindowIcon(self.app.icon)
+        if self.app.icon:
+            self._window.setWindowIcon(self.app.icon)
+        else:
+            print("Icon is not set.")
 
         # Set Windows taskbar icon
         if sys.platform == "win32":
@@ -148,52 +149,37 @@ class BrowserWindow:
             myappid = "mycompany.myproduct.subproduct.version"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
+        
         # Remove title bar and borders (if needed)
-        if not frame:
+        if not self.frame:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
 
         # Disable default context menu
-        if not context_menu:
+        if not self.context_menu:
             self.web_view.setContextMenuPolicy(Qt.NoContextMenu)
 
         # Set up QWebChannel
         self.channel = QWebChannel()
-        for js_api in js_apis:
-            self.js_apis.append(js_api)
 
         # Register additional JS APIs
         if self.js_apis:
             for js_api in self.js_apis:
                 self.channel.registerObject(js_api.__class__.__name__, js_api)
+        
 
         self.web_view.page().setWebChannel(self.channel)
-
-        # Load web page
-        # Check if URL is a local HTML file
-        if url.startswith("file://") or os.path.isfile(url) or url.endswith(".html"):
-            self.load_html_file(url)
-        else:
-            self.web_view.setUrl(url)
 
         # Connect pylonjs bridge
         self.web_view.loadFinished.connect(self._on_load_finished)
 
         # Add QWebEngineView to main window
         self._window.setCentralWidget(self.web_view)
+        
 
         # Set F12 shortcut
-        if enable_dev_tools:
+        if self.dev_tools:
             self.dev_tools_shortcut = QShortcut(QKeySequence("F12"), self._window)
-            self.dev_tools_shortcut.activated.connect(self.open_dev_window)
-
-    def load_html_file(self, file_path):
-        """Loads a local HTML file into the web view."""
-        if file_path.startswith("file://"):
-            file_path = file_path[7:]  # Remove 'file://'
-
-        url = QUrl.fromLocalFile(file_path)
-
-        self.web_view.setUrl(url)
+            self.dev_tools_shortcut.activated.connect(self.open_dev_tools)
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
@@ -229,7 +215,69 @@ class BrowserWindow:
         else:
             pass
 
-    def open_dev_window(self):
+    ###########################################################################################
+    # Load
+    ###########################################################################################
+    def load_file(self, file_path):
+        """Loads a local HTML file into the web view."""
+        self._load()
+        file_path = os.path.abspath(file_path) # absolute path
+        self.web_view.setUrl(QUrl.fromLocalFile(file_path))
+        
+
+    def load_url(self, url):
+        """Sets the URL of the window."""
+        self._load()
+        self.web_view.setUrl(QUrl(url))
+    ###########################################################################################
+    # Set Parameters
+    ###########################################################################################
+    def set_title(self, title: str):
+        """Sets the title of the window."""
+        self.title = title
+        self._window.setWindowTitle(self.title)
+
+    def set_size(self, width: int, height: int):
+        """Sets the size of the window."""
+        self.width = width
+        self.height = height
+        self._window.setGeometry(self.x, self.y, self.width, self.height)
+
+    def set_position(self, x: int, y: int):
+        """Sets the position of the window."""
+        self.x = x
+        self.y = y
+        self._window.setGeometry(self.x, self.y, self.width, self.height)
+
+    def set_frame(self, frame: bool):
+        """Sets the frame of the window."""
+        self.frame = frame
+        if self.frame:
+            self._window.setWindowFlags(Qt.Window)
+        else:
+            self._window.setWindowFlags(Qt.FramelessWindowHint)
+
+    def set_context_menu(self, context_menu: bool):
+        """Sets the context menu of the window."""
+        self.context_menu = context_menu
+        if self.context_menu:
+            self.web_view.setContextMenuPolicy(Qt.NoContextMenu)
+        else:
+            self.web_view.setContextMenuPolicy(Qt.DefaultContextMenu)
+        
+    def set_dev_tools(self, enable: bool):
+        """Sets the developer tools of the window.
+        
+        If enabled, the developer tools can be opened using the F12 key.
+        """
+        self.dev_tools = enable
+        if self.dev_tools:
+            self.dev_tools_shortcut = QShortcut(QKeySequence("F12"), self._window)
+            self.dev_tools_shortcut.activated.connect(self.open_dev_tools)
+        else:
+            self.dev_tools_shortcut.activated.disconnect()
+
+    def open_dev_tools(self):
         """Opens the developer tools window."""
         self.web_view.page().setDevToolsPage(QWebEnginePage(self.web_view.page()))
         self.dev_tools_window = QMainWindow(self._window)
@@ -244,14 +292,14 @@ class BrowserWindow:
         return {
             "id": self.id,
             "title": self.title,
-            "url": self.url,
-            "frame": self.frame,
-            "context_menu": self.context_menu,
-            "enable_dev_tools": self.enable_dev_tools,
             "width": self.width,
             "height": self.height,
             "x": self.x,
             "y": self.y,
+            "frame": self.frame,
+            "context_menu": self.context_menu,
+            "dev_tools": self.dev_tools,
+            "js_apis": self.js_apis,
         }
 
     def closeEvent(self, event):
@@ -266,30 +314,31 @@ class BrowserWindow:
         if not self.app.windows:
             self.app.quit()  # Quit the app if all windows are closed
 
-    def set_url(self, url):
-        """Sets the URL of the window."""
-        self.url = url
-        if url.startswith("file://") or os.path.isfile(url) or url.endswith(".html"):
-            self.load_html_file(url)
-        else:
-            self.web_view.setUrl(QUrl(url))
-
     ###########################################################################################
     # Window management (no ID required)
     ###########################################################################################
-    def hide_window(self):
+    def hide(self):
         """Hides the window."""
         self._window.hide()
 
-    def show_window(self):
+    def show(self):
+        """Shows the window."""
+        self._window.show()
+    
+    def focus(self):
+        """Focuses the window."""
+        self._window.activateWindow()
+        self._window.raise_()
+        self._window.setWindowState(self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+
+    def show_and_focus(self):
         """Shows and focuses the window."""
         self._window.show()
         self._window.activateWindow()
         self._window.raise_()
         self._window.setWindowState(self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
 
-
-    def close_window(self):
+    def close(self):
         """Closes the window."""
         self._window.close()
 
@@ -300,31 +349,27 @@ class BrowserWindow:
         else:
             self._window.showFullScreen()
 
-    def minimize_window(self):
+    def minimize(self):
         """Minimizes the window."""
         self._window.showMinimized()
 
-    def maximize_window(self):
+    def maximize(self):
         """Maximizes the window."""
         self._window.showMaximized()
 
-    def restore_window(self):
-        """Restores the window to its normal state."""
+    def unmaximize(self):
+        """Unmaximizes the window."""
         self._window.showNormal()
 
 
 class _WindowController(QObject):
-    hide_window_signal = Signal(str)
-    show_window_signal = Signal(str)
-    close_window_signal = Signal(str)
-    stop_app_signal = Signal()
     create_window_signal = Signal(
-        QApplication, str, str, bool, bool, list, bool, int, int, int, int
+        QApplication, str, int, int, int, int, bool, bool, bool, list
     )
 
 
 class PylonApp(QApplication):
-    def __init__(self, single_instance=True, icon_path=""):
+    def __init__(self, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
         super().__init__(sys.argv)
         self.windows = []
         self.server = None
@@ -334,102 +379,79 @@ class PylonApp(QApplication):
             self._init_single_instance()
 
         self.controller = _WindowController()
-        self.controller.create_window_signal.connect(self._create_window_function)
-        # self.controller.hide_window_signal.connect(self._hide_window)
-        # self.controller.show_window_signal.connect(self._show_window)
-        # self.controller.close_window_signal.connect(self._close_window_by_id)
-        # self.controller.stop_app_signal.connect(self.quit)
+        self.controller.create_window_signal.connect(self._create_window_signal_function)
 
-        self.tray_icon_path = None
-        self.tray_icon = None
+        self.icon = QIcon(icon_path) if icon_path else None
+        self.tray_icon = QIcon(tray_icon_path) if tray_icon_path else None
         self.tray_menu_items = []
-        self.icon_path = icon_path
-        self.icon = self.load_icon(icon_path)
-        self.tray_icon_actions = {}  # Dictionary to store tray icon activation actions
+        self.tray_actions = {}
 
-    def load_icon(self, icon_path: str):
-        """Loads an icon from the given path."""
-        if is_production():
-            icon_path = get_resource_path(icon_path)
-        return QIcon(icon_path)
+    def set_icon(self, icon_path: str):
+        """Sets the icon for the application."""
+        self.icon = QIcon(icon_path)
 
-    def set_tray_icon_path(self, tray_icon_path: str):
+    def set_tray_icon(self, tray_icon_path: str):
         """Sets the path for the tray icon."""
-        self.tray_icon_path = tray_icon_path
-        self.tray_icon = self.load_icon(tray_icon_path)
+        self.tray_icon = QIcon(tray_icon_path)
 
-    def set_tray_menu_items(self, tray_menu_items):
+    def set_tray_menu_items(self, tray_menu_items: Dict[str, Callable]):
         """Sets the menu items for the tray icon."""
         self.tray_menu_items = tray_menu_items
 
     def create_window(
         self,
-        url: str,
-        title: str = "pylon",
-        frame: bool = True,
-        context_menu: bool = False,
-        js_apis=[],
-        enable_dev_tools=False,
-        width=1200,
-        height=800,
-        x=300,
-        y=300,
+        title: str="pylon app",
+        width: int=800,
+        height: int=600,
+        x: int=200,
+        y: int=200,
+        frame: bool=True,
+        context_menu: bool=False,
+        dev_tools: bool=False,
+        js_apis: List[PylonAPI]=[],
     ) -> BrowserWindow:
         """Creates a new browser window."""
-        # Add 'file://' prefix if URL is a local file path ending with .html
-        if os.path.isfile(url) or url.lower().endswith(".html"):
-            url = f"file://{os.path.abspath(url)}"
-
-        if is_production():
-            url = f"file://{get_resource_path(url)}" # TODO : THINKING OTHER METHODS...
-
         self.controller.create_window_signal.emit(
             self,
             title,
-            url,
-            frame,
-            context_menu,
-            js_apis,
-            enable_dev_tools,
             width,
             height,
             x,
             y,
+            frame,
+            context_menu,
+            dev_tools,
+            js_apis,
         )
         return self.windows[-1]
 
-    def _create_window_function(
+    def _create_window_signal_function(
         self,
         app,
         title: str,
-        url: str,
+        width: int,
+        height: int,
+        x: int,
+        y: int,
         frame: bool,
         context_menu: bool,
-        js_apis=[],
-        enable_dev_tools=False,
-        width=1200,
-        height=800,
-        x=100,
-        y=100,
+        dev_tools: bool,
+        js_apis: List[PylonAPI]=[],
     ) -> BrowserWindow:
         """Function to create a new browser window."""
         window = BrowserWindow(
             app,
             title,
-            url,
-            frame,
-            context_menu,
-            js_apis,
-            enable_dev_tools,
             width,
             height,
             x,
             y,
+            frame,
+            context_menu,
+            dev_tools,
+            js_apis,
         )
         self.windows.append(window)
-        window._window.show()
-        if not self.windows:  # If it's the first window
-            self.tray_icon.activated.connect(self.tray_icon_activated)
         return window
 
     def run(self):
@@ -455,7 +477,7 @@ class PylonApp(QApplication):
 
     
     ###########################################################################################
-    # App windows
+    # App window
     ###########################################################################################
     def get_windows(self) -> List[BrowserWindow]:
         """Returns a list of all browser windows."""
@@ -466,14 +488,36 @@ class PylonApp(QApplication):
         if self.windows:
             main_window = self.windows[0]
             main_window._window.show()
+
+    def focus_main_window(self):
+        """Focuses the first window."""
+        if self.windows:
+            main_window = self.windows[0]
             main_window._window.activateWindow()
             main_window._window.raise_()
             main_window._window.setWindowState(main_window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+    
+    def show_and_focus_main_window(self):
+        """Shows and focuses the first window."""
+        if self.windows:
+            main_window = self.windows[0]
+            main_window._window.show()
+            main_window._window.activateWindow()
+            main_window._window.raise_()
+            main_window._window.setWindowState(main_window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+    
+    def close_all_windows(self):
+        """Closes all windows."""
+        for window in self.windows:
+            window._window.close()
 
+    def quit(self):
+        """Quits the application."""
+        self.close_all_windows()
+        QApplication.quit()
     ###########################################################################################
     # Window management in the app (ID required)
     ###########################################################################################
-
     def get_window_by_id(self, window_id: str) -> Optional[BrowserWindow]:
         """Returns the window with the given ID."""
         for window in self.windows:
@@ -485,7 +529,7 @@ class PylonApp(QApplication):
         """Hides the window with the given ID."""
         window = self.get_window_by_id(window_id)
         if window:
-            window._window.hide()
+            window.hide()
 
     def show_window_by_id(self, window_id: str):
         """Shows and focuses the window with the given ID."""
@@ -502,42 +546,28 @@ class PylonApp(QApplication):
         if window:
             window._window.close()
 
-    def close_all_windows(self):
-        """Closes all windows."""
-        for window in self.windows:
-            window._window.close()
-
-    def quit(self):
-        """Quits the application."""
-        self.close_all_windows()
-        QApplication.quit()
-
     def toggle_fullscreen_by_id(self, window_id: str):
         """Toggles fullscreen mode for the window with the given ID."""
         window = self.get_window_by_id(window_id)
-        if window:
-            if window._window.isFullScreen():
-                window._window.showNormal()
-            else:
-                window._window.showFullScreen()
+        window.toggle_fullscreen()
 
     def minimize_window_by_id(self, window_id: str):
         """Minimizes the window with the given ID."""
         window = self.get_window_by_id(window_id)
         if window:
-            window._window.showMinimized()
+            window.minimize()
 
     def maximize_window_by_id(self, window_id: str):
         """Maximizes the window with the given ID."""
         window = self.get_window_by_id(window_id)
         if window:
-            window._window.showMaximized()
+            window.maximize()
 
-    def restore_window_by_id(self, window_id: str):
-        """Restores the window with the given ID to its normal state."""
+    def unmaximize_window_by_id(self, window_id: str):
+        """Unmaximizes the window with the given ID."""
         window = self.get_window_by_id(window_id)
         if window:
-            window._window.showNormal()
+            window.unmaximize()
 
     ###########################################################################################
     # Tray
@@ -545,12 +575,13 @@ class PylonApp(QApplication):
     def setup_tray(self):
         """Sets up the system tray icon and menu."""
         self.tray = QSystemTrayIcon(self)
-        if (
-            self.tray_icon_path is None
-        ):  # If tray icon is not set, use the default icon
-            self.tray.setIcon(self.icon)
-        else:
+        if self.tray_icon:
             self.tray.setIcon(self.tray_icon)
+        else:
+            if self.icon:
+                self.tray.setIcon(self.icon)
+            else:
+                print("Icon and Tray icon are not set.")
 
         tray_menu = QMenu()
 
@@ -561,13 +592,14 @@ class PylonApp(QApplication):
                 action.triggered.connect(item["callback"])
 
         self.tray.setContextMenu(tray_menu)
-        self.tray.activated.connect(self.tray_activated)
+        self.tray.activated.connect(self._tray_activated)
         self.tray.show()
 
-    def tray_activated(self, reason):
+    def _tray_activated(self, reason):
         """Handles the event when the tray icon is activated."""
         reason_enum = QSystemTrayIcon.ActivationReason(reason)
 
+        print(reason_enum)
 
         if reason_enum in self.tray_actions:
             self.tray_actions[reason_enum]()
@@ -580,23 +612,3 @@ class PylonApp(QApplication):
                  and values are callback functions for the respective activation reasons.
         """
         self.tray_actions = actions
-
-
-if __name__ == "__main__":
-    app = PylonApp(icon_path="assets/icon.ico")
-
-    window = app.create_window(
-        title="Pylon Browser",
-        url="https://www.example.com",
-        frame=True,
-        context_menu=True,
-        enable_dev_tools=True,
-        width=1200,
-        height=800,
-        x=100,
-        y=100,
-    )
-
-    window.show()
-
-    app.run()

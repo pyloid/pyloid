@@ -1,21 +1,29 @@
 import sys
 import os
+from typing import Optional
 
 
-def get_resource_path(file_path):
+def get_production_path() -> Optional[str]:
+    """
+    Returns the path to the resource files in a production environment.
+    If running as a regular Python script, returns None.
+
+    Returns:
+        str | None
+    """
     if getattr(sys, 'frozen', False):
-        # PyInstaller로 빌드된 경우
-        return os.path.join(sys._MEIPASS, os.path.basename(file_path))
+        # If built with PyInstaller
+        return os.path.join(sys._MEIPASS)
     else:
-        # 일반 Python 스크립트로 실행되는 경우
-        return file_path
+        # If running as a regular Python script
+        return None
 
 
 def is_production():
     """
-    현재 환경이 프로덕션 환경인지 확인하는 함수입니다.
+    Checks if the current environment is a production environment.
 
     Returns:
-        bool: 프로덕션 환경이면 True, 그렇지 않으면 False를 반환합니다.
+        bool: True if in a production environment, False otherwise.
     """
     return getattr(sys, 'frozen', False)
