@@ -3,7 +3,6 @@ import os
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QPushButton,
     QSystemTrayIcon,
     QMenu,
 )
@@ -17,7 +16,20 @@ from .utils import get_resource_path, is_production
 from .api import PylonAPI, Bridge
 import uuid
 from typing import List, Optional
+from PySide6.QtCore import qInstallMessageHandler
 
+# for linux debug
+os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
+
+def custom_message_handler(mode, context, message):
+    if not hasattr(custom_message_handler, 'vulkan_warning_shown') and (('Failed to load vulkan' in message) or ('No Vulkan library available' in message) or ('Failed to create platform Vulkan instance' in message)):
+        print('\033[93mPylon Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m')
+        os.environ['QT_QUICK_BACKEND'] = 'software'
+        custom_message_handler.vulkan_warning_shown = True
+    if 'vulkan' not in message.lower():
+        print(message)
+
+qInstallMessageHandler(custom_message_handler)
 
 class WindowAPI(PylonAPI):
     def __init__(self, window_id, app):
