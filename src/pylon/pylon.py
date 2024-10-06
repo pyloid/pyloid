@@ -34,10 +34,10 @@ def custom_message_handler(mode, context, message):
 qInstallMessageHandler(custom_message_handler)
 
 class WindowAPI(PylonAPI):
-    def __init__(self, window_id, app):
+    def __init__(self, window_id: str, app):
         super().__init__()
-        self.window_id = window_id
-        self.app = app
+        self.window_id: str = window_id
+        self.app: PylonApp = app
 
     @Bridge(result=str)
     def getWindowId(self):
@@ -94,33 +94,54 @@ class WindowAPI(PylonAPI):
             window.unmaximize()
 
     @Bridge(str)
-    def setWindowTitle(self, title: str):
-        """Sets the window title."""
+    def setTitle(self, title: str):
+        """Sets the title of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.setWindowTitle(title)
+            window.set_title(title)
 
     @Bridge(int, int)
-    def setWindowSize(self, width: int, height: int):
-        """Sets the window size."""
+    def setSize(self, width: int, height: int):
+        """Sets the size of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.resize(width, height)
+            window.set_size(width, height)
 
     @Bridge(int, int)
-    def setWindowPosition(self, x: int, y: int):
-        """Sets the window position."""
+    def setPosition(self, x: int, y: int):
+        """Sets the position of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.move(x, y)
+            window.set_position(x, y)
 
-    @Bridge(str)
-    def setWindowIcon(self, icon_path: str):
-        """Sets the window icon."""
+    @Bridge(bool)
+    def setFrame(self, frame: bool):
+        """Sets the frame of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.setWindowIcon(QIcon(icon_path))
+            window.set_frame(frame)
 
+    @Bridge(bool)
+    def setContextMenu(self, context_menu: bool):
+        """Sets the context menu of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.set_context_menu(context_menu)
+
+    @Bridge(bool)
+    def setDevTools(self, enable: bool):
+        """Sets the developer tools of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.set_dev_tools(enable)
+
+    @Bridge(str, result=Optional[str])
+    def capture(self, save_path: str) -> Optional[str]:
+        """Captures the current window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            return window.capture(save_path)
+        return None
 
 
 class BrowserWindow:
