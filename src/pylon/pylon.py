@@ -8,14 +8,17 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtGui import QIcon, QKeySequence, QShortcut
+from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage
 from PySide6.QtCore import Qt, Signal, QUrl, QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .api import PylonAPI, Bridge
 import uuid
-from typing import List, Optional, Dict, Callable
+from typing import List, Optional, Dict, Callable, Union
 from PySide6.QtCore import qInstallMessageHandler
+import signal
+from .utils import is_production
+from .monitor import Monitor
 
 # for linux debug
 os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
@@ -90,6 +93,34 @@ class WindowAPI(PylonAPI):
         if window:
             window.unmaximize()
 
+    @Bridge(str)
+    def setWindowTitle(self, title: str):
+        """Sets the window title."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.setWindowTitle(title)
+
+    @Bridge(int, int)
+    def setWindowSize(self, width: int, height: int):
+        """Sets the window size."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.resize(width, height)
+
+    @Bridge(int, int)
+    def setWindowPosition(self, x: int, y: int):
+        """Sets the window position."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.move(x, y)
+
+    @Bridge(str)
+    def setWindowIcon(self, icon_path: str):
+        """Sets the window icon."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.setWindowIcon(QIcon(icon_path))
+
 
 
 class BrowserWindow:
@@ -126,6 +157,7 @@ class BrowserWindow:
         self.js_apis = [WindowAPI(self.id, self.app)]
         for js_api in js_apis:
             self.js_apis.append(js_api)
+        self.shortcuts = {}
         ###########################################################################################
     
     def _load(self):
@@ -178,8 +210,7 @@ class BrowserWindow:
 
         # Set F12 shortcut
         if self.dev_tools:
-            self.dev_tools_shortcut = QShortcut(QKeySequence("F12"), self._window)
-            self.dev_tools_shortcut.activated.connect(self.open_dev_tools)
+            self.add_shortcut("F12", self.open_dev_tools)
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
@@ -272,10 +303,9 @@ class BrowserWindow:
         """
         self.dev_tools = enable
         if self.dev_tools:
-            self.dev_tools_shortcut = QShortcut(QKeySequence("F12"), self._window)
-            self.dev_tools_shortcut.activated.connect(self.open_dev_tools)
+            self.add_shortcut("F12", self.open_dev_tools)
         else:
-            self.dev_tools_shortcut.activated.disconnect()
+            self.remove_shortcut("F12")
 
     def open_dev_tools(self):
         """Opens the developer tools window."""
@@ -361,18 +391,74 @@ class BrowserWindow:
         """Unmaximizes the window."""
         self._window.showNormal()
 
+    def capture(self, save_path: str) -> Optional[str]:
+        """
+        Captures the current window.
+        
+        :param save_path: Path to save the captured image. If not specified, it will be saved in the current directory.
+        :return: Path of the saved image
+        """
+        try:
+            # Capture window
+            screenshot = self._window.grab()
+            
+            # Save image
+            screenshot.save(save_path)
+            return save_path
+        except Exception as e:
+            print(f"Error occurred while capturing the window: {e}")
+            return None
+
+    ###########################################################################################
+    # Shortcut
+    ###########################################################################################
+    def add_shortcut(self, key_sequence: str, callback: Callable):
+        """
+        Adds a keyboard shortcut to the window.
+        
+        :param key_sequence: Shortcut sequence (e.g., "Ctrl+C")
+        :param callback: Function to be executed when the shortcut is pressed
+        :return: Created QShortcut object
+        """
+        shortcut = QShortcut(QKeySequence(key_sequence), self._window)
+        shortcut.activated.connect(callback)
+        self.shortcuts[key_sequence] = shortcut
+        return shortcut
+
+    def remove_shortcut(self, key_sequence: str):
+        """
+        Removes a keyboard shortcut from the window.
+        
+        :param key_sequence: Shortcut sequence to be removed
+        """
+        if key_sequence in self.shortcuts:
+            shortcut = self.shortcuts.pop(key_sequence)
+            shortcut.setEnabled(False)
+            shortcut.deleteLater()
+
+    def get_all_shortcuts(self):
+        """
+        Returns all registered shortcuts in the window.
+        
+        :return: Dictionary of shortcut sequences and QShortcut objects
+        """
+        return self.shortcuts
+
 
 class _WindowController(QObject):
     create_window_signal = Signal(
         QApplication, str, int, int, int, int, bool, bool, bool, list
     )
 
-
 class PylonApp(QApplication):
     def __init__(self, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
         super().__init__(sys.argv)
+
         self.windows = []
         self.server = None
+
+        self.clipboard_class = self.clipboard()
+        self.shortcuts = {}
 
         self.single_instance = single_instance
         if self.single_instance:
@@ -456,7 +542,11 @@ class PylonApp(QApplication):
 
     def run(self):
         """Runs the application event loop."""
-        sys.exit(self.exec())
+        if is_production():
+            sys.exit(self.exec())
+        else:
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            sys.exit(self.exec())
 
     def _init_single_instance(self):
         """Initializes the application as a single instance."""
@@ -569,31 +659,55 @@ class PylonApp(QApplication):
         if window:
             window.unmaximize()
 
+    def capture_window_by_id(self, window_id: str, save_path: str) -> Optional[str]:
+        """
+        Captures a specific window.
+        
+        :param window_id: ID of the window to capture
+        :param save_path: Path to save the captured image. If not specified, it will be saved in the current directory.
+        :return: Path of the saved image
+        """
+        try:
+            window = self.get_window_by_id(window_id)
+            if not window:
+                print(f"Cannot find window with the specified ID: {window_id}")
+                return None
+            
+            # Capture window
+            screenshot = window._window.grab()
+            
+            # Save image
+            screenshot.save(save_path)
+            return save_path
+        except Exception as e:
+            print(f"Error occurred while capturing the window: {e}")
+            return None
     ###########################################################################################
     # Tray
     ###########################################################################################
-    def setup_tray(self):
+    def run_tray(self):
         """Sets up the system tray icon and menu."""
-        self.tray = QSystemTrayIcon(self)
-        if self.tray_icon:
-            self.tray.setIcon(self.tray_icon)
-        else:
-            if self.icon:
-                self.tray.setIcon(self.icon)
+        if not hasattr(self, 'tray'):
+            self.tray = QSystemTrayIcon(self)
+            if self.tray_icon:
+                self.tray.setIcon(self.tray_icon)
             else:
-                print("Icon and Tray icon are not set.")
+                if self.icon:
+                    self.tray.setIcon(self.icon)
+                else:
+                    print("Icon and Tray icon are not set.")
 
-        tray_menu = QMenu()
+            tray_menu = QMenu()
 
-        # Add menu items from external source
-        if self.tray_menu_items:
-            for item in self.tray_menu_items:
-                action = tray_menu.addAction(item["label"])
-                action.triggered.connect(item["callback"])
+            # Add menu items from external source
+            if self.tray_menu_items:
+                for item in self.tray_menu_items:
+                    action = tray_menu.addAction(item["label"])
+                    action.triggered.connect(item["callback"])
 
-        self.tray.setContextMenu(tray_menu)
-        self.tray.activated.connect(self._tray_activated)
-        self.tray.show()
+            self.tray.setContextMenu(tray_menu)
+            self.tray.activated.connect(self._tray_activated)
+            self.tray.show()
 
     def _tray_activated(self, reason):
         """Handles the event when the tray icon is activated."""
@@ -612,3 +726,67 @@ class PylonApp(QApplication):
                  and values are callback functions for the respective activation reasons.
         """
         self.tray_actions = actions
+
+    def show_notification(self, title: str, message: str):
+        """Displays a notification in the system tray."""
+        if not hasattr(self, 'tray'):
+            self.run_tray()  # Ensure the tray is initialized
+
+        self.tray.showMessage(title, message, QIcon(self.icon), 5000)
+
+    ###########################################################################################
+    # Monitor
+    ###########################################################################################
+    def get_all_monitors(self) -> List[Monitor]:
+        """
+        Returns a list of information for all connected monitors.
+        
+        :return: List containing monitor information
+        """
+        monitors = [Monitor(index, screen) for index, screen in enumerate(self.screens())]
+        return monitors
+    
+    def get_primary_monitor(self) -> Monitor:
+        """
+        Returns information for the primary monitor.
+        
+        :return: Primary monitor information
+        """
+        primary_monitor = self.screens()[0]
+        return Monitor(0, primary_monitor)
+    
+    ###########################################################################################
+    # Clipboard
+    ###########################################################################################
+    def copy_to_clipboard(self, text):
+        """
+        Copies text to the clipboard.
+        
+        :param text: Text to be copied
+        """
+        self.clipboard_class.setText(text, QClipboard.Clipboard)
+
+    def get_clipboard_text(self):
+        """
+        Retrieves text from the clipboard.
+        
+        :return: Text from the clipboard
+        """
+        return self.clipboard_class.text()
+
+    def set_clipboard_image(self, image: Union[str, bytes, os.PathLike]):
+        """
+        Copies an image to the clipboard.
+        
+        :param image: Path to the image to be copied
+        """
+        self.clipboard_class.setImage(QImage(image), QClipboard.Clipboard)
+
+    def get_clipboard_image(self):
+        """
+        Retrieves an image from the clipboard.
+        
+        :return: QImage object from the clipboard (None if no image)
+        """
+        return self.clipboard_class.image()
+    

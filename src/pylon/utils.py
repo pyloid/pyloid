@@ -13,7 +13,7 @@ def get_production_path() -> Optional[str]:
     """
     if getattr(sys, 'frozen', False):
         # If built with PyInstaller
-        return os.path.join(sys._MEIPASS)
+        return sys._MEIPASS
     else:
         # If running as a regular Python script
         return None

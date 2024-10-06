@@ -1,12 +1,16 @@
 from src.pylon.pylon import PylonApp
 from src.pylon.api import PylonAPI, Bridge
 from src.pylon.tray import TrayEvent
-import time
-
+from src.pylon.utils import is_production, get_production_path
+import os
 
 app = PylonApp(single_instance=True)
 
-app.set_icon("assets/icon.ico")
+if (is_production()):
+    app.set_icon(os.path.join(get_production_path() + "/icon.ico"))
+else:
+    app.set_icon("assets/icon.ico")
+    app.set_tray_icon("assets/icon.ico")
 
 app.set_tray_actions(
     {
@@ -24,13 +28,14 @@ app.set_tray_menu_items(
     ]
 )
 
-app.setup_tray()
+app.run_tray()
+
 
 class CustomAPI(PylonAPI):
     @Bridge(str, int, result=str)
     def echo(self, message, message2):
-        print(type(message), type(message2))
-        return f"파이썬에서 받은 메시지: {message}, {message2}"
+        print(f"메시지: {message}-{message2}")
+        return f"파이썬에서 받은 메시지: {message}-{message2}"
 
     @Bridge(result=str)
     def getAppVersion(self):
@@ -55,7 +60,6 @@ class CustomAPI(PylonAPI):
 
         return window.id
 
-
 window = app.create_window(
     title="Pylon Browser1",
     frame=True,
@@ -66,7 +70,35 @@ window = app.create_window(
 
 window.set_size(1500, 1000)
 
-window.load_file("file/index.html")
+if (is_production()):
+    window.load_file(os.path.join(get_production_path() + "/file/index.html"))
+else:
+    window.load_file("file/index.html")
+
 window.show_and_focus()
 
+app.show_notification("알림", "알림 메시지")
+
+from pprint import pprint
+pprint(app.get_all_monitors())
+pprint(app.get_primary_monitor())
+
+monitors = app.get_all_monitors()
+
+monitors[0].geometry_changed(lambda: print("geometry_changed"))
+monitors[0].orientation_changed(lambda: print("orientation_changed"))
+monitors[0].refresh_rate_changed(lambda: print("refresh_rate_changed"))
+
+app.copy_to_clipboard("test")
+print(app.get_clipboard_text())
+
+app.set_clipboard_image("assets/icon.png")
+print(app.get_clipboard_image())
+
+window.add_shortcut("Ctrl+Shift+I", lambda: (print("Ctrl+Shift+I 단축키가 눌렸습니다. Ctrl+Shift+Q 단축키를 제거합니다."), window.remove_shortcut("Ctrl+Shift+Q")))
+window.add_shortcut("Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q 단축키가 눌렸습니다.")))
+window.add_shortcut("Ctrl+Shift+S", lambda: (print("Ctrl+Shift+S 단축키가 눌렸습니다."), print(window.get_all_shortcuts())))
+
 app.run()
+
+
