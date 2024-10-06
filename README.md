@@ -11,6 +11,10 @@ Pylon is a framework that allows you to easily create desktop applications using
 - Single instance application support
 - Cross-platform support for Windows, macOS, and Linux 🌍
 
+## Documentation 📚
+
+[Pylon Documentation](https://docs.pylon-app.com/)
+
 ## Installation 📦
 
 ### Direct Installation
@@ -32,7 +36,9 @@ Boilerplate address: [https://github.com/python-pylon/pylon-react-boilerplate](h
 ```python
 from pylon import PylonApp
 
-app = PylonApp(single_instance=True, icon_path="assets/icon.ico")
+app = PylonApp(single_instance=True)
+
+app.set_icon("assets/icon.ico")
 
 window = app.create_window(
     "https://www.example.com",
@@ -67,8 +73,9 @@ from pylon import PylonAPI, Bridge
 
 class CustomAPI(PylonAPI):
     @Bridge(str, int, result=str)
-    def echo(self, message, number):
-        return f"Message received in Python: {message}, {number}"
+    def echo(self, message, message2):
+        print(f"메시지: {message}-{message2}")
+        return f"파이썬에서 받은 메시지: {message}-{message2}"
 
     @Bridge(result=str)
     def getAppVersion(self):
@@ -77,20 +84,38 @@ class CustomAPI(PylonAPI):
     @Bridge(result=str)
     def create_window(self):
         window = app.create_window(
-            "alert.html",
+            title="Pylon Browser2",
+            frame=True,
+            context_menu=False,
             js_apis=[CustomAPI()],
-            width=300,
-            height=200,
-            x=100,
-            y=100,
+            dev_tools=True
         )
+
+
+        window.set_size(800, 600)
+        window.set_position(0, 0)
+        window.load_url("https://www.google.com")
+        window.show()
+        window.focus()
+
         return window.id
 
 window = app.create_window(
-    "index.html",
+    title="Pylon Browser1",
+    frame=True,
+    context_menu=False,
     js_apis=[CustomAPI()],
-    # Other options...
+    dev_tools=True
 )
+
+window.set_size(1500, 1000)
+
+if (is_production()):
+    window.load_file(os.path.join(get_production_path() + "/file/index.html"))
+else:
+    window.load_file("file/index.html")
+
+window.show_and_focus()
 ```
 
 ```javascript
@@ -152,89 +177,6 @@ function App() {
   return <h1>Hello World</h1>;
 }
 ```
-
-## API Reference 📚
-
-### PylonApp
-
-- `create_window(url, title, frame, context_menu, js_apis, enable_dev_tools, width, height, x, y) -> BrowserWindow`: Creates a new window and returns a BrowserWindow object.
-- `run()`: Runs the application.
-- `set_tray_actions(actions)`: Sets tray icon actions.
-- `set_tray_menu_items(items)`: Sets tray menu items.
-- `setup_tray()`: Sets up the system tray.
-- `get_windows()`: Returns a list of all browser windows.
-- `show_main_window()`: Shows and focuses the first window.
-- `get_window_by_id(window_id)`: Returns the window with the given ID.
-- `hide_window_by_id(window_id)`: Hides the window with the given ID.
-- `show_window_by_id(window_id)`: Shows the window with the given ID.
-- `close_window_by_id(window_id)`: Closes the window with the given ID.
-- `close_all_windows()`: Closes all windows.
-- `quit()`: Quits the application.
-- `toggle_fullscreen_by_id(window_id)`: Toggles fullscreen mode for the window with the given ID.
-- `minimize_window_by_id(window_id)`: Minimizes the window with the given ID.
-- `maximize_window_by_id(window_id)`: Maximizes the window with the given ID.
-- `restore_window_by_id(window_id)`: Restores the window with the given ID to its normal state.'
-
-### BrowserWindow
-
-- `__init__(app, title, url, frame, context_menu, js_apis, enable_dev_tools, width, height, x, y)`: Initializes a new browser window.
-- `open_dev_window()`: Opens the developer tools window.
-  - When enable_dev_tools=True, pressing F12 will open the dev tools window.
-- `get_window_properties()`: Returns the properties of the window.
-- `hide_window()`: Hides the window.
-- `show_window()`: Shows and focuses the window.
-- `close_window()`: Closes the window.
-- `toggle_fullscreen()`: Toggles fullscreen mode for the window.
-- `minimize_window()`: Minimizes the window.
-- `maximize_window()`: Maximizes the window.
-- `restore_window()`: Restores the window to its normal state.
-- `set_url(url)`: Sets the URL of the window.
-
-### PylonAPI
-
-Used to define bridge APIs for communication between Python and JavaScript.
-
-- `@Bridge(*arg_types, result=return_type)`: Converts a Python method into a function callable from JavaScript.
-  - `arg_types`: Types of function arguments (multiple possible)
-  - `result`: Type of return value (optional)
-
-## Basic Bridge window.WindowAPI Functions
-
-### getWindowId
-
-- `window.WindowAPI.getWindowId() -> str`: Returns the current window ID.
-
-### closeWindow
-
-- `window.WindowAPI.closeWindow()`: Closes the window with the given window ID.
-
-### hideWindow
-
-- `window.WindowAPI.hideWindow()`: Hides the window with the given window ID.
-
-### showWindow
-
-- `window.WindowAPI.showWindow()`: Shows and focuses the window with the given window ID.
-
-### toggleFullscreen
-
-- `window.WindowAPI.toggleFullscreen()`: Toggles fullscreen mode for the window with the given window ID.
-
-### minimizeWindow
-
-- `window.WindowAPI.minimizeWindow()`: Minimizes the window with the given window ID.
-
-### maximizeWindow
-
-- `window.WindowAPI.maximizeWindow()`: Maximizes the window with the given window ID.
-
-### restoreWindow
-
-- `window.WindowAPI.restoreWindow()`: Restores the window with the given window ID to its normal state.
-
-### setUrl
-
-- `window.WindowAPI.setUrl(url)`: Sets the URL of the window.
 
 ## License 📄
 
