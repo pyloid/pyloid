@@ -4,10 +4,10 @@ from src.pylon.tray import TrayEvent
 from src.pylon.utils import is_production, get_production_path
 import os
 
-app = PylonApp(single_instance=True)
+app = PylonApp("Pylon-App", single_instance=True)
 
 if (is_production()):
-    app.set_icon(os.path.join(get_production_path(), "/icon.ico"))
+    app.set_icon(os.path.join(get_production_path(), "icon.ico"))
 else:
     app.set_icon("assets/icon.ico")
     app.set_tray_icon("assets/icon.ico")
@@ -71,17 +71,13 @@ window = app.create_window(
 window.set_size(800, 600)
 
 if (is_production()):
-    window.load_file(os.path.join(get_production_path(), "/file/index.html"))
+    window.load_file(os.path.join(get_production_path(), "file/index.html"))
 else:
     window.load_file("file/index.html")
 
 window.show_and_focus()
 
 app.show_notification("알림", "알림 메시지")
-
-from pprint import pprint
-pprint(app.get_all_monitors())
-pprint(app.get_primary_monitor())
 
 monitors = app.get_all_monitors()
 
@@ -100,6 +96,9 @@ window.add_shortcut("Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q 단축키가 �
 window.add_shortcut("Ctrl+Shift+S", lambda: (print("Ctrl+Shift+S 단축키가 눌렸습니다."), print(window.get_all_shortcuts())))
 
 window.add_shortcut("Ctrl+Shift+E", lambda: (print("Ctrl+Shift+E 단축키가 눌렸습니다."), window.emit('pythonEvent', { "message": 'Hello from Python!' })))
+
+app.set_auto_start(False)
+print(app.is_auto_start())
 
 app.run()
 

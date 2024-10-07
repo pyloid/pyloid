@@ -20,6 +20,7 @@ import signal
 from .utils import is_production
 from .monitor import Monitor
 import json
+from .autostart import AutoStart
 
 # for linux debug
 os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
@@ -262,7 +263,6 @@ class BrowserWindow:
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
                 new QWebChannel(qt.webChannelTransport, function (channel) {
-
                     window.pylon = {
                         EventAPI: {
                             listen: function(eventName, callback) {
@@ -277,25 +277,21 @@ class BrowserWindow:
                                 });
                             },
                             unlisten: function(eventName) {
-                                document.removeEventListener(eventName, callback);
+                                document.removeEventListener(eventName);
                             }
                         }   
                     };
                     console.log('pylon.EventAPI object initialized:', window.pylon.EventAPI);
 
                     %s
+
                     // Dispatch a custom event to signal that the initialization is ready
                     const event = new CustomEvent('pylonReady');
-
                     document.dispatchEvent(event);
                 });
-
             } else {
-
                 console.error('QWebChannel is not defined.');
-
             }
-
             """
             js_api_init = "\n".join(
                 [
@@ -535,8 +531,10 @@ class _WindowController(QObject):
         QApplication, str, int, int, int, int, bool, bool, bool, list
     )
 
+import winreg as reg
+
 class PylonApp(QApplication):
-    def __init__(self, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
+    def __init__(self, app_name, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
         super().__init__(sys.argv)
 
         self.windows = []
@@ -556,6 +554,11 @@ class PylonApp(QApplication):
         self.tray_icon = QIcon(tray_icon_path) if tray_icon_path else None
         self.tray_menu_items = []
         self.tray_actions = {}
+
+        self.app_name = app_name
+        self.app_path = sys.executable
+
+        self.auto_start = AutoStart(self.app_name, self.app_path)
 
     def set_icon(self, icon_path: str):
         """Sets the icon for the application."""
@@ -875,3 +878,35 @@ class PylonApp(QApplication):
         """
         return self.clipboard_class.image()
     
+    ###########################################################################################
+    # Atostart
+    ###########################################################################################
+    def set_auto_start(self, enable: bool):
+        """
+        Sets the application to start automatically with the system (Production Only).
+        This function does not work unless it is in a production environment.
+        
+        :param enable: True to enable auto-start, False to disable
+        """
+        if not enable:
+            self.auto_start.set_auto_start(False)
+            return False
+
+        if is_production():
+            if enable:
+                self.auto_start.set_auto_start(True)
+                return True
+        else:
+            print("\033[93mset_auto_start(True) is not supported in non-production environment\033[0m")
+            return None
+
+    def is_auto_start(self):
+        """
+        Checks if the application is set to start automatically with the system.
+
+        :return: True if auto-start is enabled, False otherwise
+        """
+        
+        return self.auto_start.is_auto_start()
+        
+
