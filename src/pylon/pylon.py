@@ -269,9 +269,9 @@ class BrowserWindow:
                                 document.addEventListener(eventName, function(event) {
                                     let eventData;
                                     try {
-                                        eventData = JSON.parse(event.data);
+                                        eventData = JSON.parse(event.detail);
                                     } catch (e) {
-                                        eventData = event.data;
+                                        eventData = event.detail;
                                     }
                                     callback(eventData);
                                 });
@@ -521,8 +521,11 @@ class BrowserWindow:
         :param data: Data to be sent with the event (optional)
         """
         script = f"""
-        const event = new CustomEvent('{event_name}', {{ data: {json.dumps(data)} }});
-        document.dispatchEvent(event);
+        (function() {{
+            const eventData = {json.dumps(data)};
+            const customEvent = new CustomEvent('{event_name}', {{ detail: eventData }});
+            document.dispatchEvent(customEvent);
+        }})();
         """
         self.web_view.page().runJavaScript(script)
 

@@ -32,3 +32,7 @@ document.getElementById('myButton').addEventListener('click', function () {
     console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
   });
 });
+
+window.pylon.EventAPI.listen('pythonEvent', function (data) {
+  console.log('Received event from Python:', data.message);
+});
