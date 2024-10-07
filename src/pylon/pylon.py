@@ -254,8 +254,7 @@ class BrowserWindow:
         
 
         # Set F12 shortcut
-        if self.dev_tools:
-            self.add_shortcut("F12", self.open_dev_tools)
+        self.set_dev_tools(self.dev_tools)
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
@@ -476,12 +475,16 @@ class BrowserWindow:
     ###########################################################################################
     def add_shortcut(self, key_sequence: str, callback: Callable):
         """
-        Adds a keyboard shortcut to the window.
+        Adds a keyboard shortcut to the window if it does not already exist.
         
         :param key_sequence: Shortcut sequence (e.g., "Ctrl+C")
         :param callback: Function to be executed when the shortcut is pressed
-        :return: Created QShortcut object
+        :return: Created QShortcut object or None if the shortcut already exists
         """
+        if key_sequence in self.shortcuts:
+            # print(f"Shortcut {key_sequence} already exists.")
+            return None
+        
         shortcut = QShortcut(QKeySequence(key_sequence), self._window)
         shortcut.activated.connect(callback)
         self.shortcuts[key_sequence] = shortcut
@@ -530,8 +533,6 @@ class _WindowController(QObject):
     create_window_signal = Signal(
         QApplication, str, int, int, int, int, bool, bool, bool, list
     )
-
-import winreg as reg
 
 class PylonApp(QApplication):
     def __init__(self, app_name, single_instance=True, icon_path: str=None, tray_icon_path: str=None):

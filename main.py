@@ -54,7 +54,7 @@ class CustomAPI(PylonAPI):
         
         window.set_size(800, 600)
         window.set_position(0, 0)
-        window.load_url("https://www.google.com")
+        window.load_url("http://localhost:5173")
         window.show()
         window.focus()
 

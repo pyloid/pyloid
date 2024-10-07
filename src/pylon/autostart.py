@@ -1,6 +1,7 @@
 import sys
 import os
-import winreg as reg
+if sys.platform == "win32":
+    import winreg as reg
 
 class AutoStart:
     def __init__(self, app_name, app_path):
