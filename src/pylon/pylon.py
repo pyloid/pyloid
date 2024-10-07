@@ -14,11 +14,12 @@ from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .api import PylonAPI, Bridge
 import uuid
-from typing import List, Optional, Dict, Callable, Union
+from typing import List, Optional, Dict, Callable, Union, Any
 from PySide6.QtCore import qInstallMessageHandler
 import signal
 from .utils import is_production
 from .monitor import Monitor
+import json
 
 # for linux debug
 os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
@@ -143,6 +144,28 @@ class WindowAPI(PylonAPI):
             return window.capture(save_path)
         return None
 
+# class EventAPI(PylonAPI):
+#     def __init__(self, window_id: str, app):
+#         super().__init__()
+#         self.window_id: str = window_id
+#         self.app: PylonApp = app
+#         self.subscribers = {}
+
+#     @Bridge(str, Callable)
+#     def on(self, event_name: str, callback: Callable):
+#         """특정 이벤트를 구독합니다."""
+#         if event_name not in self.subscribers:
+#             self.subscribers[event_name] = []
+#         self.subscribers[event_name].append(callback)
+
+#     @Bridge(str, result=Optional[str])
+#     def emit(self, event_name: str, *args, **kwargs):
+#         """다른 윈도우로 특정 이벤트를 보냅니다."""
+#         if event_name in self.subscribers:
+#             for callback in self.subscribers[event_name]:
+#                 callback(*args, **kwargs)
+
+        
 
 class BrowserWindow:
     def __init__(
@@ -240,7 +263,25 @@ class BrowserWindow:
             if (typeof QWebChannel !== 'undefined') {
                 new QWebChannel(qt.webChannelTransport, function (channel) {
 
-                    window.pylon = {};
+                    window.pylon = {
+                        EventAPI: {
+                            listen: function(eventName, callback) {
+                                document.addEventListener(eventName, function(event) {
+                                    let eventData;
+                                    try {
+                                        eventData = JSON.parse(event.data);
+                                    } catch (e) {
+                                        eventData = event.data;
+                                    }
+                                    callback(eventData);
+                                });
+                            },
+                            unlisten: function(eventName) {
+                                document.removeEventListener(eventName, callback);
+                            }
+                        }   
+                    };
+                    console.log('pylon.EventAPI object initialized:', window.pylon.EventAPI);
 
                     %s
                     // Dispatch a custom event to signal that the initialization is ready
@@ -352,6 +393,10 @@ class BrowserWindow:
             "dev_tools": self.dev_tools,
             "js_apis": self.js_apis,
         }
+    
+    def get_id(self):
+        """Returns the ID of the window."""
+        return self.id
 
     def closeEvent(self, event):
         """Handles the event when the window is closed."""
@@ -464,6 +509,22 @@ class BrowserWindow:
         :return: Dictionary of shortcut sequences and QShortcut objects
         """
         return self.shortcuts
+    
+    ###########################################################################################
+    # Event (Calling the JS from Python)
+    ###########################################################################################
+    def emit(self, event_name, data: Optional[Dict]=None):
+        """
+        Emits an event to the JavaScript side.
+        
+        :param event_name: Name of the event
+        :param data: Data to be sent with the event (optional)
+        """
+        script = f"""
+        const event = new CustomEvent('{event_name}', {{ data: {json.dumps(data)} }});
+        document.dispatchEvent(event);
+        """
+        self.web_view.page().runJavaScript(script)
 
 
 class _WindowController(QObject):
