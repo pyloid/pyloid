@@ -802,8 +802,6 @@ class PylonApp(QApplication):
         """Handles the event when the tray icon is activated."""
         reason_enum = QSystemTrayIcon.ActivationReason(reason)
 
-        print(reason_enum)
-
         if reason_enum in self.tray_actions:
             self.tray_actions[reason_enum]()
 
