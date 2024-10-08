@@ -43,15 +43,24 @@ class AutoStart:
             </array>
             <key>RunAtLoad</key>
             <true/>
+            <key>KeepAlive</key>
+            <false/>
         </dict>
         </plist>
         """
-        if enable:
-            with open(plist_path, "w") as f:
-                f.write(plist_content)
-        else:
-            if os.path.exists(plist_path):
-                os.remove(plist_path)
+        try:
+            if enable:
+                os.makedirs(os.path.dirname(plist_path), exist_ok=True)
+                with open(plist_path, "w") as f:
+                    f.write(plist_content)
+                os.chmod(plist_path, 0o644)
+            else:
+                if os.path.exists(plist_path):
+                    os.remove(plist_path)
+            return True
+        except (IOError, OSError) as e:
+            print(f"Error setting auto start on macOS: {e}")
+            return False
 
     def _set_auto_start_linux(self, enable: bool):
         autostart_dir = os.path.expanduser("~/.config/autostart")
