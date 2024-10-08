@@ -54,7 +54,7 @@ class CustomAPI(PylonAPI):
         
         window.set_size(800, 600)
         window.set_position(0, 0)
-        window.load_url("http://localhost:5173")
+        window.load_file("file/index2.html")
         window.show()
         window.focus()
 
@@ -81,6 +81,8 @@ app.show_notification("알림", "알림 메시지")
 
 monitors = app.get_all_monitors()
 
+print(monitors)
+
 monitors[0].geometry_changed(lambda: print("geometry_changed"))
 monitors[0].orientation_changed(lambda: print("orientation_changed"))
 monitors[0].refresh_rate_changed(lambda: print("refresh_rate_changed"))
@@ -97,7 +99,7 @@ window.add_shortcut("Ctrl+Shift+S", lambda: (print("Ctrl+Shift+S 단축키가 �
 
 window.add_shortcut("Ctrl+Shift+E", lambda: (print("Ctrl+Shift+E 단축키가 눌렸습니다."), window.emit('pythonEvent', { "message": 'Hello from Python!' })))
 
-app.set_auto_start(False)
+app.set_auto_start(True)
 print(app.is_auto_start())
 
 app.run()
