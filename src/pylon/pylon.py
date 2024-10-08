@@ -26,8 +26,7 @@ from .autostart import AutoStart
 os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
 
 # for macos debug
-import os
-os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, 'vulkan_warning_shown') and (('Failed to load vulkan' in message) or ('No Vulkan library available' in message) or ('Failed to create platform Vulkan instance' in message)):
