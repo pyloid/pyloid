@@ -23,19 +23,23 @@ With Pylon, you can leverage the full power of Python in your desktop applicatio
 
 [Pylon Documentation](https://docs.pylon-app.com/)
 
-## Installation 📦
+### Create Project 📦
 
-### Direct Installation
+#### Creating a HTML/CSS/JS + Pylon Project 🌐
+
+[https://github.com/python-pylon/pylon-html-boilerplate](https://github.com/python-pylon/pylon-html-boilerplate)
+
+#### Creating a React + Vite + Pylon Project ⚛️
+
+[https://github.com/python-pylon/pylon-react-boilerplate](https://github.com/python-pylon/pylon-react-boilerplate)
+
+### Custom Your Boilerplate 🔨
 
 ```bash
 pip install pylon-app
 ```
 
 Package URL: [https://pypi.org/project/pylon-app/](https://pypi.org/project/pylon-app/)
-
-### Creating a React + Pylon Project
-
-Boilerplate address: [https://github.com/python-pylon/pylon-react-boilerplate](https://github.com/python-pylon/pylon-react-boilerplate)
 
 ## Usage 🛠️
 
@@ -46,12 +50,30 @@ from pylon import PylonApp
 
 app = PylonApp(single_instance=True)
 
-app.set_icon("assets/icon.ico")
+# set icon
+if (is_production()):
+    app.set_icon(os.path.join(get_production_path(), "icons/icon.png"))
+else:
+    app.set_icon("src-pylon/icons/icon.png")
 
+# create window
 window = app.create_window(
-    "https://www.example.com",
-    title="Pylon Browser",
+    title="Pylon Browser1",
+    js_apis=[CustomAPI()],
+    dev_tools=True
 )
+
+window.set_size(800, 600)
+
+# load html
+if (is_production()):
+    window.set_dev_tools(False)
+    window.load_file(os.path.join(get_production_path(), "src/index.html"))
+else:
+    window.load_file("src/index.html")
+
+# show window
+window.show_and_focus()
 
 app.run()
 ```
@@ -73,57 +95,6 @@ app.set_tray_menu_items([
 ])
 app.setup_tray()
 ```
-
-### Creating Python-JavaScript Bridge API
-
-````python
-from pylon import PylonAPI, Bridge
-
-class CustomAPI(PylonAPI):
-    @Bridge(str, int, result=str)
-    def echo(self, message, message2):
-        print(f"Message: {message}-{message2}")
-        return f"Message received in Python: {message}-{message2}"
-
-    @Bridge(result=str)
-    def getAppVersion(self):
-        return "1.0.0"
-
-    @Bridge(result=str)
-    def create_window(self):
-        window = app.create_window(
-            title="Pylon Browser2",
-            frame=True,
-            context_menu=False,
-            js_apis=[CustomAPI()],
-            dev_tools=True
-        )
-
-
-        window.set_size(800, 600)
-        window.set_position(0, 0)
-        window.load_url("https://www.google.com")
-        window.show()
-        window.focus()
-
-        return window.id
-
-window = app.create_window(
-    title="Pylon Browser1",
-    frame=True,
-    context_menu=False,
-    js_apis=[CustomAPI()],
-    dev_tools=True
-)
-
-window.set_size(1500, 1000)
-
-if (is_production()):
-    window.load_file(os.path.join(get_production_path() + "/file/index.html"))
-else:
-    window.load_file("file/index.html")
-
-window.show_and_focus()
 
 ```javascript
 // CustomAPI method usage example
@@ -157,7 +128,7 @@ document.addEventListener('pylonReady', function () {
     });
   });
 });
-````
+```
 
 ### Using React
 
