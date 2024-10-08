@@ -101,5 +101,3 @@ app.set_auto_start(False)
 print(app.is_auto_start())
 
 app.run()
-
-

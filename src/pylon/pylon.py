@@ -884,8 +884,9 @@ class PylonApp(QApplication):
     ###########################################################################################
     def set_auto_start(self, enable: bool):
         """
-        Sets the application to start automatically with the system (Production Only).
-        This function does not work unless it is in a production environment.
+        Sets the application to start automatically with the system. (set_auto_start(True) only works in production)
+        True only works in production.
+        False works in both environments.
         
         :param enable: True to enable auto-start, False to disable
         """
