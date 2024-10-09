@@ -1,10 +1,10 @@
-# Pylon 👋
+# pylon-app 👋
 
-Pylon is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
+Pylon is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project, built on **QtWebEngine** and **PySide6**, provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
 
-## 🚀 Why Pylon?
+## 🚀 Why pylon-app?
 
-With Pylon, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
+With pylon-app, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
 
 ## Key Features 🚀
 
@@ -21,17 +21,17 @@ With Pylon, you can leverage the full power of Python in your desktop applicatio
 
 ## Documentation 📚
 
-[Pylon Documentation](https://docs.pylon-app.com/)
+[pylon-app Documentation](https://docs.pylon-app.com/)
 
 ### Create Project 📦
 
 #### Creating a HTML/CSS/JS + Pylon Project 🌐
 
-[https://github.com/python-pylon/pylon-html-boilerplate](https://github.com/python-pylon/pylon-html-boilerplate)
+[https://github.com/python-pylon/pylon-app_html_boilerplate](https://github.com/python-pylon/pylon-app_html_boilerplate)
 
 #### Creating a React + Vite + Pylon Project ⚛️
 
-[https://github.com/python-pylon/pylon-react-boilerplate](https://github.com/python-pylon/pylon-react-boilerplate)
+[https://github.com/python-pylon/pylon-app_react_boilerplate](https://github.com/python-pylon/pylon-app_react_boilerplate)
 
 ### Custom Your Boilerplate 🔨
 
@@ -46,7 +46,7 @@ Package URL: [https://pypi.org/project/pylon-app/](https://pypi.org/project/pylo
 ### Creating a Basic Application
 
 ```python
-from pylon import PylonApp
+from pylon-app import PylonApp
 
 app = PylonApp(single_instance=True)
 
