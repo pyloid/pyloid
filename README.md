@@ -46,7 +46,7 @@ Package URL: [https://pypi.org/project/pylon-app/](https://pypi.org/project/pylo
 ### Creating a Basic Application
 
 ```python
-from pylon-app import PylonApp
+from pylon import PylonApp
 
 app = PylonApp(single_instance=True)
 
