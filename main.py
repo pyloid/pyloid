@@ -1,10 +1,10 @@
-from src.pylon.pylon import PylonApp
-from src.pylon.api import PylonAPI, Bridge
-from src.pylon.tray import TrayEvent
-from src.pylon.utils import is_production, get_production_path
+from pyloid.pyloid import Pyloid
+from pyloid.api import PyloidAPI, Bridge
+from pyloid.tray import TrayEvent
+from pyloid.utils import is_production, get_production_path
 import os
 
-app = PylonApp("Pylon-App", single_instance=True)
+app = Pyloid("Pyloid-App", single_instance=True)
 
 if (is_production()):
     app.set_icon(os.path.join(get_production_path(), "icon.ico"))
@@ -31,7 +31,7 @@ app.set_tray_menu_items(
 app.run_tray()
 
 
-class CustomAPI(PylonAPI):
+class CustomAPI(PyloidAPI):
     @Bridge(str, int, result=str)
     def echo(self, message, message2):
         print(f"메시지: {message}-{message2}")
@@ -44,7 +44,7 @@ class CustomAPI(PylonAPI):
     @Bridge(result=str)
     def create_window(self):
         window = app.create_window(
-            title="Pylon Browser2",
+            title="Pyloid Browser2",
             frame=True,
             context_menu=False,
             js_apis=[CustomAPI()],
@@ -61,7 +61,7 @@ class CustomAPI(PylonAPI):
         return window.id
 
 window = app.create_window(
-    title="Pylon Browser1",
+    title="Pyloid Browser1",
     frame=True,
     context_menu=False,
     js_apis=[CustomAPI()],

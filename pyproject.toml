@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pylon-app"
-version = "0.9.4"
+name = "pyloid"
+version = "0.9.7"
 description = ""
 authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
 readme = "README.md"
 packages = [
-    { include = "pylon", from = "src" },
+    { include = "pyloid", from = "src" },
 ]
 
 [tool.poetry.dependencies]

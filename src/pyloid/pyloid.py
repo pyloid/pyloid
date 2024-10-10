@@ -12,7 +12,7 @@ from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage
 from PySide6.QtCore import Qt, Signal, QUrl, QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
-from .api import PylonAPI, Bridge
+from .api import PyloidAPI, Bridge
 import uuid
 from typing import List, Optional, Dict, Callable, Union, Any
 from PySide6.QtCore import qInstallMessageHandler
@@ -26,11 +26,10 @@ from .autostart import AutoStart
 os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
 
 # for macos debug
-os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, 'vulkan_warning_shown') and (('Failed to load vulkan' in message) or ('No Vulkan library available' in message) or ('Failed to create platform Vulkan instance' in message)):
-        print('\033[93mPylon Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m')
+        print('\033[93mPyloid Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m')
         os.environ['QT_QUICK_BACKEND'] = 'software'
         custom_message_handler.vulkan_warning_shown = True
     if 'vulkan' not in message.lower():
@@ -38,11 +37,11 @@ def custom_message_handler(mode, context, message):
 
 qInstallMessageHandler(custom_message_handler)
 
-class WindowAPI(PylonAPI):
+class WindowAPI(PyloidAPI):
     def __init__(self, window_id: str, app):
         super().__init__()
         self.window_id: str = window_id
-        self.app: PylonApp = app
+        self.app: Pyloid = app
 
     @Bridge(result=str)
     def getWindowId(self):
@@ -183,7 +182,7 @@ class BrowserWindow:
         frame: bool=True,
         context_menu: bool=False,
         dev_tools: bool=False,
-        js_apis: List[PylonAPI]=[],
+        js_apis: List[PyloidAPI]=[],
     ):
         ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
@@ -265,7 +264,7 @@ class BrowserWindow:
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
                 new QWebChannel(qt.webChannelTransport, function (channel) {
-                    window.pylon = {
+                    window.pyloid = {
                         EventAPI: {
                             listen: function(eventName, callback) {
                                 document.addEventListener(eventName, function(event) {
@@ -283,12 +282,12 @@ class BrowserWindow:
                             }
                         }   
                     };
-                    console.log('pylon.EventAPI object initialized:', window.pylon.EventAPI);
+                    console.log('pyloid.EventAPI object initialized:', window.pyloid.EventAPI);
 
                     %s
 
                     // Dispatch a custom event to signal that the initialization is ready
-                    const event = new CustomEvent('pylonReady');
+                    const event = new CustomEvent('pyloidReady');
                     document.dispatchEvent(event);
                 });
             } else {
@@ -297,8 +296,8 @@ class BrowserWindow:
             """
             js_api_init = "\n".join(
                 [
-                    f"window.pylon['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
-                    f"console.log('pylon.{js_api.__class__.__name__} object initialized:', window.pylon['{js_api.__class__.__name__}']);"
+                    f"window.pyloid['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
+                    f"console.log('pyloid.{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
                     for js_api in self.js_apis
                 ]
             )
@@ -537,7 +536,7 @@ class _WindowController(QObject):
         QApplication, str, int, int, int, int, bool, bool, bool, list
     )
 
-class PylonApp(QApplication):
+class Pyloid(QApplication):
     def __init__(self, app_name, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
         super().__init__(sys.argv)
 
@@ -586,7 +585,7 @@ class PylonApp(QApplication):
         frame: bool=True,
         context_menu: bool=False,
         dev_tools: bool=False,
-        js_apis: List[PylonAPI]=[],
+        js_apis: List[PyloidAPI]=[],
     ) -> BrowserWindow:
         """Creates a new browser window."""
         self.controller.create_window_signal.emit(
@@ -614,7 +613,7 @@ class PylonApp(QApplication):
         frame: bool,
         context_menu: bool,
         dev_tools: bool,
-        js_apis: List[PylonAPI]=[],
+        js_apis: List[PyloidAPI]=[],
     ) -> BrowserWindow:
         """Function to create a new browser window."""
         window = BrowserWindow(
@@ -643,14 +642,14 @@ class PylonApp(QApplication):
     def _init_single_instance(self):
         """Initializes the application as a single instance."""
         socket = QLocalSocket()
-        socket.connectToServer("PylonBrowserApp")
+        socket.connectToServer("PyloidBrowserApp")
         if socket.waitForConnected(500):
             # Another instance is already running
             sys.exit(1)
 
         # Create a new server
         self.server = QLocalServer()
-        self.server.listen("PylonBrowserApp")
+        self.server.listen("PyloidBrowserApp")
         self.server.newConnection.connect(self._handle_new_connection)
 
     def _handle_new_connection(self):

@@ -1,12 +1,12 @@
-# pylon-app 👋
+# Pyloid 👋
 
-Pylon is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project, built on **QtWebEngine** and **PySide6**, provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
+Pyloid is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project, built on **QtWebEngine** and **PySide6**, provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
 
 ![example image](example.png)
 
-## 🚀 Why pylon-app?
+## 🚀 Why Pyloid?
 
-With pylon-app, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
+With Pyloid, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
 
 ## Key Features 🚀
 
@@ -23,44 +23,44 @@ With pylon-app, you can leverage the full power of Python in your desktop applic
 
 ## Documentation 📚
 
-[pylon-app Documentation](https://docs.pylon-app.com/)
+[Pyloid Documentation](https://docs.pyloid.com/)
 
 ### Create Project 📦
 
-#### Creating a HTML/CSS/JS + Pylon Project 🌐
+#### Creating a HTML/CSS/JS + Pyloid Project 🌐
 
-[https://github.com/python-pylon/pylon-app_html_boilerplate](https://github.com/python-pylon/pylon-app_html_boilerplate)
+[https://github.com/pylonic/pyloid_html_boilerplate](https://github.com/Pyloid/pyloid_html_boilerplate)
 
-#### Creating a React + Vite + Pylon Project ⚛️
+#### Creating a React + Vite + Pyloid Project ⚛️
 
-[https://github.com/python-pylon/pylon-app_react_boilerplate](https://github.com/python-pylon/pylon-app_react_boilerplate)
+[https://github.com/pylonic/pyloid_react_boilerplate](https://github.com/Pyloid/yloid_react_boilerplate)
 
 ### Custom Your Boilerplate 🔨
 
 ```bash
-pip install pylon-app
+pip install pyloid
 ```
 
-Package URL: [https://pypi.org/project/pylon-app/](https://pypi.org/project/pylon-app/)
+Package URL: [https://pypi.org/project/pyloid/](https://pypi.org/project/pyloid/)
 
 ## Usage 🛠️
 
 ### Creating a Basic Application
 
 ```python
-from pylon import PylonApp
+from pyloid import Pyloid
 
-app = PylonApp(single_instance=True)
+app = Pyloid(single_instance=True)
 
 # set icon
 if (is_production()):
     app.set_icon(os.path.join(get_production_path(), "icons/icon.png"))
 else:
-    app.set_icon("src-pylon/icons/icon.png")
+    app.set_icon("src-pyloid/icons/icon.png")
 
 # create window
 window = app.create_window(
-    title="Pylon Browser1",
+    title="Pyloid Browser1",
     js_apis=[CustomAPI()],
     dev_tools=True
 )
@@ -83,7 +83,7 @@ app.run()
 ### Setting Up System Tray
 
 ```python
-from pylon import TrayEvent
+from pyloid import TrayEvent
 
 def on_double_click():
     print("Tray icon was double-clicked.")
@@ -100,23 +100,23 @@ app.setup_tray()
 
 ```javascript
 // CustomAPI method usage example
-document.addEventListener('pylonReady', function () {
+document.addEventListener('pyloidReady', function () {
   // Using the echo method
-  pylon.CustomAPI.echo('Hello', 42).then((result) => {
+  window.pyloid.CustomAPI.echo('Hello', 42).then((result) => {
     console.log(result); // "Message received in Python: Hello, 42" output
   });
 
   // Using the getAppVersion method
-  pylon.CustomAPI.getAppVersion().then((version) => {
+  window.pyloid.CustomAPI.getAppVersion().then((version) => {
     console.log('App version:', version); // "App version: 1.0.0" output
   });
 
   // Example using async/await syntax
   async function useCustomAPI() {
-    const echoResult = await pylon.CustomAPI.echo('Test', 100);
+    const echoResult = await window.pyloid.CustomAPI.echo('Test', 100);
     console.log(echoResult);
 
-    const appVersion = await pylon.CustomAPI.getAppVersion();
+    const appVersion = await window.pyloid.CustomAPI.getAppVersion();
     console.log('Current app version:', appVersion);
   }
 
@@ -125,7 +125,7 @@ document.addEventListener('pylonReady', function () {
   // Button click event binding
   document.getElementById('myButton').addEventListener('click', function () {
     // Using the create_window method
-    pylon.CustomAPI.create_window().then((windowId) => {
+    window.pyloid.CustomAPI.create_window().then((windowId) => {
       console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
     });
   });
@@ -140,7 +140,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
-document.addEventListener('pylonReady', function () {
+document.addEventListener('pyloidReady', function () {
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />
@@ -151,7 +151,7 @@ document.addEventListener('pylonReady', function () {
 function App() {
   console.log('Pylon is ready');
 
-  window.pylon.CustomAPI.getAppVersion().then((version) => {
+  window.pyloid.CustomAPI.getAppVersion().then((version) => {
     console.log('App version:', version); // "App version: 1.0.0"
   });
   return <h1>Hello World</h1>;

@@ -1,7 +1,7 @@
 from PySide6.QtCore import QObject, Slot
 
 
-class PylonAPI(QObject):
+class PyloidAPI(QObject):
     def __init__(self):
         super().__init__()
 
