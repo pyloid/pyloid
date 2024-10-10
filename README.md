@@ -60,7 +60,7 @@ else:
 
 # create window
 window = app.create_window(
-    title="Pyloid Browser1",
+    title="Pyloid Browser",
     js_apis=[CustomAPI()],
     dev_tools=True
 )
@@ -149,7 +149,7 @@ document.addEventListener('pyloidReady', function () {
 });
 
 function App() {
-  console.log('Pylon is ready');
+  console.log('Pyloid is ready');
 
   window.pyloid.CustomAPI.getAppVersion().then((version) => {
     console.log('App version:', version); // "App version: 1.0.0"
