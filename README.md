@@ -2,6 +2,8 @@
 
 Pylon is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project, built on **QtWebEngine** and **PySide6**, provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
 
+![example image](example.png)
+
 ## 🚀 Why pylon-app?
 
 With pylon-app, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
