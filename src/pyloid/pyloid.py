@@ -174,7 +174,7 @@ class BrowserWindow:
     def __init__(
         self,
         app,
-        title: str="pylon app",
+        title: str="pyloid app",
         width: int=800,
         height: int=600,
         x: int=200,
@@ -577,7 +577,7 @@ class Pyloid(QApplication):
 
     def create_window(
         self,
-        title: str="pylon app",
+        title: str="pyloid app",
         width: int=800,
         height: int=600,
         x: int=200,
