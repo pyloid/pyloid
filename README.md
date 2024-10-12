@@ -33,7 +33,7 @@ With Pyloid, you can leverage the full power of Python in your desktop applicati
 
 #### Creating a React + Vite + Pyloid Project ⚛️
 
-[https://github.com/pylonic/pyloid_react_boilerplate](https://github.com/Pyloid/yloid_react_boilerplate)
+[https://github.com/pylonic/pyloid_react_boilerplate](https://github.com/Pyloid/pyloid_react_boilerplate)
 
 ### Custom Your Boilerplate 🔨
 
