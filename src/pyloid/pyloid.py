@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage
-from PySide6.QtCore import Qt, Signal, QUrl, QObject
+from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage, QAction
+from PySide6.QtCore import Qt, Signal, QUrl, QObject, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .api import PyloidAPI, Bridge
@@ -21,21 +21,31 @@ from .utils import is_production
 from .monitor import Monitor
 import json
 from .autostart import AutoStart
+from .filewatcher import FileWatcher
 
 # for linux debug
-os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
+os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 
 # for macos debug
 
+
 def custom_message_handler(mode, context, message):
-    if not hasattr(custom_message_handler, 'vulkan_warning_shown') and (('Failed to load vulkan' in message) or ('No Vulkan library available' in message) or ('Failed to create platform Vulkan instance' in message)):
-        print('\033[93mPyloid Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m')
-        os.environ['QT_QUICK_BACKEND'] = 'software'
+    if not hasattr(custom_message_handler, "vulkan_warning_shown") and (
+        ("Failed to load vulkan" in message)
+        or ("No Vulkan library available" in message)
+        or ("Failed to create platform Vulkan instance" in message)
+    ):
+        print(
+            "\033[93mPyloid Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m"
+        )
+        os.environ["QT_QUICK_BACKEND"] = "software"
         custom_message_handler.vulkan_warning_shown = True
-    if 'vulkan' not in message.lower():
+    if "vulkan" not in message.lower():
         print(message)
 
+
 qInstallMessageHandler(custom_message_handler)
+
 
 class WindowAPI(PyloidAPI):
     def __init__(self, window_id: str, app):
@@ -147,6 +157,7 @@ class WindowAPI(PyloidAPI):
             return window.capture(save_path)
         return None
 
+
 # class EventAPI(PylonAPI):
 #     def __init__(self, window_id: str, app):
 #         super().__init__()
@@ -168,21 +179,20 @@ class WindowAPI(PyloidAPI):
 #             for callback in self.subscribers[event_name]:
 #                 callback(*args, **kwargs)
 
-        
 
 class BrowserWindow:
     def __init__(
         self,
         app,
-        title: str="pyloid app",
-        width: int=800,
-        height: int=600,
-        x: int=200,
-        y: int=200,
-        frame: bool=True,
-        context_menu: bool=False,
-        dev_tools: bool=False,
-        js_apis: List[PyloidAPI]=[],
+        title: str = "pyloid app",
+        width: int = 800,
+        height: int = 600,
+        x: int = 200,
+        y: int = 200,
+        frame: bool = True,
+        context_menu: bool = False,
+        dev_tools: bool = False,
+        js_apis: List[PyloidAPI] = [],
     ):
         ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
@@ -190,9 +200,9 @@ class BrowserWindow:
         self._window = QMainWindow()
         self.web_view = QWebEngineView()
 
-        self._window.closeEvent = self.closeEvent  # Override closeEvent method 
+        self._window.closeEvent = self.closeEvent  # Override closeEvent method
         ###########################################################################################
-        self.app = app 
+        self.app = app
         self.title = title
         self.width = width
         self.height = height
@@ -206,14 +216,16 @@ class BrowserWindow:
             self.js_apis.append(js_api)
         self.shortcuts = {}
         ###########################################################################################
-    
+
     def _load(self):
         self._window.setWindowTitle(self.title)
 
         self._window.setGeometry(self.x, self.y, self.width, self.height)
 
         # allow local file access to remote urls
-        self.web_view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.LocalContentCanAccessRemoteUrls, True
+        )
 
         # Set icon
         if self.app.icon:
@@ -228,7 +240,6 @@ class BrowserWindow:
             myappid = "mycompany.myproduct.subproduct.version"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-        
         # Remove title bar and borders (if needed)
         if not self.frame:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
@@ -244,7 +255,6 @@ class BrowserWindow:
         if self.js_apis:
             for js_api in self.js_apis:
                 self.channel.registerObject(js_api.__class__.__name__, js_api)
-        
 
         self.web_view.page().setWebChannel(self.channel)
 
@@ -253,7 +263,6 @@ class BrowserWindow:
 
         # Add QWebEngineView to main window
         self._window.setCentralWidget(self.web_view)
-        
 
         # Set F12 shortcut
         self.set_dev_tools(self.dev_tools)
@@ -311,14 +320,14 @@ class BrowserWindow:
     def load_file(self, file_path):
         """Loads a local HTML file into the web view."""
         self._load()
-        file_path = os.path.abspath(file_path) # absolute path
+        file_path = os.path.abspath(file_path)  # absolute path
         self.web_view.setUrl(QUrl.fromLocalFile(file_path))
-        
 
     def load_url(self, url):
         """Sets the URL of the window."""
         self._load()
         self.web_view.setUrl(QUrl(url))
+
     ###########################################################################################
     # Set Parameters
     ###########################################################################################
@@ -354,10 +363,10 @@ class BrowserWindow:
             self.web_view.setContextMenuPolicy(Qt.NoContextMenu)
         else:
             self.web_view.setContextMenuPolicy(Qt.DefaultContextMenu)
-        
+
     def set_dev_tools(self, enable: bool):
         """Sets the developer tools of the window.
-        
+
         If enabled, the developer tools can be opened using the F12 key.
         """
         self.dev_tools = enable
@@ -390,7 +399,7 @@ class BrowserWindow:
             "dev_tools": self.dev_tools,
             "js_apis": self.js_apis,
         }
-    
+
     def get_id(self):
         """Returns the ID of the window."""
         return self.id
@@ -417,19 +426,23 @@ class BrowserWindow:
     def show(self):
         """Shows the window."""
         self._window.show()
-    
+
     def focus(self):
         """Focuses the window."""
         self._window.activateWindow()
         self._window.raise_()
-        self._window.setWindowState(self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+        self._window.setWindowState(
+            self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive
+        )
 
     def show_and_focus(self):
         """Shows and focuses the window."""
         self._window.show()
         self._window.activateWindow()
         self._window.raise_()
-        self._window.setWindowState(self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+        self._window.setWindowState(
+            self._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive
+        )
 
     def close(self):
         """Closes the window."""
@@ -457,14 +470,14 @@ class BrowserWindow:
     def capture(self, save_path: str) -> Optional[str]:
         """
         Captures the current window.
-        
+
         :param save_path: Path to save the captured image. If not specified, it will be saved in the current directory.
         :return: Path of the saved image
         """
         try:
             # Capture window
             screenshot = self._window.grab()
-            
+
             # Save image
             screenshot.save(save_path)
             return save_path
@@ -478,7 +491,7 @@ class BrowserWindow:
     def add_shortcut(self, key_sequence: str, callback: Callable):
         """
         Adds a keyboard shortcut to the window if it does not already exist.
-        
+
         :param key_sequence: Shortcut sequence (e.g., "Ctrl+C")
         :param callback: Function to be executed when the shortcut is pressed
         :return: Created QShortcut object or None if the shortcut already exists
@@ -486,7 +499,7 @@ class BrowserWindow:
         if key_sequence in self.shortcuts:
             # print(f"Shortcut {key_sequence} already exists.")
             return None
-        
+
         shortcut = QShortcut(QKeySequence(key_sequence), self._window)
         shortcut.activated.connect(callback)
         self.shortcuts[key_sequence] = shortcut
@@ -495,7 +508,7 @@ class BrowserWindow:
     def remove_shortcut(self, key_sequence: str):
         """
         Removes a keyboard shortcut from the window.
-        
+
         :param key_sequence: Shortcut sequence to be removed
         """
         if key_sequence in self.shortcuts:
@@ -506,18 +519,18 @@ class BrowserWindow:
     def get_all_shortcuts(self):
         """
         Returns all registered shortcuts in the window.
-        
+
         :return: Dictionary of shortcut sequences and QShortcut objects
         """
         return self.shortcuts
-    
+
     ###########################################################################################
     # Event (Calling the JS from Python)
     ###########################################################################################
-    def emit(self, event_name, data: Optional[Dict]=None):
+    def emit(self, event_name, data: Optional[Dict] = None):
         """
         Emits an event to the JavaScript side.
-        
+
         :param event_name: Name of the event
         :param data: Data to be sent with the event (optional)
         """
@@ -536,8 +549,13 @@ class _WindowController(QObject):
         QApplication, str, int, int, int, int, bool, bool, bool, list
     )
 
+
 class Pyloid(QApplication):
-    def __init__(self, app_name, single_instance=True, icon_path: str=None, tray_icon_path: str=None):
+    def __init__(
+        self,
+        app_name,
+        single_instance=True,
+    ):
         super().__init__(sys.argv)
 
         self.windows = []
@@ -551,10 +569,12 @@ class Pyloid(QApplication):
             self._init_single_instance()
 
         self.controller = _WindowController()
-        self.controller.create_window_signal.connect(self._create_window_signal_function)
+        self.controller.create_window_signal.connect(
+            self._create_window_signal_function
+        )
 
-        self.icon = QIcon(icon_path) if icon_path else None
-        self.tray_icon = QIcon(tray_icon_path) if tray_icon_path else None
+        self.file_watcher = FileWatcher()
+
         self.tray_menu_items = []
         self.tray_actions = {}
 
@@ -563,29 +583,36 @@ class Pyloid(QApplication):
 
         self.auto_start = AutoStart(self.app_name, self.app_path)
 
+        self.animation_timer = None
+        self.icon_frames = []
+        self.current_frame = 0
+
     def set_icon(self, icon_path: str):
-        """Sets the icon for the application."""
+        """
+        Dynamically sets the application's icon.
+
+        :param icon_path: Path to the new icon file
+
+        This method can be called while the application is running.
+        The icon can be changed at any time and is applied immediately.
+        """
         self.icon = QIcon(icon_path)
 
-    def set_tray_icon(self, tray_icon_path: str):
-        """Sets the path for the tray icon."""
-        self.tray_icon = QIcon(tray_icon_path)
-
-    def set_tray_menu_items(self, tray_menu_items: Dict[str, Callable]):
-        """Sets the menu items for the tray icon."""
-        self.tray_menu_items = tray_menu_items
+        # Immediately update the icon for all open windows
+        for window in self.windows:
+            window._window.setWindowIcon(self.icon)
 
     def create_window(
         self,
-        title: str="pyloid app",
-        width: int=800,
-        height: int=600,
-        x: int=200,
-        y: int=200,
-        frame: bool=True,
-        context_menu: bool=False,
-        dev_tools: bool=False,
-        js_apis: List[PyloidAPI]=[],
+        title: str = "pyloid app",
+        width: int = 800,
+        height: int = 600,
+        x: int = 200,
+        y: int = 200,
+        frame: bool = True,
+        context_menu: bool = False,
+        dev_tools: bool = False,
+        js_apis: List[PyloidAPI] = [],
     ) -> BrowserWindow:
         """Creates a new browser window."""
         self.controller.create_window_signal.emit(
@@ -613,7 +640,7 @@ class Pyloid(QApplication):
         frame: bool,
         context_menu: bool,
         dev_tools: bool,
-        js_apis: List[PyloidAPI]=[],
+        js_apis: List[PyloidAPI] = [],
     ) -> BrowserWindow:
         """Function to create a new browser window."""
         window = BrowserWindow(
@@ -656,7 +683,6 @@ class Pyloid(QApplication):
         """Handles new connections for the single instance server."""
         pass
 
-    
     ###########################################################################################
     # App window
     ###########################################################################################
@@ -676,8 +702,11 @@ class Pyloid(QApplication):
             main_window = self.windows[0]
             main_window._window.activateWindow()
             main_window._window.raise_()
-            main_window._window.setWindowState(main_window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
-    
+            main_window._window.setWindowState(
+                main_window._window.windowState() & ~Qt.WindowMinimized
+                | Qt.WindowActive
+            )
+
     def show_and_focus_main_window(self):
         """Shows and focuses the first window."""
         if self.windows:
@@ -685,8 +714,11 @@ class Pyloid(QApplication):
             main_window._window.show()
             main_window._window.activateWindow()
             main_window._window.raise_()
-            main_window._window.setWindowState(main_window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
-    
+            main_window._window.setWindowState(
+                main_window._window.windowState() & ~Qt.WindowMinimized
+                | Qt.WindowActive
+            )
+
     def close_all_windows(self):
         """Closes all windows."""
         for window in self.windows:
@@ -696,6 +728,7 @@ class Pyloid(QApplication):
         """Quits the application."""
         self.close_all_windows()
         QApplication.quit()
+
     ###########################################################################################
     # Window management in the app (ID required)
     ###########################################################################################
@@ -719,7 +752,9 @@ class Pyloid(QApplication):
             window._window.show()
             window._window.activateWindow()
             window._window.raise_()
-            window._window.setWindowState(window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+            window._window.setWindowState(
+                window._window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive
+            )
 
     def close_window_by_id(self, window_id: str):
         """Closes the window with the given ID."""
@@ -753,7 +788,7 @@ class Pyloid(QApplication):
     def capture_window_by_id(self, window_id: str, save_path: str) -> Optional[str]:
         """
         Captures a specific window.
-        
+
         :param window_id: ID of the window to capture
         :param save_path: Path to save the captured image. If not specified, it will be saved in the current directory.
         :return: Path of the saved image
@@ -763,45 +798,83 @@ class Pyloid(QApplication):
             if not window:
                 print(f"Cannot find window with the specified ID: {window_id}")
                 return None
-            
+
             # Capture window
             screenshot = window._window.grab()
-            
+
             # Save image
             screenshot.save(save_path)
             return save_path
         except Exception as e:
             print(f"Error occurred while capturing the window: {e}")
             return None
+
     ###########################################################################################
     # Tray
     ###########################################################################################
-    def run_tray(self):
-        """Sets up the system tray icon and menu."""
-        if not hasattr(self, 'tray'):
-            self.tray = QSystemTrayIcon(self)
-            if self.tray_icon:
-                self.tray.setIcon(self.tray_icon)
-            else:
-                if self.icon:
-                    self.tray.setIcon(self.icon)
-                else:
-                    print("Icon and Tray icon are not set.")
+    def set_tray_icon(self, tray_icon_path: str):
+        """
+        Dynamically sets the tray icon.
+        Can be called while the application is running, and changes are applied immediately.
 
-            tray_menu = QMenu()
+        :param tray_icon_path: Path to the new tray icon file
+        """
+        # Stop and remove existing animation timer if present
+        if hasattr(self, "animation_timer") and self.animation_timer is not None:
+            self.animation_timer.stop()
+            self.animation_timer.deleteLater()
+            self.animation_timer = None
 
-            # Add menu items from external source
-            if self.tray_menu_items:
-                for item in self.tray_menu_items:
-                    action = tray_menu.addAction(item["label"])
-                    action.triggered.connect(item["callback"])
+        # Remove existing icon frames
+        if hasattr(self, "icon_frames"):
+            self.icon_frames = []
 
-            self.tray.setContextMenu(tray_menu)
-            self.tray.activated.connect(self._tray_activated)
-            self.tray.show()
+        # Set new icon
+        self.tray_icon = QIcon(tray_icon_path)
+
+        if not hasattr(self, "tray"):
+            self._init_tray()
+        else:
+            self.tray.setIcon(self.tray_icon)
+
+    def set_tray_menu_items(
+        self, tray_menu_items: List[Dict[str, Union[str, Callable]]]
+    ):
+        """
+        Dynamically sets the tray menu items.
+        Can be called while the application is running, and changes are applied immediately.
+
+        :param tray_menu_items: List of new tray menu items
+        """
+        self.tray_menu_items = tray_menu_items
+        if not hasattr(self, "tray"):
+            self._init_tray()
+        self._update_tray_menu()
+
+    def _init_tray(self):
+        """Initializes the tray icon."""
+        self.tray = QSystemTrayIcon(self)
+        if self.tray_icon:
+            self.tray.setIcon(self.tray_icon)
+        else:
+            print("Icon and tray icon have not been set.")
+        if self.tray_menu_items:
+            pass
+        else:
+            self.tray.setContextMenu(QMenu())
+        self.tray.show()
+
+    def _update_tray_menu(self):
+        """Updates the tray menu."""
+        tray_menu = self.tray.contextMenu()
+        tray_menu.clear()
+        for item in self.tray_menu_items:
+            action = QAction(item["label"], self)
+            action.triggered.connect(item["callback"])
+            tray_menu.addAction(action)
 
     def _tray_activated(self, reason):
-        """Handles the event when the tray icon is activated."""
+        """Handles events when the tray icon is activated."""
         reason_enum = QSystemTrayIcon.ActivationReason(reason)
 
         if reason_enum in self.tray_actions:
@@ -809,19 +882,93 @@ class Pyloid(QApplication):
 
     def set_tray_actions(self, actions):
         """
-        Sets the actions for tray icon activation.
+        Dynamically sets actions for tray icon activation.
+        Can be called while the application is running, and changes are applied immediately.
 
-        actions: Dictionary where keys are TrayEvent enum values,
-                 and values are callback functions for the respective activation reasons.
+        :param actions: Dictionary with TrayEvent enum values as keys and corresponding callback functions as values
         """
+        if self.tray_actions:
+            self.tray.activated.disconnect()  # Disconnect existing connections
+
         self.tray_actions = actions
+        if not hasattr(self, "tray"):
+            self._init_tray()
+
+        self.tray.activated.connect(lambda reason: self._tray_activated(reason))
 
     def show_notification(self, title: str, message: str):
-        """Displays a notification in the system tray."""
-        if not hasattr(self, 'tray'):
-            self.run_tray()  # Ensure the tray is initialized
+        """
+        Displays a notification in the system tray.
+        Can be called while the application is running, and the notification is displayed immediately.
+
+        :param title: Notification title
+        :param message: Notification content
+        """
+        if not hasattr(self, "tray"):
+            self._init_tray()  # Ensure the tray is initialized
 
         self.tray.showMessage(title, message, QIcon(self.icon), 5000)
+
+    def _update_tray_icon(self):
+        """Updates the animation frames."""
+        if hasattr(self, "tray") and self.icon_frames:
+            self.tray.setIcon(self.icon_frames[self.current_frame])
+            self.current_frame = (self.current_frame + 1) % len(self.icon_frames)
+
+    def set_tray_icon_animation(self, icon_frames: List[str], interval: int = 200):
+        """
+        Dynamically sets and starts an animation for the tray icon.
+        Can be called while the application is running, and changes are applied immediately.
+
+        :param icon_frames: List of paths to animation frame images
+        :param interval: Interval between frames (milliseconds)
+        """
+        if not hasattr(self, "tray"):
+            self._init_tray()
+
+        # Remove existing icon
+        if hasattr(self, "tray_icon"):
+            del self.tray_icon
+
+        # Stop and remove existing animation timer
+        if hasattr(self, "animation_timer") and self.animation_timer is not None:
+            self.animation_timer.stop()
+            self.animation_timer.deleteLater()
+            self.animation_timer = None
+
+        self.icon_frames = [QIcon(frame) for frame in icon_frames]
+        self.animation_interval = interval
+        self.start_tray_icon_animation()
+
+    def start_tray_icon_animation(self):
+        """Starts the tray icon animation."""
+        if self.icon_frames:
+            if self.animation_timer is None:
+                self.animation_timer = QTimer(self)
+                self.animation_timer.timeout.connect(lambda: self._update_tray_icon())
+            self.animation_timer.start(self.animation_interval)
+            self.current_frame = 0
+
+    def set_tray_tooltip(self, message: str):
+        """
+        Dynamically sets the tooltip for the tray icon.
+        Can be called while the application is running, and changes are applied immediately.
+
+        :param message: New tooltip message
+        """
+        if not hasattr(self, "tray"):
+            self._init_tray()
+        self.tray.setToolTip(message)
+
+    def set_notification_callback(self, callback: Callable[[str], None]):
+        """
+        Sets the callback function to be called when a notification is clicked.
+
+        :param callback: Callback function to be called when a notification is clicked
+        """
+        if not hasattr(self, "tray"):
+            self._init_tray()
+        self.tray.messageClicked.connect(callback)
 
     ###########################################################################################
     # Monitor
@@ -829,28 +976,30 @@ class Pyloid(QApplication):
     def get_all_monitors(self) -> List[Monitor]:
         """
         Returns a list of information for all connected monitors.
-        
+
         :return: List containing monitor information
         """
-        monitors = [Monitor(index, screen) for index, screen in enumerate(self.screens())]
+        monitors = [
+            Monitor(index, screen) for index, screen in enumerate(self.screens())
+        ]
         return monitors
-    
+
     def get_primary_monitor(self) -> Monitor:
         """
         Returns information for the primary monitor.
-        
+
         :return: Primary monitor information
         """
         primary_monitor = self.screens()[0]
         return Monitor(0, primary_monitor)
-    
+
     ###########################################################################################
     # Clipboard
     ###########################################################################################
     def copy_to_clipboard(self, text):
         """
         Copies text to the clipboard.
-        
+
         :param text: Text to be copied
         """
         self.clipboard_class.setText(text, QClipboard.Clipboard)
@@ -858,7 +1007,7 @@ class Pyloid(QApplication):
     def get_clipboard_text(self):
         """
         Retrieves text from the clipboard.
-        
+
         :return: Text from the clipboard
         """
         return self.clipboard_class.text()
@@ -866,7 +1015,7 @@ class Pyloid(QApplication):
     def set_clipboard_image(self, image: Union[str, bytes, os.PathLike]):
         """
         Copies an image to the clipboard.
-        
+
         :param image: Path to the image to be copied
         """
         self.clipboard_class.setImage(QImage(image), QClipboard.Clipboard)
@@ -874,11 +1023,11 @@ class Pyloid(QApplication):
     def get_clipboard_image(self):
         """
         Retrieves an image from the clipboard.
-        
+
         :return: QImage object from the clipboard (None if no image)
         """
         return self.clipboard_class.image()
-    
+
     ###########################################################################################
     # Atostart
     ###########################################################################################
@@ -887,7 +1036,7 @@ class Pyloid(QApplication):
         Sets the application to start automatically with the system. (set_auto_start(True) only works in production)
         True only works in production.
         False works in both environments.
-        
+
         :param enable: True to enable auto-start, False to disable
         """
         if not enable:
@@ -899,7 +1048,9 @@ class Pyloid(QApplication):
                 self.auto_start.set_auto_start(True)
                 return True
         else:
-            print("\033[93mset_auto_start(True) is not supported in non-production environment\033[0m")
+            print(
+                "\033[93mset_auto_start(True) is not supported in non-production environment\033[0m"
+            )
             return None
 
     def is_auto_start(self):
@@ -908,7 +1059,83 @@ class Pyloid(QApplication):
 
         :return: True if auto-start is enabled, False otherwise
         """
-        
-        return self.auto_start.is_auto_start()
-        
 
+        return self.auto_start.is_auto_start()
+
+    ###########################################################################################
+    # File watcher
+    ###########################################################################################
+    def watch_file(self, file_path: str) -> bool:
+        """
+        Adds a file to the watch list.
+
+        :param file_path: Path of the file to watch
+        :return: True if the file was successfully added to the watch list, False otherwise
+        """
+        return self.file_watcher.add_path(file_path)
+
+    def watch_directory(self, dir_path: str) -> bool:
+        """
+        Adds a directory to the watch list.
+
+        :param dir_path: Path of the directory to watch
+        :return: True if the directory was successfully added to the watch list, False otherwise
+        """
+        return self.file_watcher.add_path(dir_path)
+
+    def stop_watching(self, path: str) -> bool:
+        """
+        Removes a file or directory from the watch list.
+
+        :param path: Path of the file or directory to stop watching
+        :return: True if the path was successfully removed from the watch list, False otherwise
+        """
+        return self.file_watcher.remove_path(path)
+
+    def get_watched_paths(self) -> List[str]:
+        """
+        Returns all currently watched paths.
+
+        :return: List of all watched paths
+        """
+        return self.file_watcher.get_watched_paths()
+
+    def get_watched_files(self) -> List[str]:
+        """
+        Returns all currently watched files.
+
+        :return: List of all watched files
+        """
+        return self.file_watcher.get_watched_files()
+
+    def get_watched_directories(self) -> List[str]:
+        """
+        Returns all currently watched directories.
+
+        :return: List of all watched directories
+        """
+        return self.file_watcher.get_watched_directories()
+
+    def remove_all_watched_paths(self) -> None:
+        """
+        Removes all paths from the watch list.
+
+        :return: None
+        """
+        self.file_watcher.remove_all_paths()
+
+    def set_file_change_callback(self, callback: Callable[[str], None]) -> None:
+        """
+        Sets the callback function to be called when a file changes.
+
+        :param callback: Function to be called when a file changes
+        """
+        self.file_watcher.file_changed.connect(callback)
+
+    def set_directory_change_callback(self, callback: Callable[[str], None]) -> None:
+        """
+        Sets the callback function to be called when a directory changes.
+
+        :param callback: Function to be called when a directory changes
+        """
+        self.file_watcher.directory_changed.connect(callback)
