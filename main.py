@@ -2,10 +2,11 @@ from src.pyloid.pyloid import Pyloid
 from src.pyloid.api import PyloidAPI, Bridge
 from src.pyloid.tray import TrayEvent
 from src.pyloid.utils import is_production, get_production_path
+from src.pyloid.timer import PyloidTimer
 import os
-from PySide6.QtCore import QTimer
 
 app = Pyloid("Pyloid-App", single_instance=True)
+timer = PyloidTimer()
 
 if is_production():
     app.set_icon(os.path.join(get_production_path(), "icon.ico"))
@@ -171,7 +172,7 @@ def update_menu():
 
 
 # 5초 후에 트레이 메뉴 업데이트
-QTimer.singleShot(5000, update_menu)
+timer.start_single_shot_timer(5000, update_menu)
 
 
 def update_tray_icon():
@@ -187,13 +188,13 @@ def update_tray_icon():
     )
 
 
-QTimer.singleShot(3000, update_tray_icon)
-QTimer.singleShot(6000, lambda: app.set_tray_icon("assets/icon.ico"))
+timer.start_single_shot_timer(3000, update_tray_icon)
+timer.start_single_shot_timer(6000, lambda: app.set_tray_icon("assets/icon.ico"))
 
 # 트레이 아이콘 툴팁 설정
 app.set_tray_tooltip("이것은 Pyloid 애플리케이션입니다.")
 
-QTimer.singleShot(10000, lambda: app.set_tray_tooltip("새로운 툴팁입니다!"))
+timer.start_single_shot_timer(10000, lambda: app.set_tray_tooltip("새로운 툴팁입니다!"))
 
 
 # 알림 클릭 콜백 설정
