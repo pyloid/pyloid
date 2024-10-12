@@ -1,7 +1,7 @@
-from pyloid.pyloid import Pyloid
-from pyloid.api import PyloidAPI, Bridge
-from pyloid.tray import TrayEvent
-from pyloid.utils import is_production, get_production_path
+from src.pyloid.pyloid import Pyloid
+from src.pyloid.api import PyloidAPI, Bridge
+from src.pyloid.tray import TrayEvent
+from src.pyloid.utils import is_production, get_production_path
 import os
 from PySide6.QtCore import QTimer
 

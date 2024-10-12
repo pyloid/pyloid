@@ -22,12 +22,14 @@ from .monitor import Monitor
 import json
 from .autostart import AutoStart
 from .filewatcher import FileWatcher
+import logging
+from PySide6.QtCore import QCoreApplication
 
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 
 # for macos debug
-
+logging.getLogger('Qt').setLevel(logging.ERROR)
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, "vulkan_warning_shown") and (

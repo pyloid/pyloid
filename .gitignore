@@ -152,5 +152,4 @@ cython_debug/
 
 # poetry
 poetry.lock
-
-venv-pylon
+venv-pyloid
