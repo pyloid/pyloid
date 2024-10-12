@@ -207,5 +207,4 @@ app.set_notification_callback(on_notification_clicked)
 # 새로운 알림 표시 (기존 코드 수정)
 app.show_notification("새 알림", "이 알림을 클릭해보세요!")
 
-
 app.run()

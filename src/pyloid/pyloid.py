@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage, QAction
+from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage, QAction, QPalette, QColor
 from PySide6.QtCore import Qt, Signal, QUrl, QObject, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
@@ -353,10 +353,13 @@ class BrowserWindow:
     def set_frame(self, frame: bool):
         """Sets the frame of the window."""
         self.frame = frame
+        was_visible = self._window.isVisible()
         if self.frame:
             self._window.setWindowFlags(Qt.Window)
         else:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
+        if was_visible:
+            self._window.show()
 
     def set_context_menu(self, context_menu: bool):
         """Sets the context menu of the window."""
