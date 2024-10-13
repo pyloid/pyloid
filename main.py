@@ -16,24 +16,18 @@ else:
 
 app.set_tray_actions(
     {
-        TrayEvent.DoubleClick: lambda: print("트레이 아이콘이 더블클릭되었습니다."),
-        TrayEvent.MiddleClick: lambda: print(
-            "트레이 아이콘이 중간 버튼으로 클릭되었습니다."
-        ),
-        TrayEvent.RightClick: lambda: print(
-            "트레이 아이콘이 오른쪽 버튼으로 클릭되었습니다."
-        ),
-        TrayEvent.LeftClick: lambda: print(
-            "트레이 아이콘이 왼쪽 버튼으로 클릭되었습니다."
-        ),
+        TrayEvent.DoubleClick: lambda: print("Tray icon double-clicked."),
+        TrayEvent.MiddleClick: lambda: print("Tray icon middle-clicked."),
+        TrayEvent.RightClick: lambda: print("Tray icon right-clicked."),
+        TrayEvent.LeftClick: lambda: print("Tray icon left-clicked."),
     }
 )
 
 
 app.set_tray_menu_items(
     [
-        {"label": "창 보이기", "callback": lambda: app.show_and_focus_main_window()},
-        {"label": "종료", "callback": lambda: app.quit()},
+        {"label": "Show Window", "callback": lambda: app.show_and_focus_main_window()},
+        {"label": "Exit", "callback": lambda: app.quit()},
     ]
 )
 
@@ -41,8 +35,8 @@ app.set_tray_menu_items(
 class CustomAPI(PyloidAPI):
     @Bridge(str, int, result=str)
     def echo(self, message, message2):
-        print(f"메시지: {message}-{message2}")
-        return f"파이썬에서 받은 메시지: {message}-{message2}"
+        print(f"Message: {message}-{message2}")
+        return f"Message received in Python: {message}-{message2}"
 
     @Bridge(result=str)
     def getAppVersion(self):
@@ -101,17 +95,17 @@ print(app.get_clipboard_image())
 window.add_shortcut(
     "Ctrl+Shift+I",
     lambda: (
-        print("Ctrl+Shift+I 단축키가 눌렸습니다. Ctrl+Shift+Q 단축키를 제거합니다."),
+        print("Ctrl+Shift+I shortcut pressed. Removing Ctrl+Shift+Q shortcut."),
         window.remove_shortcut("Ctrl+Shift+Q"),
     ),
 )
 window.add_shortcut(
-    "Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q 단축키가 눌렸습니다."))
+    "Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q shortcut pressed."))
 )
 window.add_shortcut(
     "Ctrl+Shift+S",
     lambda: (
-        print("Ctrl+Shift+S 단축키가 눌렸습니다."),
+        print("Ctrl+Shift+S shortcut pressed."),
         print(window.get_all_shortcuts()),
     ),
 )
@@ -119,7 +113,7 @@ window.add_shortcut(
 window.add_shortcut(
     "Ctrl+Shift+E",
     lambda: (
-        print("Ctrl+Shift+E 단축키가 눌렸습니다."),
+        print("Ctrl+Shift+E shortcut pressed."),
         window.emit("pythonEvent", {"message": "Hello from Python!"}),
     ),
 )
@@ -128,55 +122,55 @@ app.set_auto_start(True)
 print(app.is_auto_start())
 
 
-# 파일 감시 시작
+# Start file watching
 app.watch_file("test.txt")
 
-# 디렉토리 감시 시작
+# Start directory watching
 app.watch_directory("test")
 
 
-# 파일 변경 콜백 설정
+# Set file change callback
 def on_file_changed(path):
-    print(f"파일이 변경되었습니다: {path}")
+    print(f"File changed: {path}")
 
 
 app.set_file_change_callback(on_file_changed)
 
 
-# 디렉토리 변경 콜백 설정
+# Set directory change callback
 def on_directory_changed(path):
-    print(f"디렉토리가 변경되었습니다: {path}")
+    print(f"Directory changed: {path}")
 
 
 app.set_directory_change_callback(on_directory_changed)
 
-# 감시 중인 경로 확인
+# Check watched paths
 print(app.get_watched_paths())
 
 
-# 트레이 메뉴 동적 업데이트
+# Dynamic update of tray menu
 def update_menu():
     app.set_tray_menu_items(
         [
             {
-                "label": "새로운 메뉴 1",
-                "callback": lambda: print("새로운 메뉴 1 클릭됨"),
+                "label": "New Menu 1",
+                "callback": lambda: print("New Menu 1 clicked"),
             },
             {
-                "label": "새로운 메뉴 2",
-                "callback": lambda: print("새로운 메뉴 2 클릭됨"),
+                "label": "New Menu 2",
+                "callback": lambda: print("New Menu 2 clicked"),
             },
-            {"label": "종료", "callback": lambda: app.quit()},
+            {"label": "Exit", "callback": lambda: app.quit()},
         ]
     )
 
 
-# 5초 후에 트레이 메뉴 업데이트
+# Update tray menu after 5 seconds
 timer.start_single_shot_timer(5000, update_menu)
 
 
 def update_tray_icon():
-    # 트레이 아이콘 애니메이션 설정
+    # Set tray icon animation
     app.set_tray_icon_animation(
         [
             "assets/frame1.png",
@@ -191,21 +185,21 @@ def update_tray_icon():
 timer.start_single_shot_timer(3000, update_tray_icon)
 timer.start_single_shot_timer(6000, lambda: app.set_tray_icon("assets/icon.ico"))
 
-# 트레이 아이콘 툴팁 설정
-app.set_tray_tooltip("이것은 Pyloid 애플리케이션입니다.")
+# Set tray icon tooltip
+app.set_tray_tooltip("This is a Pyloid application.")
 
-timer.start_single_shot_timer(10000, lambda: app.set_tray_tooltip("새로운 툴팁입니다!"))
+timer.start_single_shot_timer(10000, lambda: app.set_tray_tooltip("New tooltip!"))
 
 
-# 알림 클릭 콜백 설정
+# Set notification click callback
 def on_notification_clicked():
-    print("알림이 클릭되었습니다!")
+    print("Notification clicked!")
 
 
 app.set_notification_callback(on_notification_clicked)
 
 
-# 새로운 알림 표시 (기존 코드 수정)
-app.show_notification("새 알림", "이 알림을 클릭해보세요!")
+# Show new notification (modified existing code)
+app.show_notification("New Notification", "Click this notification!")
 
 app.run()

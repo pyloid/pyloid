@@ -8,7 +8,16 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QClipboard, QImage, QAction, QPalette, QColor
+from PySide6.QtGui import (
+    QIcon,
+    QKeySequence,
+    QShortcut,
+    QClipboard,
+    QImage,
+    QAction,
+    QPalette,
+    QColor,
+)
 from PySide6.QtCore import Qt, Signal, QUrl, QObject, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
@@ -23,13 +32,14 @@ import json
 from .autostart import AutoStart
 from .filewatcher import FileWatcher
 import logging
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication, QtMsgType
 
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 
 # for macos debug
-logging.getLogger('Qt').setLevel(logging.ERROR)
+logging.getLogger("Qt").setLevel(logging.ERROR)
+
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, "vulkan_warning_shown") and (
@@ -42,7 +52,13 @@ def custom_message_handler(mode, context, message):
         )
         os.environ["QT_QUICK_BACKEND"] = "software"
         custom_message_handler.vulkan_warning_shown = True
-    if "vulkan" not in message.lower():
+
+    if "Autofill.enable failed" in message:
+        print(
+            "\033[93mPyloid Warning: Autofill is not enabled in developer tools.\033[0m"
+        )
+
+    if "vulkan" not in message.lower() and "Autofill.enable failed" not in message:
         print(message)
 
 
@@ -390,6 +406,11 @@ class BrowserWindow:
         self.dev_tools_window.resize(800, 600)
         self.dev_tools_window.show()
 
+        # Add this line to handle dev tools window closure
+        self.dev_tools_window.closeEvent = lambda event: setattr(
+            self, "dev_tools_window", None
+        )
+
     def get_window_properties(self):
         """Returns the properties of the window."""
         return {
@@ -411,6 +432,14 @@ class BrowserWindow:
 
     def closeEvent(self, event):
         """Handles the event when the window is closed."""
+        # Close developer tools if open
+        if hasattr(self, "dev_tools_window") and self.dev_tools_window:
+            self.dev_tools_window.close()
+            self.dev_tools_window = None
+
+        # Solve memory leak issue with web view engine
+        self.web_view.page().deleteLater()
+        self.web_view.deleteLater()
         self._remove_from_app_windows()
         event.accept()  # Accept the event (allow the window to close)
 
@@ -730,8 +759,11 @@ class Pyloid(QApplication):
             window._window.close()
 
     def quit(self):
-        """Quits the application."""
-        self.close_all_windows()
+        """애플리케이션을 종료합니다."""
+        for window in self.windows:
+            window._window.close()
+            window.web_page.deleteLater()
+            window.web_view.deleteLater()
         QApplication.quit()
 
     ###########################################################################################
