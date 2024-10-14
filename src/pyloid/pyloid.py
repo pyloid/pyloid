@@ -18,7 +18,7 @@ from PySide6.QtGui import (
     QPalette,
     QColor,
 )
-from PySide6.QtCore import Qt, Signal, QUrl, QObject, QTimer
+from PySide6.QtCore import Qt, Signal, QPoint, QUrl, QObject, QTimer, QSize
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .api import PyloidAPI, Bridge
@@ -32,7 +32,9 @@ import json
 from .autostart import AutoStart
 from .filewatcher import FileWatcher
 import logging
-from PySide6.QtCore import QCoreApplication, QtMsgType
+from PySide6.QtGui import QPalette, QColor
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QSizePolicy
+from PySide6.QtGui import QPixmap
 
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
@@ -75,6 +77,13 @@ class WindowAPI(PyloidAPI):
     def getWindowId(self):
         """Returns the current window ID."""
         return self.window_id
+
+    @Bridge(result=dict)
+    def getWindowProperties(self):
+        """Returns the properties of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        window_properties = window.get_window_properties()
+        return window_properties
 
     @Bridge()
     def close(self):
@@ -175,6 +184,44 @@ class WindowAPI(PyloidAPI):
             return window.capture(save_path)
         return None
 
+    @Bridge(result=bool)
+    def getFrame(self):
+        """Returns whether the window has a frame."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.frame if window else False
+    
+    @Bridge(result=bool)
+    def getContextMenu(self):
+        """Returns whether the window has a context menu."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.context_menu if window else False
+    
+    @Bridge(result=bool)
+    def getDevTools(self):
+        """Returns whether the window has developer tools."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.dev_tools if window else False
+    
+    @Bridge(result=str)
+    def getTitle(self):
+        """Returns the title of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.title if window else ""
+    
+    @Bridge(result=dict)
+    def getSize(self):
+        """Returns the size of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        return {"width": window.width, "height": window.height} if window else {"width": 0, "height": 0}
+    
+    @Bridge(result=dict)
+    def getPosition(self):
+        """Returns the position of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        return {"x": window.x, "y": window.y} if window else {"x": 0, "y": 0}
+    
+    
+    
 
 # class EventAPI(PylonAPI):
 #     def __init__(self, window_id: str, app):
@@ -197,6 +244,106 @@ class WindowAPI(PyloidAPI):
 #             for callback in self.subscribers[event_name]:
 #                 callback(*args, **kwargs)
 
+
+class CustomTitleBar(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(5, 0, 5, 0)
+        self.layout.setSpacing(0)
+
+        self.icon_label = QLabel()
+        self.icon_label.setFixedSize(20, 20)
+        self.title = QLabel("Custom Title")
+        
+        self.minimize_button = QPushButton("－")
+        self.maximize_button = QPushButton("❐")
+        self.close_button = QPushButton("×")
+
+        for button in (self.minimize_button, self.maximize_button, self.close_button):
+            button.setFixedSize(45, 30)
+            button.setFlat(True)
+
+        self.layout.addWidget(self.icon_label)
+        self.layout.addSpacing(5)
+        self.layout.addWidget(self.title)
+        self.layout.addStretch(1)
+        self.layout.addWidget(self.minimize_button)
+        self.layout.addWidget(self.maximize_button)
+        self.layout.addWidget(self.close_button)
+
+        self.minimize_button.clicked.connect(self.window().showMinimized)
+        self.maximize_button.clicked.connect(self.toggle_maximize)
+        self.close_button.clicked.connect(self.window().close)
+
+        self.setFixedHeight(30)
+        self.set_style("darkblue", "white")
+
+    def set_style(self, bg_color, text_color):
+        self.setAutoFillBackground(True)
+        palette = self.palette()
+        bg_qcolor = QColor(bg_color)
+        text_qcolor = QColor(text_color)
+        palette.setColor(QPalette.Window, bg_qcolor)
+        palette.setColor(QPalette.WindowText, text_qcolor)
+        self.setPalette(palette)
+
+        self.title.setStyleSheet(f"color: {text_color}; font-weight: bold;")
+
+        button_style = f"""
+            QPushButton {{
+                background-color: {bg_color};
+                color: {text_color};
+                border: none;
+                font-family: Arial;
+                font-size: 14px;
+                padding: 0px;
+                text-align: center;
+            }}
+            QPushButton:hover {{
+                background-color: {bg_qcolor.lighter(120).name()};
+            }}
+            QPushButton:pressed {{
+                background-color: {bg_qcolor.darker(110).name()};
+            }}
+        """
+        for button in (self.minimize_button, self.maximize_button, self.close_button):
+            button.setStyleSheet(button_style)
+
+        self.close_button.setStyleSheet(button_style + f"""
+            QPushButton:hover {{
+                background-color: #e81123;
+                color: white;
+            }}
+        """)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.window().moving = True
+            self.window().offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.window().moving:
+            self.window().move(event.globalPos() - self.window().offset)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.window().moving = False
+
+    def toggle_maximize(self):
+        if self.window().isMaximized():
+            self.window().showNormal()
+            self.maximize_button.setText("❐")
+        else:
+            self.window().showMaximized()
+            self.maximize_button.setText("❐")
+
+    def set_icon(self, icon_path):
+        pixmap = QPixmap(icon_path)
+        self.icon_label.setPixmap(pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    def set_title(self, title):
+        self.title.setText(title)
 
 class BrowserWindow:
     def __init__(
@@ -234,6 +381,37 @@ class BrowserWindow:
             self.js_apis.append(js_api)
         self.shortcuts = {}
         ###########################################################################################
+
+    def set_custom_frame(self, use_custom: bool, title: str = "Custom Title", bg_color: str = "darkblue", text_color: str = "white", icon_path: str = None):
+        """커스텀 프레임을 설정하거나 제거합니다."""
+        if use_custom:
+            self._window.setWindowFlags(Qt.FramelessWindowHint)
+            self.custom_title_bar = CustomTitleBar(self._window)
+            self.custom_title_bar.set_style(bg_color, text_color)
+            self.custom_title_bar.set_title(title)
+            
+            if icon_path:
+                self.custom_title_bar.set_icon(icon_path)
+            
+            layout = QVBoxLayout()
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(0)
+            layout.addWidget(self.custom_title_bar)
+            layout.addWidget(self.web_view)
+            
+            central_widget = QWidget()
+            central_widget.setLayout(layout)
+            self._window.setCentralWidget(central_widget)
+
+            # 창 이동을 위한 속성 추가
+            self._window.moving = False
+            self._window.offset = QPoint()
+        else:
+            self._window.setWindowFlags(Qt.Window)
+            self._window.setCentralWidget(self.web_view)
+            self.custom_title_bar = None
+
+        self._window.show()
 
     def _load(self):
         self._window.setWindowTitle(self.title)
@@ -411,25 +589,6 @@ class BrowserWindow:
             self, "dev_tools_window", None
         )
 
-    def get_window_properties(self):
-        """Returns the properties of the window."""
-        return {
-            "id": self.id,
-            "title": self.title,
-            "width": self.width,
-            "height": self.height,
-            "x": self.x,
-            "y": self.y,
-            "frame": self.frame,
-            "context_menu": self.context_menu,
-            "dev_tools": self.dev_tools,
-            "js_apis": self.js_apis,
-        }
-
-    def get_id(self):
-        """Returns the ID of the window."""
-        return self.id
-
     def closeEvent(self, event):
         """Handles the event when the window is closed."""
         # Close developer tools if open
@@ -576,7 +735,56 @@ class BrowserWindow:
         }})();
         """
         self.web_view.page().runJavaScript(script)
+    ###########################################################################################
+    # Get Properties
+    ###########################################################################################
+    def get_window_properties(self):
+        """Returns the properties of the window."""
+        return {
+            "id": self.id,
+            "title": self.title,
+            "width": self.width,
+            "height": self.height,
+            "x": self.x,
+            "y": self.y,
+            "frame": self.frame,
+            "context_menu": self.context_menu,
+            "dev_tools": self.dev_tools,
+        }
 
+    def get_id(self):
+        """Returns the ID of the window."""
+        return self.id
+    
+    def get_size(self) -> Dict[str, int]:
+        """Returns the size of the window."""
+        return {"width": self.width, "height": self.height}
+
+    def get_position(self) -> Dict[str, int]:
+        """Returns the position of the window."""
+        return {"x": self.x, "y": self.y}
+    
+    def get_title(self) -> str:
+        """Returns the title of the window."""
+        return self.title
+
+    def get_url(self) -> str:
+        """Returns the URL of the window."""
+        return self.web_view.url().toString()
+    
+    def get_visible(self) -> bool:
+        """Returns the visibility of the window."""
+        return self._window.isVisible()
+
+    def set_resizable(self, resizable: bool):
+        """창의 크기 조절 가능 여부를 설정합니다."""
+        self.resizable = resizable
+        if resizable:
+            self._window.setWindowFlags(self._window.windowFlags() & ~Qt.MSWindowsFixedSizeDialogHint)
+        else:
+            self._window.setWindowFlags(self._window.windowFlags() | Qt.MSWindowsFixedSizeDialogHint)
+        self._window.show()  # 변경사항을 적용하기 위해 창을 다시 표시합니다.
+    
 
 class _WindowController(QObject):
     create_window_signal = Signal(
@@ -614,7 +822,7 @@ class Pyloid(QApplication):
 
         self.app_name = app_name
         self.app_path = sys.executable
-
+        
         self.auto_start = AutoStart(self.app_name, self.app_path)
 
         self.animation_timer = None

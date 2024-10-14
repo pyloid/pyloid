@@ -202,4 +202,23 @@ app.set_notification_callback(on_notification_clicked)
 # Show new notification (modified existing code)
 app.show_notification("New Notification", "Click this notification!")
 
+print(window.get_window_properties())
+print(window.get_id())
+print(window.get_title())
+print(window.get_url())
+print(window.get_visible())
+
+window.set_size(600, 400)
+
+print(window.get_size())
+print(window.get_position())
+
+window.set_resizable(False)
+
+# window.set_frame(False)  # 기본 프레임 제거 및 커스텀 프레임 추가
+# window.set_frame(True)   # 기본 프레임으로 복원
+
+# 커스텀 프레임의 색상과 제목 변경
+window.set_custom_frame(True, title="Pylon-App", bg_color="dark", text_color="white", icon_path="assets/icon.ico")
+
 app.run()
