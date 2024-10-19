@@ -63,7 +63,7 @@ class CustomAPI(PyloidAPI):
 
 window = app.create_window(
     title="Pyloid Browser1",
-    frame=True,
+    frame=False,
     context_menu=False,
     js_apis=[CustomAPI()],
     dev_tools=True,

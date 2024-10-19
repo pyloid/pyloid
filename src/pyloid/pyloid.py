@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QClipboard,
     QImage,
     QAction,
+    QCursor,
 )
 from PySide6.QtCore import Qt, Signal, QPoint, QUrl, QObject, QTimer, QSize, QEvent
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -261,6 +262,7 @@ class CustomWebEngineView(QWebEngineView):
         self.parent = parent
         self.drag_relative_position = None
         self.is_dragging = False
+        self.screen_geometry = self.screen().availableGeometry()
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
@@ -273,8 +275,25 @@ class CustomWebEngineView(QWebEngineView):
         if not self.parent.frame and self.is_dragging:
             # 현재 마우스 위치를 전역 좌표로 가져옵니다
             current_global_pos = event.globalPos()
-            # 새로운 창 위치를 계산합니다
-            new_window_pos = current_global_pos - self.drag_relative_position
+
+            # 화면 경계를 계산합니다
+            left_boundary = self.screen_geometry.left()
+            right_boundary = self.screen_geometry.right()
+            top_boundary = self.screen_geometry.top()
+            bottom_boundary = self.screen_geometry.bottom()
+
+            # 마우스 커서 위치를 제한합니다
+            new_cursor_pos = QPoint(
+                max(left_boundary, min(current_global_pos.x(), right_boundary)),
+                max(top_boundary, min(current_global_pos.y(), bottom_boundary)),
+            )
+
+            # 마우스 커서를 새 위치로 이동합니다
+            QCursor.setPos(new_cursor_pos)
+
+            # 창의 새 위치를 계산합니다
+            new_window_pos = new_cursor_pos - self.drag_relative_position
+
             # 창을 새 위치로 이동합니다
             self.parent._window.move(new_window_pos)
 
@@ -283,12 +302,13 @@ class CustomWebEngineView(QWebEngineView):
             self.is_dragging = False
 
     def eventFilter(self, source, event):
-        if self.focusProxy() is source and event.type() == QEvent.MouseButtonPress:
-            self.mouse_press_event(event)
-        if self.focusProxy() is source and event.type() == QEvent.MouseMove:
-            self.mouse_move_event(event)
-        elif self.focusProxy() is source and event.type() == QEvent.MouseButtonRelease:
-            self.mouse_release_event(event)
+        if self.focusProxy() is source:
+            if event.type() == QEvent.MouseButtonPress:
+                self.mouse_press_event(event)
+            elif event.type() == QEvent.MouseMove:
+                self.mouse_move_event(event)
+            elif event.type() == QEvent.MouseButtonRelease:
+                self.mouse_release_event(event)
         return super().eventFilter(source, event)
 
 
