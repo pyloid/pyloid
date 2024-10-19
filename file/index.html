@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
     <script>
       document.addEventListener('pyloidReady', function () {
@@ -30,9 +33,23 @@
         border: none;
         cursor: pointer;
       }
+      .drag-region {
+        -webkit-app-region: drag;
+        width: 100%;
+      }
+      .no-drag {
+        -webkit-app-region: no-drag;
+      }
     </style>
   </head>
   <body>
+    <div
+      id="titlebar"
+      class="drag-region"
+    >
+      Custom Title Bar
+      <button class="no-drag">Button</button>
+    </div>
     <h1>Test Webpage</h1>
     <p>This page is created for testing purposes.</p>
     <button id="myButton">Create Window!</button>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script>
+      document.addEventListener('pyloidReady', function () {
+        console.log('pyloidReady');
+      });
+    </script>
+    <title>Test Page</title>
+    <style>
+      .draggable {
+        width: 100%; /* 전체 너비로 확장 */
+        height: 50px; /* 높이 조정 */
+        background-color: #3498db;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="draggable"
+      data-pyloid-drag-region
+    >
+      드래그 가능한 영역
+      <button>버튼</button>
+      <button>버튼</button>
+      <button>버튼</button>
+
+    <h1>안녕하세요</h1>
+  </body>
+</html>

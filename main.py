@@ -72,9 +72,9 @@ window = app.create_window(
 window.set_size(800, 600)
 
 if is_production():
-    window.load_file(os.path.join(get_production_path(), "file/index.html"))
+    window.load_file(os.path.join(get_production_path(), "file/index3.html"))
 else:
-    window.load_file("file/index.html")
+    window.load_file("file/index3.html")
 
 window.show_and_focus()
 
@@ -99,9 +99,7 @@ window.add_shortcut(
         window.remove_shortcut("Ctrl+Shift+Q"),
     ),
 )
-window.add_shortcut(
-    "Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q shortcut pressed."))
-)
+window.add_shortcut("Ctrl+Shift+Q", lambda: (print("Ctrl+Shift+Q shortcut pressed.")))
 window.add_shortcut(
     "Ctrl+Shift+S",
     lambda: (
@@ -213,12 +211,12 @@ window.set_size(600, 400)
 print(window.get_size())
 print(window.get_position())
 
-window.set_resizable(False)
+# window.set_resizable(False)
 
 # window.set_frame(False)  # 기본 프레임 제거 및 커스텀 프레임 추가
 # window.set_frame(True)   # 기본 프레임으로 복원
 
 # 커스텀 프레임의 색상과 제목 변경
-window.set_custom_frame(True, title="Pylon-App", bg_color="dark", text_color="white", icon_path="assets/icon.ico")
+# window.set_custom_frame(True, title="Pylon-App", bg_color="dark", text_color="white", icon_path="assets/icon.ico")
 
 app.run()
