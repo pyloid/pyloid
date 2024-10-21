@@ -760,7 +760,7 @@ class BrowserWindow:
         return self._window.isVisible()
 
     def set_resizable(self, resizable: bool):
-        """창의 크기 조절 가능 여부를 설정합니다."""
+        """Sets the resizability of the window."""
         self.resizable = resizable
         if resizable:
             self._window.setWindowFlags(
@@ -789,6 +789,9 @@ class Pyloid(QApplication):
 
         self.windows = []
         self.server = None
+
+        self.app_name = app_name
+        self.icon = None
 
         self.clipboard_class = self.clipboard()
         self.shortcuts = {}
@@ -898,14 +901,14 @@ class Pyloid(QApplication):
     def _init_single_instance(self):
         """Initializes the application as a single instance."""
         socket = QLocalSocket()
-        socket.connectToServer("PyloidBrowserApp")
+        socket.connectToServer(self.app_name)
         if socket.waitForConnected(500):
             # Another instance is already running
             sys.exit(1)
 
         # Create a new server
         self.server = QLocalServer()
-        self.server.listen("PyloidBrowserApp")
+        self.server.listen(self.app_name)
         self.server.newConnection.connect(self._handle_new_connection)
 
     def _handle_new_connection(self):

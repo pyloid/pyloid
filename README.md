@@ -50,112 +50,13 @@ Package URL: [https://pypi.org/project/pyloid/](https://pypi.org/project/pyloid/
 ```python
 from pyloid import Pyloid
 
-app = Pyloid(single_instance=True)
+app = Pyloid(app_name="Pyloid-App", single_instance=True)
 
-# set icon
-if (is_production()):
-    app.set_icon(os.path.join(get_production_path(), "icons/icon.png"))
-else:
-    app.set_icon("src-pyloid/icons/icon.png")
-
-# create window
-window = app.create_window(
-    title="Pyloid Browser",
-    js_apis=[CustomAPI()],
-    dev_tools=True
-)
-
-window.set_size(800, 600)
-
-# load html
-if (is_production()):
-    window.set_dev_tools(False)
-    window.load_file(os.path.join(get_production_path(), "src/index.html"))
-else:
-    window.load_file("src/index.html")
-
-# show window
-window.show_and_focus()
+win = app.create_window("pyloid-example")
+win.load_url("https://www.example.com")
+win.show_and_focus()
 
 app.run()
-```
-
-### Setting Up System Tray
-
-```python
-from pyloid import TrayEvent
-
-def on_double_click():
-    print("Tray icon was double-clicked.")
-
-app.set_tray_actions({
-    TrayEvent.DoubleClick: on_double_click,
-})
-app.set_tray_menu_items([
-    {"label": "Show Window", "callback": app.show_main_window},
-    {"label": "Quit", "callback": app.quit},
-])
-app.setup_tray()
-```
-
-```javascript
-// CustomAPI method usage example
-document.addEventListener('pyloidReady', function () {
-  // Using the echo method
-  window.pyloid.CustomAPI.echo('Hello', 42).then((result) => {
-    console.log(result); // "Message received in Python: Hello, 42" output
-  });
-
-  // Using the getAppVersion method
-  window.pyloid.CustomAPI.getAppVersion().then((version) => {
-    console.log('App version:', version); // "App version: 1.0.0" output
-  });
-
-  // Example using async/await syntax
-  async function useCustomAPI() {
-    const echoResult = await window.pyloid.CustomAPI.echo('Test', 100);
-    console.log(echoResult);
-
-    const appVersion = await window.pyloid.CustomAPI.getAppVersion();
-    console.log('Current app version:', appVersion);
-  }
-
-  useCustomAPI();
-
-  // Button click event binding
-  document.getElementById('myButton').addEventListener('click', function () {
-    // Using the create_window method
-    window.pyloid.CustomAPI.create_window().then((windowId) => {
-      console.log('New window ID:', windowId); // "New window ID: [generated window ID]" output
-    });
-  });
-});
-```
-
-### Using React
-
-```javascript
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
-
-document.addEventListener('pyloidReady', function () {
-  createRoot(document.getElementById('root')).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
-});
-
-function App() {
-  console.log('Pyloid is ready');
-
-  window.pyloid.CustomAPI.getAppVersion().then((version) => {
-    console.log('App version:', version); // "App version: 1.0.0"
-  });
-  return <h1>Hello World</h1>;
-}
 ```
 
 ## License 📄
