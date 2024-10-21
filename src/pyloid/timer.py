@@ -1,4 +1,4 @@
-from PySide6.QtCore import QTimer, QObject
+from PySide6.QtCore import QTimer, QObject, Qt
 
 class PyloidTimer(QObject):
     def __init__(self):
@@ -94,7 +94,7 @@ class PyloidTimer(QObject):
         :param callback: 실행할 콜백 함수
         :return: 타이머 ID
         """
-        return self._create_timer_with_type(interval, callback, QTimer.TimerType.PreciseTimer)
+        return self._create_timer_with_type(interval, callback, Qt.TimerType.PreciseTimer)
 
     def start_coarse_periodic_timer(self, interval, callback):
         """
@@ -104,7 +104,7 @@ class PyloidTimer(QObject):
         :param callback: 실행할 콜백 함수
         :return: 타이머 ID
         """
-        return self._create_timer_with_type(interval, callback, QTimer.TimerType.CoarseTimer)
+        return self._create_timer_with_type(interval, callback, Qt.TimerType.CoarseTimer)
 
     def _create_timer_with_type(self, interval, callback, timer_type, auto_remove=False):
         timer = QTimer(self)
