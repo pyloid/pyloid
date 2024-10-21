@@ -262,17 +262,28 @@ class CustomWebEngineView(QWebEngineView):
         self.parent = parent
         self.drag_relative_position = None
         self.is_dragging = False
+        self.is_resizing = False
+        self.resize_start_pos = None
+        self.resize_direction = None
         self.screen_geometry = self.screen().availableGeometry()
+        self.is_resizing_enabled = True
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
             self.drag_relative_position = event.pos()
+            if not self.parent.frame and self.is_resizing_enabled:
+                self.resize_direction = self.get_resize_direction(event.pos())
+                if self.resize_direction:
+                    self.is_resizing = True
+                    self.resize_start_pos = event.globalPos()
 
     def start_system_drag(self):
         self.is_dragging = True
 
     def mouse_move_event(self, event):
-        if not self.parent.frame and self.is_dragging:
+        if self.is_resizing and self.is_resizing_enabled:
+            self.resize_window(event.globalPos())
+        elif not self.parent.frame and self.is_dragging:
             # 현재 마우스 위치를 전역 좌표로 가져옵니다
             current_global_pos = event.globalPos()
 
@@ -296,10 +307,20 @@ class CustomWebEngineView(QWebEngineView):
 
             # 창을 새 위치로 이동합니다
             self.parent._window.move(new_window_pos)
+        else:
+            # Change cursor based on resize direction
+            resize_direction = self.get_resize_direction(event.pos())
+            if resize_direction and self.is_resizing_enabled:
+                self.set_cursor_for_resize_direction(resize_direction)
+            else:
+                self.unsetCursor()
 
     def mouse_release_event(self, event):
         if event.button() == Qt.LeftButton:
             self.is_dragging = False
+            self.is_resizing = False
+            self.resize_direction = None
+            self.unsetCursor()
 
     def eventFilter(self, source, event):
         if self.focusProxy() is source:
@@ -310,6 +331,53 @@ class CustomWebEngineView(QWebEngineView):
             elif event.type() == QEvent.MouseButtonRelease:
                 self.mouse_release_event(event)
         return super().eventFilter(source, event)
+
+    def get_resize_direction(self, pos):
+        if not self.parent.frame and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
+            margin = 5  # Margin in pixels to detect edge
+            rect = self.rect()
+            direction = None
+
+            if pos.x() <= margin:
+                direction = 'left'
+            elif pos.x() >= rect.width() - margin:
+                direction = 'right'
+
+            if pos.y() <= margin:
+                direction = 'top' if direction is None else direction + '-top'
+            elif pos.y() >= rect.height() - margin:
+                direction = 'bottom' if direction is None else direction + '-bottom'
+
+            return direction
+        return None
+
+    def set_cursor_for_resize_direction(self, direction):
+        if not self.parent.frame and direction and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
+            if direction in ['left', 'right']:
+                self.setCursor(Qt.SizeHorCursor)
+            elif direction in ['top', 'bottom']:
+                self.setCursor(Qt.SizeVerCursor)
+            elif direction in ['left-top', 'right-bottom']:
+                self.setCursor(Qt.SizeFDiagCursor)
+            elif direction in ['right-top', 'left-bottom']:
+                self.setCursor(Qt.SizeBDiagCursor)
+
+    def resize_window(self, global_pos):
+        if not self.parent.frame and self.resize_start_pos and self.resize_direction and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
+            delta = global_pos - self.resize_start_pos
+            new_geometry = self.parent._window.geometry()
+
+            if 'left' in self.resize_direction:
+                new_geometry.setLeft(new_geometry.left() + delta.x())
+            if 'right' in self.resize_direction:
+                new_geometry.setRight(new_geometry.right() + delta.x())
+            if 'top' in self.resize_direction:
+                new_geometry.setTop(new_geometry.top() + delta.y())
+            if 'bottom' in self.resize_direction:
+                new_geometry.setBottom(new_geometry.bottom() + delta.y())
+
+            self.parent._window.setGeometry(new_geometry)
+            self.resize_start_pos = global_pos
 
 
 class BrowserWindow:
@@ -758,20 +826,49 @@ class BrowserWindow:
     def get_visible(self) -> bool:
         """Returns the visibility of the window."""
         return self._window.isVisible()
-
+    
+    def get_frame(self) -> bool:
+        """Returns the frame enabled state of the window."""
+        return self.frame
+    
+    ###########################################################################################
+    # Resize
+    ###########################################################################################
     def set_resizable(self, resizable: bool):
         """Sets the resizability of the window."""
         self.resizable = resizable
-        if resizable:
-            self._window.setWindowFlags(
-                self._window.windowFlags() & ~Qt.MSWindowsFixedSizeDialogHint
-            )
+        if self.frame:
+            flags = self._window.windowFlags() | Qt.WindowCloseButtonHint
+            if resizable:
+                pass
+            else:
+                flags |= Qt.MSWindowsFixedSizeDialogHint
+            self._window.setWindowFlags(flags)
         else:
-            self._window.setWindowFlags(
-                self._window.windowFlags() | Qt.MSWindowsFixedSizeDialogHint
-            )
+            # 프레임이 없는 경우 커스텀 리사이징 로직을 설정합니다.
+            self.web_view.is_resizing_enabled = resizable
+
         self._window.show()  # 변경사항을 적용하기 위해 창을 다시 표시합니다.
 
+    def set_minimum_size(self, min_width: int, min_height: int):
+        """Sets the minimum size of the window."""
+        self._window.setMinimumSize(min_width, min_height)
+
+    def set_maximum_size(self, max_width: int, max_height: int):
+        """Sets the maximum size of the window."""
+        self._window.setMaximumSize(max_width, max_height)
+
+    def get_minimum_size(self):
+        """Returns the minimum size of the window."""
+        return {'width': self._window.minimumWidth(), 'height': self._window.minimumHeight()}
+
+    def get_maximum_size(self):
+        """Returns the maximum size of the window."""
+        return {'width': self._window.maximumWidth(), 'height': self._window.maximumHeight()}
+    
+    def get_resizable(self):
+        """Returns the resizability of the window."""
+        return self.resizable
 
 class _WindowController(QObject):
     create_window_signal = Signal(

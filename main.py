@@ -69,6 +69,14 @@ window = app.create_window(
     dev_tools=True,
 )
 
+window.set_resizable(True)
+window.set_minimum_size(400, 300)
+window.set_maximum_size(1200, 800)
+
+print(window.get_resizable())
+print(window.get_minimum_size())
+print(window.get_maximum_size())
+
 window.set_size(800, 600)
 
 if is_production():
