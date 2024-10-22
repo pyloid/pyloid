@@ -1,12 +1,13 @@
 from PySide6.QtCore import QObject, Slot
 
+
 class PyloidAPI(QObject):
     """
-    PyloidAPI 클래스는 PySide6의 QObject를 상속받아 생성된 클래스입니다.
-    JavaScript와 Python 간의 통신을 가능하게 합니다.
+    PyloidAPI class is derived from PySide6's QObject.
+    It enables communication between JavaScript and Python.
 
-    사용 예제
-    --------
+    Usage Example
+    -------------
     (Python)
     ```python
     from pyloid import Pyloid, PyloidAPI, Bridge
@@ -41,22 +42,24 @@ class PyloidAPI(QObject):
     ```
 
     """
+
     def __init__(self):
         super().__init__()
 
+
 def Bridge(*args, **kwargs):
     """
-    Bridge 함수는 JavaScript에서 호출할 수 있는 슬롯을 생성합니다.
+    Bridge function creates a slot that can be called from JavaScript.
 
     Parameters
     ----------
     *args : tuple
-        가변 인자 목록입니다.
+        Variable length argument list.
     **kwargs : dict
-        키워드 인자 목록입니다.
+        Arbitrary keyword arguments.
 
-    사용 예제
-    --------
+    Usage Example
+    -------------
     (Python)
     ```python
     from pyloid import Pyloid, PyloidAPI, Bridge
