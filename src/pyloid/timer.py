@@ -2,27 +2,79 @@ from PySide6.QtCore import QTimer, QObject, Qt
 
 class PyloidTimer(QObject):
     def __init__(self):
+        """
+        Constructor for the PyloidTimer class.
+
+        This class is based on PySide6's QTimer and allows for easy creation and management of various types of timers.
+        """
         super().__init__()
         self.timers = {}
 
     def start_periodic_timer(self, interval, callback):
         """
-        주기적으로 실행되는 타이머를 시작합니다.
-        
-        :param interval: 밀리초 단위의 간격
-        :param callback: 실행할 콜백 함수
-        :param auto_remove: 타이머 중지 시 자동 삭제 여부
-        :return: 타이머 ID
+        Starts a periodic timer.
+
+        This function starts a timer that repeatedly executes the callback function at the given interval.
+
+        Parameters
+        ----------
+        interval : int
+            Interval in milliseconds
+        callback : function
+            Callback function to execute
+
+        Returns
+        -------
+        int
+            Timer ID
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        def print_hello():
+            print("Hello!")
+
+        # Start a timer that prints "Hello!" every 2 seconds
+        timer_id = timer_manager.start_periodic_timer(2000, print_hello)
+        ```
         """
         return self._create_timer(interval, callback, single_shot=False, auto_remove=False)
 
     def start_single_shot_timer(self, delay, callback):
         """
-        한 번만 실행되는 타이머를 시작합니다.
-        
-        :param delay: 밀리초 단위의 지연 시간
-        :param callback: 실행할 콜백 함수
-        :return: 타이머 ID
+        Starts a single-shot timer.
+
+        This function starts a timer that executes the callback function once after the given delay.
+
+        Parameters
+        ----------
+        delay : int
+            Delay in milliseconds
+        callback : function
+            Callback function to execute
+
+        Returns
+        -------
+        int
+            Timer ID
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        def delayed_message():
+            print("5 seconds have passed!")
+
+        # Start a single-shot timer that prints a message after 5 seconds
+        timer_id = timer_manager.start_single_shot_timer(5000, delayed_message)
+        ```
         """
         return self._create_timer(delay, callback, single_shot=True, auto_remove=True)
 
@@ -48,9 +100,25 @@ class PyloidTimer(QObject):
 
     def stop_timer(self, timer_id):
         """
-        지정된 ID의 타이머를 중지합니다.
-        
-        :param timer_id: 중지할 타이머의 ID
+        Stops the timer with the specified ID.
+
+        This function stops the timer corresponding to the given timer ID and removes it from the timer list.
+
+        Parameters
+        ----------
+        timer_id : int
+            ID of the timer to stop
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        # Stop the timer using its ID
+        timer_manager.stop_timer(timer_id)
+        ```
         """
         if timer_id in self.timers:
             self.timers[timer_id].stop()
@@ -58,19 +126,62 @@ class PyloidTimer(QObject):
 
     def is_timer_active(self, timer_id):
         """
-        지정된 ID의 타이머가 활성 상태인지 확인합니다.
-        
-        :param timer_id: 확인할 타이머의 ID
-        :return: 타이머가 활성 상태이면 True, 그렇지 않으면 False
+        Checks if the timer with the specified ID is active.
+
+        This function returns whether the timer corresponding to the given timer ID is currently active.
+
+        Parameters
+        ----------
+        timer_id : int
+            ID of the timer to check
+
+        Returns
+        -------
+        bool
+            True if the timer is active, False otherwise
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        if timer_manager.is_timer_active(timer_id):
+            print("The timer is still running.")
+        else:
+            print("The timer has stopped.")
+        ```
         """
         return timer_id in self.timers and self.timers[timer_id].isActive()
 
     def get_remaining_time(self, timer_id):
         """
-        지정된 ID의 타이머의 남은 시간을 반환합니다.
-        
-        :param timer_id: 확인할 타이머의 ID
-        :return: 남은 시간 (밀리초), 타이머가 없으면 None
+        Returns the remaining time of the timer with the specified ID.
+
+        This function returns the remaining time of the timer corresponding to the given timer ID in milliseconds.
+
+        Parameters
+        ----------
+        timer_id : int
+            ID of the timer to check
+
+        Returns
+        -------
+        int or None
+            Remaining time in milliseconds, or None if the timer does not exist
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        remaining_time = timer_manager.get_remaining_time(timer_id)
+        if remaining_time is not None:
+            print(f"{remaining_time}ms remaining.")
+        ```
         """
         if timer_id in self.timers:
             return self.timers[timer_id].remainingTime()
@@ -78,31 +189,104 @@ class PyloidTimer(QObject):
 
     def set_interval(self, timer_id, interval):
         """
-        지정된 ID의 타이머의 간격을 설정합니다.
-        
-        :param timer_id: 설정할 타이머의 ID
-        :param interval: 새로운 간격 (밀리초)
+        Sets the interval of the timer with the specified ID.
+
+        This function sets a new interval for the timer corresponding to the given timer ID.
+
+        Parameters
+        ----------
+        timer_id : int
+            ID of the timer to set
+        interval : int
+            New interval in milliseconds
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        # Change the timer interval to 3 seconds
+        timer_manager.set_interval(timer_id, 3000)
+        ```
         """
         if timer_id in self.timers:
             self.timers[timer_id].setInterval(interval)
 
     def start_precise_periodic_timer(self, interval, callback):
         """
-        정밀한 주기적 타이머를 시작합니다.
+        Starts a precise periodic timer.
+
+        This function starts a timer that repeatedly executes the callback function at precise intervals.
         
-        :param interval: 밀리초 단위의 간격
-        :param callback: 실행할 콜백 함수
-        :return: 타이머 ID
+        Note
+        ----
+        Precise timers consume more CPU resources.
+
+        Parameters
+        ----------
+        interval : int
+            Interval in milliseconds
+        callback : function
+            Callback function to execute
+
+        Returns
+        -------
+        int
+            Timer ID
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        def precise_task():
+            print("Executing precise task")
+
+        # Start a precise periodic timer with a 100ms interval
+        precise_timer_id = timer_manager.start_precise_periodic_timer(100, precise_task)
+        ```
         """
         return self._create_timer_with_type(interval, callback, Qt.TimerType.PreciseTimer)
 
     def start_coarse_periodic_timer(self, interval, callback):
         """
-        덜 정밀한 주기적 타이머를 시작합니다.
-        
-        :param interval: 밀리초 단위의 간격
-        :param callback: 실행할 콜백 함수
-        :return: 타이머 ID
+        Starts a coarse periodic timer.
+
+        This function starts a timer that repeatedly executes the callback function at coarse intervals.
+
+        Note
+        ----
+        Coarse timers consume less CPU resources.
+
+        Parameters
+        ----------
+        interval : int
+            Interval in milliseconds
+        callback : function
+            Callback function to execute
+
+        Returns
+        -------
+        int
+            Timer ID
+
+        Example
+        -------
+        ```python
+        from pyloid.timer import PyloidTimer
+
+        timer_manager = PyloidTimer()
+
+        def coarse_task():
+            print("Executing coarse task")
+
+        # Start a coarse periodic timer with a 500ms interval
+        coarse_timer_id = timer_manager.start_coarse_periodic_timer(500, coarse_task)
+        ```
         """
         return self._create_timer_with_type(interval, callback, Qt.TimerType.CoarseTimer)
 

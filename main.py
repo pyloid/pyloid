@@ -94,7 +94,7 @@ monitors[0].geometry_changed(lambda: print("geometry_changed"))
 monitors[0].orientation_changed(lambda: print("orientation_changed"))
 monitors[0].refresh_rate_changed(lambda: print("refresh_rate_changed"))
 
-app.copy_to_clipboard("test")
+app.set_clipboard_text("test")
 print(app.get_clipboard_text())
 
 app.set_clipboard_image("assets/icon.png")
