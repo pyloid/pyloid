@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  </head>
+  <body>
+    <button id="openFile">파일 열기</button>
+    <button id="showMessage">메시지 표시</button>
+
+    <script>
+      document.addEventListener('pyloidReady', function () {
+        async function openFile() {
+          const filePath = await window.pyloid.CustomAPI.open_file();
+          console.log('선택된 파일:', filePath);
+        }
+
+        async function showMessage() {
+          await window.pyloid.MessageAPI.show_warning(
+            '안내',
+            '커스텀 API 테스트입니다.'
+          );
+        }
+
+        document.querySelector('#openFile').addEventListener('click', openFile);
+        document
+          .querySelector('#showMessage')
+          .addEventListener('click', showMessage);
+      });
+    </script>
+  </body>
+</html>

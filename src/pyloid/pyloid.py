@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QSystemTrayIcon,
     QMenu,
+    QFileDialog,
 )
 from PySide6.QtGui import (
     QIcon,
@@ -1239,4 +1240,84 @@ class Pyloid(QApplication):
         >>> app.set_directory_change_callback(on_directory_change)
         """
         self.file_watcher.directory_changed.connect(callback)
+
+    ###########################################################################################
+    # File dialog
+    ###########################################################################################
+    def open_file_dialog(self, dir: Optional[str] = None, filter: Optional[str] = None) -> Optional[str]:
+        """
+        Opens a file dialog to select a file to open.
+
+        Parameters
+        ----------
+        dir : str, optional
+            The initial directory that the dialog will open in. If None, the dialog will open in the current working directory.
+        filter : str, optional
+            A string that specifies the file types that can be selected. For example, "Text Files (*.txt);;All Files (*)".
+
+        Returns
+        -------
+        Optional[str]
+            The path of the selected file. Returns None if no file is selected.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> file_path = app.open_file_dialog(dir="/home/user", filter="Text Files (*.txt)")
+        >>> if file_path:
+        >>>     print("Selected file:", file_path)
+        """
+        file_path, _ = QFileDialog.getOpenFileName(None, dir=dir, filter=filter)
+        return file_path if file_path else None
+
+    def save_file_dialog(self, dir: Optional[str] = None, filter: Optional[str] = None) -> Optional[str]:
+        """
+        Opens a file dialog to select a file to save.
+
+        Parameters
+        ----------
+        dir : str, optional
+            The initial directory that the dialog will open in. If None, the dialog will open in the current working directory.
+        filter : str, optional
+            A string that specifies the file types that can be saved. For example, "Text Files (*.txt);;All Files (*)".
+
+        Returns
+        -------
+        Optional[str]
+            The path of the selected file. Returns None if no file is selected.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> file_path = app.save_file_dialog(dir="/home/user", filter="Text Files (*.txt)")
+        >>> if file_path:
+        >>>     print("File will be saved to:", file_path)
+        """
+        file_path, _ = QFileDialog.getSaveFileName(None, dir=dir, filter=filter)
+        return file_path if file_path else None
+
+    def select_directory_dialog(self, dir: Optional[str] = None) -> Optional[str]:
+        """
+        Opens a dialog to select a directory.
+
+        Parameters
+        ----------
+        dir : str, optional
+            The initial directory that the dialog will open in. If None, the dialog will open in the current working directory.
+
+        Returns
+        -------
+        Optional[str]
+            The path of the selected directory. Returns None if no directory is selected.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> directory_path = app.select_directory_dialog(dir="/home/user")
+        >>> if directory_path:
+        >>>     print("Selected directory:", directory_path)
+        """
+        directory_path = QFileDialog.getExistingDirectory(None, dir=dir)
+        return directory_path if directory_path else None
+
 
