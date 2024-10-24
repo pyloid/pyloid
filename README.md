@@ -71,3 +71,7 @@ This project uses PySide6, which is licensed under the LGPL (Lesser General Publ
 ## Contributing 🤝
 
 (Add information about how to contribute here)
+
+## Issues
+
+If you encounter any issues or have suggestions for improvements, please open an issue on the [GitHub repository](https://github.com/Pyloid/pyloid/issues).
