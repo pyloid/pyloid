@@ -4,7 +4,7 @@ Pyloid is the Python backend version of Electron and Tauri, designed to simplify
 
 ![example image](example.png)
 
-## 🚀 Why Pyloid?
+## Why Pyloid?
 
 With Pyloid, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
 
