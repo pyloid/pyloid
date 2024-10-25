@@ -1,12 +1,15 @@
+from typing import TYPE_CHECKING, Optional
+
 from ..api import PyloidAPI, Bridge
-from ..pyloid import Pyloid
-from typing import Optional
+
+if TYPE_CHECKING:
+    from ..pyloid import Pyloid
 
 class WindowAPI(PyloidAPI):
-    def __init__(self, window_id: str, app):
+    def __init__(self, window_id: str, app: 'Pyloid'):
         super().__init__()
         self.window_id: str = window_id
-        self.app: Pyloid = app
+        self.app: 'Pyloid' = app
 
     @Bridge(result=str)
     def getWindowId(self):
