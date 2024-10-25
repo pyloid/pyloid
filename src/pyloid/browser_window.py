@@ -621,6 +621,18 @@ class BrowserWindow:
         """
         self._window.close()
 
+    def fullscreen(self):
+        """
+        Enters fullscreen mode.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> window = app.create_window("pyloid-window")
+        >>> window.fullscreen()
+        """
+        self._window.showFullScreen()
+
     def toggle_fullscreen(self):
         """
         Toggles the fullscreen mode of the window.
@@ -671,6 +683,45 @@ class BrowserWindow:
         >>> window.unmaximize()
         """
         self._window.showNormal()
+
+    def toggle_maximize(self):
+        """
+        Toggles the maximized state of the window.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> window = app.create_window("pyloid-window")
+        >>> window.toggle_maximize()
+        """
+        if self._window.isMaximized():
+            self._window.showNormal()
+        else:
+            self._window.showMaximized()
+
+    def is_fullscreen(self) -> bool:
+        """
+        Returns True if the window is fullscreen.
+        
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> window = app.create_window("pyloid-window")
+        >>> window.is_fullscreen()
+        """
+        return self._window.isFullScreen()
+
+    def is_maximized(self) -> bool:
+        """
+        Returns True if the window is maximized.
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> window = app.create_window("pyloid-window")
+        >>> window.is_maximized()
+        """
+        return self._window.isMaximized()
 
     def capture(self, save_path: str) -> Optional[str]:
         """

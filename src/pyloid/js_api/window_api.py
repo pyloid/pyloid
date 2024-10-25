@@ -1,11 +1,12 @@
 from ..api import PyloidAPI, Bridge
+from ..pyloid import Pyloid
 from typing import Optional
 
 class WindowAPI(PyloidAPI):
     def __init__(self, window_id: str, app):
         super().__init__()
         self.window_id: str = window_id
-        self.app = app
+        self.app: Pyloid = app
 
     @Bridge(result=str)
     def getWindowId(self):
@@ -41,6 +42,27 @@ class WindowAPI(PyloidAPI):
             window.show()
 
     @Bridge()
+    def focus(self):
+        """Focuses the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.focus()
+
+    @Bridge()
+    def showAndFocus(self):
+        """Shows and focuses the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.show_and_focus()
+
+    @Bridge()
+    def fullscreen(self):
+        """Enters fullscreen mode."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.fullscreen()
+
+    @Bridge()
     def toggleFullscreen(self):
         """Toggles fullscreen mode for the window."""
         window = self.app.get_window_by_id(self.window_id)
@@ -67,6 +89,25 @@ class WindowAPI(PyloidAPI):
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.unmaximize()
+
+    @Bridge()
+    def toggleMaximize(self):
+        """Toggles the maximized state of the window."""
+        window = self.app.get_window_by_id(self.window_id)
+        if window:
+            window.toggle_maximize()
+
+    @Bridge(result=bool)
+    def isFullscreen(self):
+        """Returns True if the window is fullscreen."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.is_fullscreen()
+    
+    @Bridge(result=bool)
+    def isMaximized(self):
+        """Returns True if the window is maximized."""
+        window = self.app.get_window_by_id(self.window_id)
+        return window.is_maximized()
 
     @Bridge(str)
     def setTitle(self, title: str):
