@@ -10,7 +10,7 @@ from PySide6.QtGui import (
     QShortcut,
     QCursor,
 )
-from PySide6.QtCore import Qt, QPoint, QUrl, QEvent
+from PySide6.QtCore import Qt, QPoint, QUrl, QEvent, QFile
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 from .api import PyloidAPI
 import uuid
@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
 )
 from .custom.titlebar import CustomTitleBar
 from .js_api.window_api import WindowAPI
-
 
 
 # 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
@@ -40,7 +39,7 @@ class CustomWebEngineView(QWebEngineView):
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
-            self.drag_relative_position = event.pos()
+            self.drag_relative_position = event.globalPos() - self.parent._window.pos()
             if not self.parent.frame and self.is_resizing_enabled:
                 self.resize_direction = self.get_resize_direction(event.pos())
                 if self.resize_direction:
@@ -103,47 +102,56 @@ class CustomWebEngineView(QWebEngineView):
         return super().eventFilter(source, event)
 
     def get_resize_direction(self, pos):
-        if not self.parent.frame and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
+        if (
+            not self.parent.frame and self.is_resizing_enabled
+        ):  # Check if frame is not present and resizing is enabled
             margin = 5  # Margin in pixels to detect edge
             rect = self.rect()
             direction = None
 
             if pos.x() <= margin:
-                direction = 'left'
+                direction = "left"
             elif pos.x() >= rect.width() - margin:
-                direction = 'right'
+                direction = "right"
 
             if pos.y() <= margin:
-                direction = 'top' if direction is None else direction + '-top'
+                direction = "top" if direction is None else direction + "-top"
             elif pos.y() >= rect.height() - margin:
-                direction = 'bottom' if direction is None else direction + '-bottom'
+                direction = "bottom" if direction is None else direction + "-bottom"
 
             return direction
         return None
 
     def set_cursor_for_resize_direction(self, direction):
-        if not self.parent.frame and direction and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
-            if direction in ['left', 'right']:
+        if (
+            not self.parent.frame and direction and self.is_resizing_enabled
+        ):  # Check if frame is not present and resizing is enabled
+            if direction in ["left", "right"]:
                 self.setCursor(Qt.SizeHorCursor)
-            elif direction in ['top', 'bottom']:
+            elif direction in ["top", "bottom"]:
                 self.setCursor(Qt.SizeVerCursor)
-            elif direction in ['left-top', 'right-bottom']:
+            elif direction in ["left-top", "right-bottom"]:
                 self.setCursor(Qt.SizeFDiagCursor)
-            elif direction in ['right-top', 'left-bottom']:
+            elif direction in ["right-top", "left-bottom"]:
                 self.setCursor(Qt.SizeBDiagCursor)
 
     def resize_window(self, global_pos):
-        if not self.parent.frame and self.resize_start_pos and self.resize_direction and self.is_resizing_enabled:  # Check if frame is not present and resizing is enabled
+        if (
+            not self.parent.frame
+            and self.resize_start_pos
+            and self.resize_direction
+            and self.is_resizing_enabled
+        ):  # Check if frame is not present and resizing is enabled
             delta = global_pos - self.resize_start_pos
             new_geometry = self.parent._window.geometry()
 
-            if 'left' in self.resize_direction:
+            if "left" in self.resize_direction:
                 new_geometry.setLeft(new_geometry.left() + delta.x())
-            if 'right' in self.resize_direction:
+            if "right" in self.resize_direction:
                 new_geometry.setRight(new_geometry.right() + delta.x())
-            if 'top' in self.resize_direction:
+            if "top" in self.resize_direction:
                 new_geometry.setTop(new_geometry.top() + delta.y())
-            if 'bottom' in self.resize_direction:
+            if "bottom" in self.resize_direction:
                 new_geometry.setBottom(new_geometry.bottom() + delta.y())
 
             self.parent._window.setGeometry(new_geometry)
@@ -278,6 +286,14 @@ class BrowserWindow:
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
         if ok and self.js_apis:
+
+            # Load qwebchannel.js
+            qwebchannel_js = QFile("://qtwebchannel/qwebchannel.js")
+            if qwebchannel_js.open(QFile.ReadOnly):
+                source = bytes(qwebchannel_js.readAll()).decode("utf-8")
+                self.web_view.page().runJavaScript(source)
+                qwebchannel_js.close()
+
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
                 new QWebChannel(qt.webChannelTransport, function (channel) {
@@ -702,7 +718,7 @@ class BrowserWindow:
     def is_fullscreen(self) -> bool:
         """
         Returns True if the window is fullscreen.
-        
+
         Examples
         --------
         >>> app = Pyloid(app_name="Pyloid-App")
@@ -1062,7 +1078,7 @@ class BrowserWindow:
         ```
         """
         return self._window.isVisible()
-    
+
     def get_frame(self) -> bool:
         """
         Returns the frame enabled state of the window.
@@ -1085,7 +1101,7 @@ class BrowserWindow:
         ```
         """
         return self.frame
-    
+
     ###########################################################################################
     # Resize
     ###########################################################################################
@@ -1192,7 +1208,10 @@ class BrowserWindow:
         app.run()
         ```
         """
-        return {'width': self._window.minimumWidth(), 'height': self._window.minimumHeight()}
+        return {
+            "width": self._window.minimumWidth(),
+            "height": self._window.minimumHeight(),
+        }
 
     def get_maximum_size(self) -> Dict[str, int]:
         """
@@ -1215,8 +1234,11 @@ class BrowserWindow:
         app.run()
         ```
         """
-        return {'width': self._window.maximumWidth(), 'height': self._window.maximumHeight()}
-    
+        return {
+            "width": self._window.maximumWidth(),
+            "height": self._window.maximumHeight(),
+        }
+
     def get_resizable(self) -> bool:
         """
         Returns the resizability of the window.
