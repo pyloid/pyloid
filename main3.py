@@ -54,7 +54,7 @@ window = app.create_window(
 window.set_gif_splash_screen("./assets/loading.gif", close_on_load=False)
 
 # window.load_url("file:///file/index4.html")
-window.load_file(
+window.load_html(
     """
     <html>
     <body>

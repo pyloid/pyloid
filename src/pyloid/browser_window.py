@@ -24,6 +24,7 @@ from .custom.titlebar import CustomTitleBar
 from .js_api.window_api import WindowAPI
 from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
+from PySide6.QtCore import QSize
 
 
 # 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
@@ -1395,6 +1396,7 @@ class BrowserWindow:
         close_on_load: bool = True,
         stay_on_top: bool = True,
         clickable: bool = True,
+        position: str = "center",
     ):
         """
         Sets the static image splash screen of the window.
@@ -1410,6 +1412,8 @@ class BrowserWindow:
         clickable : bool, optional
             True to make the splash screen clickable, False otherwise (default is True)
             if clickable is True, you can click the splash screen to close it.
+        position : str, optional
+            Position of the splash screen. Options are 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right' (default is 'center')
 
         Examples
         --------
@@ -1435,6 +1439,7 @@ class BrowserWindow:
 
         self.close_on_load = close_on_load
         self.splash_screen = splash
+        self._position_splash_screen(position)
         self.splash_screen.show()
 
     def set_gif_splash_screen(
@@ -1443,6 +1448,7 @@ class BrowserWindow:
         close_on_load: bool = True,
         stay_on_top: bool = True,
         clickable: bool = True,
+        position: str = "center",
     ):
         """
         Sets the gif splash screen of the window.
@@ -1458,6 +1464,8 @@ class BrowserWindow:
         clickable : bool, optional
             True to make the splash screen clickable, False otherwise (default is True)
             if clickable is True, you can click the splash screen to close it.
+        position : str, optional
+            Position of the splash screen. Options are 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right' (default is 'center')
 
         Examples
         --------
@@ -1490,17 +1498,45 @@ class BrowserWindow:
         movie = QMovie(gif_path)
         label.setMovie(movie)
 
-        # Start animation and show splash screen
-        movie.start()
-        splash.show()
-
         # Adjust splash screen size to match GIF size
         movie.frameChanged.connect(
             lambda: splash.setFixedSize(movie.currentPixmap().size())
         )
 
+        # Start animation and show splash screen
+        movie.start()
         self.close_on_load = close_on_load
         self.splash_screen = splash
+        self._position_splash_screen(position)
+        splash.show()
+
+    def _position_splash_screen(self, position: str):
+        if not self.splash_screen:
+            return
+
+        screen = self.app.primaryScreen().geometry()
+        splash_size = self.splash_screen.size()
+
+        if position == "center":
+            new_position = screen.center() - QPoint(
+                splash_size.width() // 2, splash_size.height() // 2
+            )
+        elif position == "top-left":
+            new_position = screen.topLeft()
+        elif position == "top-right":
+            new_position = screen.topRight() - QPoint(splash_size.width(), 0)
+        elif position == "bottom-left":
+            new_position = screen.bottomLeft() - QPoint(0, splash_size.height())
+        elif position == "bottom-right":
+            new_position = screen.bottomRight() - QPoint(
+                splash_size.width(), splash_size.height()
+            )
+        else:
+            new_position = screen.center() - QPoint(
+                splash_size.width() // 2, splash_size.height() // 2
+            )
+
+        self.splash_screen.move(new_position)
 
     def close_splash_screen(self):
         """
