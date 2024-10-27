@@ -51,7 +51,11 @@ app = Pyloid(app_name="Pyloid-App", single_instance=True)
 window = app.create_window(
     title="Custom API Example", js_apis=[CustomAPI(), MessageAPI()]
 )
-window.set_gif_splash_screen("./assets/loading.gif", close_on_load=False)
+window.set_gif_splash_screen(
+    "./assets/loading.gif", close_on_load=False, position="bottom-right"
+)
+
+window.set_position_by_anchor("bottom-right")
 
 # window.load_url("file:///file/index4.html")
 window.load_html(

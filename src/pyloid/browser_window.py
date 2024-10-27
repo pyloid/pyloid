@@ -25,6 +25,10 @@ from .js_api.window_api import WindowAPI
 from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
 from PySide6.QtCore import QSize
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..pyloid import Pyloid
 
 
 # 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
@@ -164,7 +168,7 @@ class CustomWebEngineView(QWebEngineView):
 class BrowserWindow:
     def __init__(
         self,
-        app,
+        app: "Pyloid",
         title: str = "pyloid app",
         width: int = 800,
         height: int = 600,
@@ -480,6 +484,57 @@ class BrowserWindow:
         self.x = x
         self.y = y
         self._window.setGeometry(self.x, self.y, self.width, self.height)
+
+    def set_position_by_anchor(self, anchor: str):
+        """
+        Positions the window at a specific location on the screen.
+
+        Parameters
+        ----------
+        anchor : str
+            The anchor point indicating where to position the window.
+            Possible values: 'center', 'top', 'bottom', 'left', 'right',
+                             'top-left', 'top-right', 'bottom-left', 'bottom-right'
+
+        Examples
+        --------
+        >>> window.set_position_by_anchor('center')
+        >>> window.set_position_by_anchor('top-right')
+        """
+        screen = self.app.primaryScreen().availableGeometry()
+        window_size = self.get_size()
+
+        if anchor == "center":
+            x = (screen.width() - window_size["width"]) // 2
+            y = (screen.height() - window_size["height"]) // 2
+        elif anchor == "top":
+            x = (screen.width() - window_size["width"]) // 2
+            y = screen.top()
+        elif anchor == "bottom":
+            x = (screen.width() - window_size["width"]) // 2
+            y = screen.bottom() - window_size["height"]
+        elif anchor == "left":
+            x = screen.left()
+            y = (screen.height() - window_size["height"]) // 2
+        elif anchor == "right":
+            x = screen.right() - window_size["width"]
+            y = (screen.height() - window_size["height"]) // 2
+        elif anchor == "top-left":
+            x = screen.left()
+            y = screen.top()
+        elif anchor == "top-right":
+            x = screen.right() - window_size["width"]
+            y = screen.top()
+        elif anchor == "bottom-left":
+            x = screen.left()
+            y = screen.bottom() - window_size["height"]
+        elif anchor == "bottom-right":
+            x = screen.right() - window_size["width"]
+            y = screen.bottom() - window_size["height"]
+        else:
+            raise ValueError("Invalid anchor point.")
+
+        self.set_position(x, y)
 
     def set_frame(self, frame: bool):
         """
