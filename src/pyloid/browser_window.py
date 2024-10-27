@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
 )
 from .custom.titlebar import CustomTitleBar
 from .js_api.window_api import WindowAPI
+from PySide6.QtGui import QPixmap, QMovie
+from PySide6.QtWidgets import QSplashScreen, QLabel
 
 
 # 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
@@ -341,13 +343,17 @@ class BrowserWindow:
                 ]
             )
             self.web_view.page().runJavaScript(js_code % js_api_init)
+
+            # if splash screen is set, close it when the page is loaded
+            if self.close_on_load and self.splash_screen:
+                self.close_splash_screen()
         else:
             pass
 
     ###########################################################################################
     # Load
     ###########################################################################################
-    def load_file(self, file_path):
+    def load_file(self, file_path: str):
         """
         Loads a local HTML file into the web view.
 
@@ -368,7 +374,7 @@ class BrowserWindow:
         self.web_view.setUrl(QUrl.fromLocalFile(file_path))
         self.web_view.focusProxy().installEventFilter(self.web_view)
 
-    def load_url(self, url):
+    def load_url(self, url: str):
         """
         Sets the URL of the window.
 
@@ -386,6 +392,29 @@ class BrowserWindow:
         """
         self._load()
         self.web_view.setUrl(QUrl(url))
+        self.web_view.focusProxy().installEventFilter(self.web_view)
+
+    def load_html(self, html_content: str, base_url: str = ""):
+        """
+        Loads HTML content directly into the web view.
+
+        Parameters
+        ----------
+        html_content : str
+            The HTML content to be loaded.
+        base_url : str, optional
+            The base URL to use for resolving relative URLs (default is "").
+
+        Examples
+        --------
+        >>> app = Pyloid(app_name="Pyloid-App")
+        >>> window = app.create_window("pyloid-window")
+        >>> html_content = "<html><body><h1>Hello, Pyloid!</h1></body></html>"
+        >>> window.load_html(html_content)
+        >>> window.show()
+        """
+        self._load()
+        self.web_view.setHtml(html_content, QUrl(base_url))
         self.web_view.focusProxy().installEventFilter(self.web_view)
 
     ###########################################################################################
@@ -1261,3 +1290,229 @@ class BrowserWindow:
         ```
         """
         return self.resizable
+
+    ###########################################################################################
+    # For Custom Pyside6 Features
+    ###########################################################################################
+    def get_QMainWindow(self) -> QMainWindow:
+        """
+        Returns the QMainWindow object of the window.
+
+        you can use all the features of QMainWindow for customizing the window.
+
+        Returns
+        -------
+        QMainWindow
+            QMainWindow object of the window
+
+        Examples
+        --------
+        ```python
+        from PySide6.QtCore import Qt
+        from pyloid import Pyloid
+
+        app = Pyloid(app_name="Pyloid-App")
+
+        window = app.create_window("pyloid-window")
+        qmain = window.get_QMainWindow()
+
+        qmain.setWindowFlags(qmain.windowFlags() | Qt.WindowStaysOnTopHint) # window stays on top
+        ```
+        """
+        return self._window
+
+    ###########################################################################################
+    # QMainWindow flags
+    ###########################################################################################
+    def set_window_stay_on_top(self, on_top: bool):
+        """
+        Sets the window stay on top flag of the window.
+
+        Parameters
+        ----------
+        on_top : bool
+            True to keep the window on top, False otherwise
+
+        Examples
+        --------
+        ```python
+        window.set_window_stay_on_top(True)
+        window.set_window_stay_on_top(False)
+        ```
+        """
+        flags = self._window.windowFlags()
+        if on_top:
+            flags |= Qt.WindowStaysOnTopHint
+        else:
+            flags &= ~Qt.WindowStaysOnTopHint
+
+        # Maintain existing flags while only changing WindowStaysOnTopHint
+        # Explicitly add the close button
+        flags |= Qt.WindowCloseButtonHint
+
+        self._window.setWindowFlags(flags)
+
+        # Show the window again to apply the changes
+        self._window.show()
+
+    def set_window_stay_on_bottom(self, on_bottom: bool):
+        """
+        Sets the window stay on bottom flag of the window.
+
+        Parameters
+        ----------
+        on_bottom : bool
+            True to keep the window on bottom, False otherwise
+
+        Examples
+        --------
+        ```python
+        window.set_window_stay_on_bottom(True)
+        window.set_window_stay_on_bottom(False)
+        ```
+        """
+        flags = self._window.windowFlags()
+        if on_bottom:
+            flags |= Qt.WindowStaysOnBottomHint
+        else:
+            flags &= ~Qt.WindowStaysOnBottomHint
+
+        # Maintain existing flags while only changing WindowStaysOnBottomHint
+        # Explicitly add the close button
+        flags |= Qt.WindowCloseButtonHint
+
+        self._window.setWindowFlags(flags)
+
+        # Show the window again to apply the changes
+        self._window.show()
+
+    ###########################################################################################
+    # Splash Screen
+    ###########################################################################################
+    def set_static_image_splash_screen(
+        self,
+        image_path: str,
+        close_on_load: bool = True,
+        stay_on_top: bool = True,
+        clickable: bool = True,
+    ):
+        """
+        Sets the static image splash screen of the window.
+
+        Parameters
+        ----------
+        image_path : str
+            Path to the image file
+        close_on_load : bool, optional
+            True to close the splash screen when the page is loaded, False otherwise (default is True)
+        stay_on_top : bool, optional
+            True to keep the splash screen on top, False otherwise (default is True)
+        clickable : bool, optional
+            True to make the splash screen clickable, False otherwise (default is True)
+            if clickable is True, you can click the splash screen to close it.
+
+        Examples
+        --------
+        ```python
+        window.set_image_splash_screen("./assets/loading.png", close_on_load=True, stay_on_top=True)
+        ```
+        """
+        pixmap = QPixmap(image_path)
+
+        if not clickable:
+
+            class NonClickableSplashScreen(QSplashScreen):
+                def mousePressEvent(self, event):
+                    pass  # Ignore click events
+
+            splash = NonClickableSplashScreen(
+                pixmap, Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0)
+            )
+        else:
+            splash = QSplashScreen(
+                pixmap, Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0)
+            )
+
+        self.close_on_load = close_on_load
+        self.splash_screen = splash
+        self.splash_screen.show()
+
+    def set_gif_splash_screen(
+        self,
+        gif_path: str,
+        close_on_load: bool = True,
+        stay_on_top: bool = True,
+        clickable: bool = True,
+    ):
+        """
+        Sets the gif splash screen of the window.
+
+        Parameters
+        ----------
+        gif_path : str
+            Path to the gif file
+        close_on_load : bool, optional
+            True to close the splash screen when the page is loaded, False otherwise (default is True)
+        stay_on_top : bool, optional
+            True to keep the splash screen on top, False otherwise (default is True)
+        clickable : bool, optional
+            True to make the splash screen clickable, False otherwise (default is True)
+            if clickable is True, you can click the splash screen to close it.
+
+        Examples
+        --------
+        ```python
+        window.set_gif_splash_screen("./assets/loading.gif", close_on_load=True, stay_on_top=True)
+        ```
+        """
+
+        if not clickable:
+
+            class NonClickableSplashScreen(QSplashScreen):
+                def mousePressEvent(self, event):
+                    pass  # Ignore click events
+
+            # Create splash screen (using animated GIF)
+            splash = NonClickableSplashScreen(
+                QPixmap(1, 1),
+                Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+            )  # Start with 1x1 transparent pixmap
+        else:
+            splash = QSplashScreen(
+                QPixmap(1, 1),
+                Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+            )
+
+        splash.setAttribute(Qt.WA_TranslucentBackground)
+
+        # Create QLabel for GIF animation
+        label = QLabel(splash)
+        movie = QMovie(gif_path)
+        label.setMovie(movie)
+
+        # Start animation and show splash screen
+        movie.start()
+        splash.show()
+
+        # Adjust splash screen size to match GIF size
+        movie.frameChanged.connect(
+            lambda: splash.setFixedSize(movie.currentPixmap().size())
+        )
+
+        self.close_on_load = close_on_load
+        self.splash_screen = splash
+
+    def close_splash_screen(self):
+        """
+        Closes the splash screen if it exists.
+
+        Examples
+        --------
+        ```python
+        window.close_splash_screen()
+        ```
+        """
+        if hasattr(self, "splash_screen") and self.splash_screen:
+            self.splash_screen.close()
+            self.close_on_load = None
+            self.splash_screen = None
