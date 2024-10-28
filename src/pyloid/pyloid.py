@@ -25,6 +25,7 @@ from .filewatcher import FileWatcher
 import logging
 from .browser_window import BrowserWindow
 from .tray import TrayEvent
+from PySide6.QtCore import QCoreApplication
 
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
@@ -32,6 +33,8 @@ os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 # for macos debug
 logging.getLogger("Qt").setLevel(logging.ERROR)
 
+QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--enable-features=WebRTCPipeWireCapturer --ignore-certificate-errors --allow-insecure-localhost"
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, "vulkan_warning_shown") and (

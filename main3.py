@@ -73,7 +73,7 @@ from PySide6.QtCore import QThread
 import time
 
 
-class WorkerThread(QThread):
+class SplashWorkerThread(QThread):
     def run(self):
         time.sleep(2)  # 2초 동안 작업 시뮬레이션
 
@@ -83,8 +83,26 @@ def finish_callback():
     window.show_and_focus()
 
 
-worker = WorkerThread()
-worker.finished.connect(finish_callback)
-worker.start()
+splash_worker = SplashWorkerThread()
+splash_worker.finished.connect(finish_callback)
+splash_worker.start()
+
+
+from PySide6.QtCore import QThread, Signal
+import time
+
+class ProgressWorkerThread(QThread):
+    progress = Signal(int)
+
+    def run(self):
+        for i in range(101):
+            self.progress.emit(i)
+            time.sleep(0.1)  # 작업 시뮬레이션
+
+# 사용 예시
+progress_worker = ProgressWorkerThread()
+progress_worker.progress.connect(lambda v: print(f"진행률: {v}%"))
+progress_worker.finished.connect(lambda: print("작업 완료!"))
+progress_worker.start()
 
 app.run()

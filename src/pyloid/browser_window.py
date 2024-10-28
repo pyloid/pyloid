@@ -26,6 +26,7 @@ from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
 from PySide6.QtCore import QSize
 from typing import TYPE_CHECKING
+from PySide6.QtWebEngineCore import QWebEngineSettings
 
 if TYPE_CHECKING:
     from ..pyloid import Pyloid
@@ -43,6 +44,7 @@ class CustomWebEngineView(QWebEngineView):
         self.resize_direction = None
         self.screen_geometry = self.screen().availableGeometry()
         self.is_resizing_enabled = True
+    
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
@@ -199,6 +201,8 @@ class BrowserWindow:
         for js_api in js_apis:
             self.js_apis.append(js_api)
         self.shortcuts = {}
+        self.close_on_load = True
+        self.splash_screen = None
         ###########################################################################################
 
     def _set_custom_frame(
@@ -1376,6 +1380,26 @@ class BrowserWindow:
         ```
         """
         return self._window
+    
+    def get_QWebEngineView(self) -> CustomWebEngineView:
+        """
+        Returns the CustomWebEngineView object which inherits from QWebEngineView.
+
+        Returns
+        -------
+        CustomWebEngineView
+            CustomWebEngineView object of the window
+
+        Examples
+        --------
+        ```python
+        window = app.create_window("pyloid-window")
+        web_view = window.get_QWebEngineView()
+
+        web_view.page().runJavaScript("console.log('Hello, Pyloid!')")
+        ```
+        """
+        return self.web_view
 
     ###########################################################################################
     # QMainWindow flags
@@ -1607,3 +1631,49 @@ class BrowserWindow:
             self.splash_screen.close()
             self.close_on_load = None
             self.splash_screen = None
+
+    ###########################################################################################
+    # WebEngineView Attribute setting
+    ###########################################################################################
+    def set_web_engine_view_attribute(self, attribute: QWebEngineSettings, on: bool):
+        """
+        Sets the attribute of the WebEngineView.
+
+        Parameters
+        ----------
+        attribute : QWebEngineSettings
+            Attribute to set
+        on : bool
+            True to enable the attribute, False to disable it
+
+        Examples
+        --------
+        ```python
+        window.set_web_engine_view_attribute(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, False)
+        ```
+        """
+        settings = self.web_view.settings()
+        settings.setAttribute(attribute, on)
+
+    def is_web_engine_view_attribute(self, attribute: QWebEngineSettings) -> bool:
+        """
+        Returns the attribute of the WebEngineView.
+
+        Parameters
+        ----------
+        attribute : QWebEngineSettings
+            Attribute to get
+
+        Returns
+        -------
+        bool
+            True if the attribute is enabled, False otherwise
+
+        Examples
+        --------
+        ```python
+        window.is_web_engine_view_attribute(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard)
+        ```
+        """
+        settings = self.web_view.settings()
+        return settings.testAttribute(attribute)

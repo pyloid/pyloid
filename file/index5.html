@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebRTC 미디어 테스트</title>
+    <style>
+      video {
+        width: 500px;
+        height: 375px;
+        margin: 10px;
+      }
+      button {
+        margin: 5px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebRTC 미디어 테스트</h1>
+    <video id="localVideo" autoplay playsinline></video>
+    <br />
+    <button id="startButton">카메라 시작</button>
+    <button id="stopButton">카메라 중지</button>
+
+    <script>
+      const localVideo = document.getElementById('localVideo');
+      const startButton = document.getElementById('startButton');
+      const stopButton = document.getElementById('stopButton');
+      let stream;
+
+      startButton.addEventListener('click', async () => {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+
+          localVideo.srcObject = stream;
+          startButton.disabled = true;
+          stopButton.disabled = false;
+        } catch (err) {
+          console.error('화면 캡처 접근 오류:', err);
+          alert('화면 캡처 권한을 허용해주세요.');
+        }
+      });
+
+      stopButton.addEventListener('click', () => {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          localVideo.srcObject = null;
+          startButton.disabled = false;
+          stopButton.disabled = true;
+        }
+      });
+
+      // 초기 버튼 상태 설정
+      stopButton.disabled = true;
+    </script>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 from ..api import PyloidAPI, Bridge
+from PySide6.QtCore import QByteArray, QBuffer, QIODeviceBase
 
 if TYPE_CHECKING:
     from ..pyloid import Pyloid
@@ -208,3 +209,38 @@ class WindowAPI(PyloidAPI):
         window = self.app.get_window_by_id(self.window_id)
         if window:
             window.web_view.start_system_drag()
+
+    ###############################################################
+    # Clipboard
+    ###############################################################
+
+    @Bridge(str)
+    def setClipboardText(self, text: str):
+        """Sets the text to the clipboard."""
+        self.app.set_clipboard_text(text)
+
+    @Bridge(result=str)
+    def getClipboardText(self):
+        """Gets the text from the clipboard."""
+        return self.app.get_clipboard_text()
+    
+    @Bridge(str, str)
+    def setClipboardImage(self, image_path: str, format: str):
+        """Sets the image to the clipboard."""
+        self.app.set_clipboard_image(image_path, format)
+
+    @Bridge(result=str)
+    def getClipboardImage(self):
+        """클립보드의 이미지를 Base64 인코딩된 데이터 URL로 반환합니다."""
+        image = self.app.get_clipboard_image()  # QImage 반환 가정
+        if image and not image.isNull():
+            # QImage를 바이트 배열로 변환
+            byte_array = QByteArray()
+            buffer = QBuffer(byte_array)
+            buffer.open(QIODeviceBase.WriteOnly)
+            image.save(buffer, "PNG")  # PNG 형식으로 저장
+            
+            # Base64로 인코딩
+            base64_data = byte_array.toBase64().data().decode()
+            return f"data:image/png;base64,{base64_data}"
+        return ""
