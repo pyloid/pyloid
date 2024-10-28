@@ -1,0 +1,20 @@
+<button onclick="copyText()">텍스트 복사하기</button>
+<p id="result"></p>
+
+<script>
+  function copyText() {
+    // 복사할 텍스트
+    const textToCopy = '복사될 텍스트입니다!';
+
+    // navigator.clipboard API를 사용하여 복사
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        document.getElementById('result').textContent =
+          '텍스트가 복사되었습니다!';
+      })
+      .catch((err) => {
+        document.getElementById('result').textContent = '복사 실패: ' + err;
+      });
+  }
+</script>

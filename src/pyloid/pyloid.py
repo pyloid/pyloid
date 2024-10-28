@@ -15,7 +15,7 @@ from PySide6.QtGui import (
 from PySide6.QtCore import Qt, Signal, QObject, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from .api import PyloidAPI
-from typing import List, Optional, Dict, Callable, Union
+from typing import List, Optional, Dict, Callable, Union, Literal
 from PySide6.QtCore import qInstallMessageHandler
 import signal
 from .utils import is_production
@@ -34,7 +34,10 @@ os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 logging.getLogger("Qt").setLevel(logging.ERROR)
 
 QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--enable-features=WebRTCPipeWireCapturer --ignore-certificate-errors --allow-insecure-localhost"
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = (
+    "--enable-features=WebRTCPipeWireCapturer --ignore-certificate-errors --allow-insecure-localhost"
+)
+
 
 def custom_message_handler(mode, context, message):
     if not hasattr(custom_message_handler, "vulkan_warning_shown") and (
@@ -58,6 +61,7 @@ def custom_message_handler(mode, context, message):
 
 
 qInstallMessageHandler(custom_message_handler)
+
 
 class _WindowController(QObject):
     create_window_signal = Signal(
@@ -125,6 +129,51 @@ class Pyloid(QApplication):
         self.animation_timer = None
         self.icon_frames = []
         self.current_frame = 0
+
+        self.theme = (
+            "dark"
+            if self.styleHints().colorScheme() == Qt.ColorScheme.Dark
+            else "light"
+        )
+
+        # Add color scheme tracking
+        self.styleHints().colorSchemeChanged.connect(self._handle_color_scheme_change)
+
+    # def set_theme(self, theme: Literal["system", "dark", "light"]):
+    #     """
+    #     시스템의 테마를 설정합니다.
+
+    #     Parameters
+    #     ----------
+    #     theme : Literal["system", "dark", "light"]
+    #         설정할 테마 ("system", "dark", "light" 중 하나)
+
+    #     Examples
+    #     --------
+    #     >>> app = Pyloid(app_name="Pyloid-App")
+    #     >>> app.set_theme("dark")  # 다크 테마로 설정
+    #     >>> app.set_theme("light")  # 라이트 테마로 설정
+    #     >>> app.set_theme("system")  # 시스템 테마를 따름
+    #     """
+    #     self.theme = theme
+
+    #     if theme == "system":
+    #         # 시스템 테마를 light/dark 문자열로 변환
+    #         system_theme = (
+    #             "dark"
+    #             if self.styleHints().colorScheme() == Qt.ColorScheme.Dark
+    #             else "light"
+    #         )
+    #         self._handle_color_scheme_change(system_theme)
+    #         self.styleHints().colorSchemeChanged.connect(
+    #             lambda: self._handle_color_scheme_change(system_theme)
+    #         )
+    #     else:
+    #         # 기존 이벤트 연결 해제
+    #         self.styleHints().colorSchemeChanged.disconnect(
+    #             lambda: self._handle_color_scheme_change(self.theme)
+    #         )
+    #         self._handle_color_scheme_change(self.theme)
 
     def set_icon(self, icon_path: str):
         """
@@ -410,7 +459,7 @@ class Pyloid(QApplication):
         app = Pyloid(app_name="Pyloid-App")
 
         window = app.get_window_by_id("123e4567-e89b-12d3-a456-426614174000")
-        
+
         if window:
             print("Window found:", window)
         ```
@@ -1247,7 +1296,9 @@ class Pyloid(QApplication):
     ###########################################################################################
     # File dialog
     ###########################################################################################
-    def open_file_dialog(self, dir: Optional[str] = None, filter: Optional[str] = None) -> Optional[str]:
+    def open_file_dialog(
+        self, dir: Optional[str] = None, filter: Optional[str] = None
+    ) -> Optional[str]:
         """
         Opens a file dialog to select a file to open.
 
@@ -1273,7 +1324,9 @@ class Pyloid(QApplication):
         file_path, _ = QFileDialog.getOpenFileName(None, dir=dir, filter=filter)
         return file_path if file_path else None
 
-    def save_file_dialog(self, dir: Optional[str] = None, filter: Optional[str] = None) -> Optional[str]:
+    def save_file_dialog(
+        self, dir: Optional[str] = None, filter: Optional[str] = None
+    ) -> Optional[str]:
         """
         Opens a file dialog to select a file to save.
 
@@ -1323,4 +1376,22 @@ class Pyloid(QApplication):
         directory_path = QFileDialog.getExistingDirectory(None, dir=dir)
         return directory_path if directory_path else None
 
+    def _handle_color_scheme_change(self):
+        self.theme = (
+            "dark"
+            if self.styleHints().colorScheme() == Qt.ColorScheme.Dark
+            else "light"
+        )
 
+        js_code = f"""
+        document.dispatchEvent(new CustomEvent('themeChange', {{ 
+            detail: {{ theme: "{self.theme}" }} 
+        }}));
+        """
+
+        # 모든 윈도우에 변경사항 적용
+        for window in self.windows:
+            window.web_view.page().runJavaScript(js_code)
+            window.web_view.page().setBackgroundColor(
+                Qt.GlobalColor.black if self.theme == "dark" else Qt.GlobalColor.white
+            )

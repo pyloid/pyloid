@@ -33,10 +33,39 @@ if TYPE_CHECKING:
 
 
 # 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
+class CustomWebPage(QWebEnginePage):
+    def __init__(self, profile=None):
+        super().__init__(profile)
+        # 권한 요청 시그널 연결
+        self.featurePermissionRequested.connect(self._handlePermissionRequest)
+        self._permission_handlers = {}
+
+    def _handlePermissionRequest(self, origin: QUrl, feature: QWebEnginePage.Feature):
+        """기본 권한 요청 핸들러"""
+        if feature in self._permission_handlers:
+            # 등록된 핸들러가 있으면 실행
+            handler = self._permission_handlers[feature]
+            handler(origin, feature)
+        else:
+            # 기본적으로 모든 권한 허용
+            self.setFeaturePermission(
+                origin, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
+            )
+
+    def setPermissionHandler(self, feature: QWebEnginePage.Feature, handler):
+        """특정 권한에 대한 핸들러 등록"""
+        self._permission_handlers[feature] = handler
+
+
 class CustomWebEngineView(QWebEngineView):
     def __init__(self, parent=None):
         super().__init__(parent._window)
         self.parent = parent
+
+        # 커스텀 웹 페이지 설정
+        self.custom_page = CustomWebPage()
+        self.setPage(self.custom_page)
+
         self.drag_relative_position = None
         self.is_dragging = False
         self.is_resizing = False
@@ -44,7 +73,6 @@ class CustomWebEngineView(QWebEngineView):
         self.resize_direction = None
         self.screen_geometry = self.screen().availableGeometry()
         self.is_resizing_enabled = True
-    
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
@@ -297,13 +325,13 @@ class BrowserWindow:
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
         if ok and self.js_apis:
-
             # Load qwebchannel.js
             qwebchannel_js = QFile("://qtwebchannel/qwebchannel.js")
             if qwebchannel_js.open(QFile.ReadOnly):
                 source = bytes(qwebchannel_js.readAll()).decode("utf-8")
                 self.web_view.page().runJavaScript(source)
                 qwebchannel_js.close()
+            
 
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
@@ -335,6 +363,22 @@ class BrowserWindow:
                             window.pyloid.WindowAPI.startSystemDrag();
                         }
                     });
+                    
+                    function updateTheme(theme) {
+                        document.documentElement.setAttribute(
+                        'data-pyloid-theme',
+                        theme
+                        );
+                    }
+
+                    // 테마 변경 이벤트 리스너
+                    document.addEventListener('themeChange', (e) => {
+                        console.log('themeChange event received:', e);
+                        updateTheme(e.detail.theme);
+                    });
+                    
+                    updateTheme('%s');
+                    
 
                     // Dispatch a custom event to signal that the initialization is ready
                     const event = new CustomEvent('pyloidReady');
@@ -351,7 +395,7 @@ class BrowserWindow:
                     for js_api in self.js_apis
                 ]
             )
-            self.web_view.page().runJavaScript(js_code % js_api_init)
+            self.web_view.page().runJavaScript(js_code % (js_api_init, self.app.theme))
 
             # if splash screen is set, close it when the page is loaded
             if self.close_on_load and self.splash_screen:
@@ -1380,7 +1424,7 @@ class BrowserWindow:
         ```
         """
         return self._window
-    
+
     def get_QWebEngineView(self) -> CustomWebEngineView:
         """
         Returns the CustomWebEngineView object which inherits from QWebEngineView.
@@ -1677,3 +1721,78 @@ class BrowserWindow:
         """
         settings = self.web_view.settings()
         return settings.testAttribute(attribute)
+
+    def set_permission_handler(self, feature: QWebEnginePage.Feature, handler):
+        """
+        특정 권한에 대한 핸들러를 설정합니다.
+
+        Parameters
+        ----------
+        feature : QWebEnginePage.Feature
+            설정할 권한 타입
+        handler : callable
+            권한 요청을 처리할 핸들러 함수
+
+        Examples
+        --------
+        ```python
+        def handle_camera(origin, feature):
+            window.web_view.page().setFeaturePermission(
+                origin,
+                feature,
+                QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
+            )
+
+        window.set_permission_handler(
+            QWebEnginePage.Feature.MediaVideoCapture,
+            handle_camera
+        )
+        ```
+        """
+        self.web_view.custom_page.setPermissionHandler(feature, handler)
+
+    def grant_permission(self, feature: QWebEnginePage.Feature):
+        """
+        권한 요청이 왔을 때, 특정 권한을 자동으로 허용하도록 설정합니다.
+
+        Parameters
+        ----------
+        feature : QWebEnginePage.Feature
+            자동 허용할 권한 타입
+
+        Examples
+        --------
+        ```python
+        window.grant_permission(QWebEnginePage.Feature.MediaVideoCapture)
+        ```
+        """
+
+        def auto_grant(origin, feat):
+            self.web_view.page().setFeaturePermission(
+                origin, feat, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
+            )
+
+        self.set_permission_handler(feature, auto_grant)
+
+    def deny_permission(self, feature: QWebEnginePage.Feature):
+        """
+        권한 요청이 왔을 때, 특정 권한을 자동으로 거부하도록 설정합니다.
+
+        Parameters
+        ----------
+        feature : QWebEnginePage.Feature
+            자동 거부할 권한 타입
+
+        Examples
+        --------
+        ```python
+        window.deny_permission(QWebEnginePage.Feature.Notifications)
+        ```
+        """
+
+        def auto_deny(origin, feat):
+            self.web_view.page().setFeaturePermission(
+                origin, feat, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser
+            )
+
+        self.set_permission_handler(feature, auto_deny)
