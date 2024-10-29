@@ -1724,14 +1724,14 @@ class BrowserWindow:
 
     def set_permission_handler(self, feature: QWebEnginePage.Feature, handler):
         """
-        특정 권한에 대한 핸들러를 설정합니다.
+        Sets a handler for a specific permission.
 
         Parameters
         ----------
         feature : QWebEnginePage.Feature
-            설정할 권한 타입
+            The type of permission to set
         handler : callable
-            권한 요청을 처리할 핸들러 함수
+            The handler function to process the permission request
 
         Examples
         --------
@@ -1753,12 +1753,12 @@ class BrowserWindow:
 
     def grant_permission(self, feature: QWebEnginePage.Feature):
         """
-        권한 요청이 왔을 때, 특정 권한을 자동으로 허용하도록 설정합니다.
+        Automatically grants a specific permission when a request is made.
 
         Parameters
         ----------
         feature : QWebEnginePage.Feature
-            자동 허용할 권한 타입
+            The type of permission to automatically grant
 
         Examples
         --------
@@ -1776,12 +1776,12 @@ class BrowserWindow:
 
     def deny_permission(self, feature: QWebEnginePage.Feature):
         """
-        권한 요청이 왔을 때, 특정 권한을 자동으로 거부하도록 설정합니다.
+        Automatically denies a specific permission when a request is made.
 
         Parameters
         ----------
         feature : QWebEnginePage.Feature
-            자동 거부할 권한 타입
+            The type of permission to automatically deny
 
         Examples
         --------
