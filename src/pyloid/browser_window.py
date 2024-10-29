@@ -277,9 +277,48 @@ class BrowserWindow:
         self.set_size(self.width, self.height)
         self.set_position(self.x, self.y)
 
-        # allow local file access to remote urls
+        # allow local file access to remote urls and screen capture
         self.web_view.settings().setAttribute(
-            QWebEngineSettings.LocalContentCanAccessRemoteUrls, True
+            QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.AutoLoadImages, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.JavascriptEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.LocalStorageEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.ErrorPageEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.AutoLoadIconsForPage, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.ShowScrollBars, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.DnsPrefetchEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.PdfViewerEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, True
+        )
+        self.web_view.settings().setImageAnimationPolicy(
+            QWebEngineSettings.ImageAnimationPolicy.Allow
+        )
+        self.web_view.settings().setUnknownUrlSchemePolicy(
+            QWebEngineSettings.UnknownUrlSchemePolicy.AllowAllUnknownUrlSchemes
         )
 
         # Set icon
@@ -331,7 +370,6 @@ class BrowserWindow:
                 source = bytes(qwebchannel_js.readAll()).decode("utf-8")
                 self.web_view.page().runJavaScript(source)
                 qwebchannel_js.close()
-            
 
             js_code = """
             if (typeof QWebChannel !== 'undefined') {
@@ -1693,7 +1731,7 @@ class BrowserWindow:
         Examples
         --------
         ```python
-        window.set_web_engine_view_attribute(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, False)
+        window.set_web_engine_view_attribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, False)
         ```
         """
         settings = self.web_view.settings()
@@ -1716,7 +1754,7 @@ class BrowserWindow:
         Examples
         --------
         ```python
-        window.is_web_engine_view_attribute(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard)
+        window.is_web_engine_view_attribute(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled)
         ```
         """
         settings = self.web_view.settings()
