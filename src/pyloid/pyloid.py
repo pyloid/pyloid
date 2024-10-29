@@ -48,8 +48,9 @@ def custom_message_handler(mode, context, message):
         print(
             "\033[93mPyloid Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m"
         )
-        os.environ["QT_QUICK_BACKEND"] = "software"
-        custom_message_handler.vulkan_warning_shown = True
+        if "linux" in sys.platform:
+            os.environ["QT_QUICK_BACKEND"] = "software"
+            custom_message_handler.vulkan_warning_shown = True
 
     if "Autofill.enable failed" in message:
         print(
