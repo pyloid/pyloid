@@ -895,3 +895,27 @@ class Monitor():
         monitor = self.screen
         monitor.refreshRateChanged.connect(callback)
 
+    def virtual_geometry_changed(self, callback: Callable):
+        """
+        Registers a callback for the event that occurs when the virtual geometry of the monitor changes.
+        
+        Parameters
+        ----------
+        callback : Callable
+            The function to be called when the virtual geometry changes.
+
+        Examples
+        --------
+        ```python
+        app = Pyloid("Pyloid-App")
+
+        def on_virtual_geometry_changed():
+            print("Virtual geometry changed!")
+
+        monitor = app.get_primary_monitor()
+        monitor.virtual_geometry_changed(on_virtual_geometry_changed)
+        ```
+        """
+        monitor = self.screen
+        monitor.virtualGeometryChanged.connect(callback)
+

@@ -12,7 +12,7 @@ from PySide6.QtGui import (
     QImage,
     QAction,
 )
-from PySide6.QtCore import Qt, Signal, QObject, QTimer
+from PySide6.QtCore import Qt, Signal, QObject, QTimer, QEvent
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from .api import PyloidAPI
 from typing import List, Optional, Dict, Callable, Union, Literal

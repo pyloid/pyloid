@@ -58,25 +58,22 @@ class CustomWebPage(QWebEnginePage):
 
 
 class CustomWebEngineView(QWebEngineView):
-    def __init__(self, parent=None):
+    def __init__(self, parent: "BrowserWindow" = None):
         super().__init__(parent._window)
-        self.parent = parent
+        self.parent: "BrowserWindow" = parent
 
         # 커스텀 웹 페이지 설정
         self.custom_page = CustomWebPage()
         self.setPage(self.custom_page)
 
-        self.drag_relative_position = None
-        self.is_dragging = False
         self.is_resizing = False
         self.resize_start_pos = None
         self.resize_direction = None
-        self.screen_geometry = self.screen().availableGeometry()
+        self.screen_geometry = self.screen().virtualGeometry()
         self.is_resizing_enabled = True
 
     def mouse_press_event(self, event):
         if event.button() == Qt.LeftButton:
-            self.drag_relative_position = event.globalPos() - self.parent._window.pos()
             if not self.parent.frame and self.is_resizing_enabled:
                 self.resize_direction = self.get_resize_direction(event.pos())
                 if self.resize_direction:
@@ -84,35 +81,13 @@ class CustomWebEngineView(QWebEngineView):
                     self.resize_start_pos = event.globalPos()
 
     def start_system_drag(self):
-        self.is_dragging = True
+        """네이티브 시스템 창 이동 시작"""
+        if self.parent._window.windowHandle():
+            self.parent._window.windowHandle().startSystemMove()
 
     def mouse_move_event(self, event):
         if self.is_resizing and self.is_resizing_enabled:
             self.resize_window(event.globalPos())
-        elif not self.parent.frame and self.is_dragging:
-            # 현재 마우스 위치를 전역 좌표로 가져옵니다
-            current_global_pos = event.globalPos()
-
-            # 화면 경계를 계산합니다
-            left_boundary = self.screen_geometry.left()
-            right_boundary = self.screen_geometry.right()
-            top_boundary = self.screen_geometry.top()
-            bottom_boundary = self.screen_geometry.bottom()
-
-            # 마우스 커서 위치를 제한합니다
-            new_cursor_pos = QPoint(
-                max(left_boundary, min(current_global_pos.x(), right_boundary)),
-                max(top_boundary, min(current_global_pos.y(), bottom_boundary)),
-            )
-
-            # 마우스 커서를 새 위치로 이동합니다
-            QCursor.setPos(new_cursor_pos)
-
-            # 창의 새 위치를 계산합니다
-            new_window_pos = new_cursor_pos - self.drag_relative_position
-
-            # 창을 새 위치로 이동합니다
-            self.parent._window.move(new_window_pos)
         else:
             # Change cursor based on resize direction
             resize_direction = self.get_resize_direction(event.pos())
@@ -123,7 +98,6 @@ class CustomWebEngineView(QWebEngineView):
 
     def mouse_release_event(self, event):
         if event.button() == Qt.LeftButton:
-            self.is_dragging = False
             self.is_resizing = False
             self.resize_direction = None
             self.unsetCursor()
