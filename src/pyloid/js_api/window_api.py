@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from ..api import PyloidAPI, Bridge
 from PySide6.QtCore import QByteArray, QBuffer, QIODeviceBase
+import base64
 
 if TYPE_CHECKING:
     from ..pyloid import Pyloid
@@ -244,3 +245,11 @@ class WindowAPI(PyloidAPI):
             base64_data = byte_array.toBase64().data().decode()
             return f"data:image/png;base64,{base64_data}"
         return ""
+    
+    ###########################################################################################
+    # Quit
+    ###########################################################################################
+    @Bridge()
+    def quit(self):
+        """Quits the application."""
+        self.app.quit()

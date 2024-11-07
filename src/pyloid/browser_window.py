@@ -36,25 +36,35 @@ if TYPE_CHECKING:
 class CustomWebPage(QWebEnginePage):
     def __init__(self, profile=None):
         super().__init__(profile)
-        # 권한 요청 시그널 연결
         self.featurePermissionRequested.connect(self._handlePermissionRequest)
+        self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
         self._permission_handlers = {}
+        self._desktop_media_handler = None
 
     def _handlePermissionRequest(self, origin: QUrl, feature: QWebEnginePage.Feature):
-        """기본 권한 요청 핸들러"""
+        print(origin, feature)
+        
+        """Default permission request handler"""
         if feature in self._permission_handlers:
-            # 등록된 핸들러가 있으면 실행
+            # Execute if a handler is registered
             handler = self._permission_handlers[feature]
             handler(origin, feature)
         else:
-            # 기본적으로 모든 권한 허용
+            # Allow all permissions by default
             self.setFeaturePermission(
                 origin, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
             )
 
     def setPermissionHandler(self, feature: QWebEnginePage.Feature, handler):
-        """특정 권한에 대한 핸들러 등록"""
+        """Register a handler for a specific permission"""
         self._permission_handlers[feature] = handler
+
+    def _handleDesktopMediaRequest(self, *args, **kwargs):
+        print("Desktop media request received:", args, kwargs)
+
+    # def setDesktopMediaHandler(self, handler):
+    #     """desktop media handler"""
+    #     self._desktop_media_handler = handler
 
 
 class CustomWebEngineView(QWebEngineView):
@@ -288,11 +298,23 @@ class BrowserWindow:
         self.web_view.settings().setAttribute(
             QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, True
         )
-        self.web_view.settings().setImageAnimationPolicy(
-            QWebEngineSettings.ImageAnimationPolicy.Allow
-        )
         self.web_view.settings().setUnknownUrlSchemePolicy(
             QWebEngineSettings.UnknownUrlSchemePolicy.AllowAllUnknownUrlSchemes
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.AllowGeolocationOnInsecureOrigins, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.AllowWindowActivationFromJavaScript, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.JavascriptCanPaste, True
+        )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, False
         )
 
         # Set icon
@@ -1808,3 +1830,33 @@ class BrowserWindow:
             )
 
         self.set_permission_handler(feature, auto_deny)
+
+    def set_desktop_media_handler(self, handler):
+        """
+        데스크톱 미디어(화면/윈도우) 선택 핸들러를 설정합니다.
+        
+        Parameters
+        ----------
+        handler : callable
+            요청을 처리할 핸들러 함수. QWebEngineDesktopMediaRequest를 인자로 받습니다.
+            
+        Examples
+        --------
+        ```python
+        def custom_media_handler(request):
+            # 사용 가능한 화면 목록 출력
+            for screen in request.screenList():
+                print(f"Screen: {screen.name}")
+            
+            # 사용 가능한 윈도우 목록 출력
+            for window in request.windowList():
+                print(f"Window: {window.name}")
+                
+            # 첫 번째 화면 선택
+            if request.screenList():
+                request.selectScreen(request.screenList()[0])
+            
+        window.set_desktop_media_handler(custom_media_handler)
+        ```
+        """
+        self.web_view.custom_page.setDesktopMediaHandler(handler)

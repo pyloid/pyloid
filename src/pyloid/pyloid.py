@@ -26,6 +26,9 @@ import logging
 from .browser_window import BrowserWindow
 from .tray import TrayEvent
 from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject
+import time
+from .thread_pool import PyloidThreadPool
 
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
@@ -431,10 +434,16 @@ class Pyloid(QApplication):
         app.quit()
         ```
         """
+        # 먼저 스레드 풀 정리
+        thread_pool = self.get_thread_pool()
+        thread_pool.clear()  # 대기 중인 작업 제거
+        
+        # 윈도우 정리
         for window in self.windows:
             window._window.close()
             window.web_page.deleteLater()
             window.web_view.deleteLater()
+
         QApplication.quit()
 
     ###########################################################################################

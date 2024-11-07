@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>WebRTC 미디어 테스트</title>
+    <title>WebRTC Media Test</title>
     <style>
       video {
         width: 500px;
@@ -15,15 +15,11 @@
     </style>
   </head>
   <body>
-    <h1>WebRTC 미디어 테스트</h1>
-    <video
-      id="localVideo"
-      autoplay
-      playsinline
-    ></video>
+    <h1>WebRTC Media Test</h1>
+    <video id="localVideo" autoplay playsinline></video>
     <br />
-    <button id="startButton">카메라 시작</button>
-    <button id="stopButton">카메라 중지</button>
+    <button id="startButton">Start Screen Capture</button>
+    <button id="stopButton">Stop Screen Capture</button>
 
     <script>
       const localVideo = document.getElementById('localVideo');
@@ -39,27 +35,25 @@
           });
         })
         .catch((err) => {
-          console.error('디바이스 목록 조회 오류:', err);
+          console.error('Error enumerating devices:', err);
         });
 
       startButton.addEventListener('click', async () => {
         try {
           stream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-              displaySurface: 'monitor',
-              width: { max: 1920 },
-              height: { max: 1080 },
-              frameRate: { max: 30 },
-            },
-            audio: false,
+            video: true,
           });
 
           localVideo.srcObject = stream;
           startButton.disabled = true;
           stopButton.disabled = false;
         } catch (err) {
-          console.error('화면 캡처 접근 오류:', err.name, err.message);
-          alert('화면 캡처 오류: ' + err.message);
+          console.error(
+            'Error accessing screen capture:',
+            err.name,
+            err.message
+          );
+          alert('Screen capture error: ' + err.message);
         }
       });
 
@@ -72,7 +66,6 @@
         }
       });
 
-      // 초기 버튼 상태 설정
       stopButton.disabled = true;
     </script>
   </body>
