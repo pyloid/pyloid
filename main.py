@@ -16,12 +16,12 @@ win = app.create_window("main2")
 
 
 win.set_dev_tools(True)
-
+win.set_frame(True)
 
 if is_production():
-    win.load_file(os.path.join(get_production_path(), "file/index5.html"))
+    win.load_file(os.path.join(get_production_path(), "file/index3.html"))
 else:
-    win.load_file("file/index5.html")
+    win.load_file("file/index3.html")
 
 
 win.show_and_focus()

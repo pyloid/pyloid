@@ -4,7 +4,7 @@ import platform
 from typing import Optional
 
 
-def get_production_path() -> Optional[str]:
+def get_production_path(path: Optional[str] = None) -> Optional[str]:
     """
     Returns the path to the resource files in a production environment.
     If running as a regular Python script, returns None.
@@ -18,7 +18,7 @@ def get_production_path() -> Optional[str]:
     Examples
     --------
     >>> from pyloid.utils import get_production_path
-    >>> path = get_production_path()
+    >>> path = get_production_path("assets/icon.ico")
     >>> if path:
     >>>     print(f"Production path: {path}")
     >>> else:
@@ -26,7 +26,7 @@ def get_production_path() -> Optional[str]:
     """
     if getattr(sys, 'frozen', False):
         # If built with PyInstaller
-        return sys._MEIPASS
+        return sys._MEIPASS + "/" + path if path else sys._MEIPASS
     else:
         # If running as a regular Python script
         return None
@@ -73,6 +73,26 @@ def get_platform() -> str:
     """
     return platform.system()
 
+def get_absolute_path(path: str) -> str:
+    """
+    Returns the absolute path of the given relative path.
+    
+    Parameters
+    ----------
+    path : str
+        The relative path to get the absolute path of.
 
-
+    Returns
+    -------
+    str
+        The absolute path of the given relative path.
+        
+    Examples
+    --------
+    >>> from pyloid.utils import get_absolute_path
+    >>> absolute_path = get_absolute_path("assets/icon.ico")
+    >>> print(absolute_path)
+    C:/Users/aaaap/Documents/pyloid/pyloid/assets/icon.ico
+    """
+    return os.path.normpath(os.path.abspath(path))
 

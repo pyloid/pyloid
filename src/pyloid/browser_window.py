@@ -81,14 +81,20 @@ class CustomWebEngineView(QWebEngineView):
         self.resize_direction = None
         self.screen_geometry = self.screen().virtualGeometry()
         self.is_resizing_enabled = True
+        
+        self.setAttribute(Qt.WA_SetCursor, False)
+        
+        self.is_in_resize_area = False
 
     def mouse_press_event(self, event):
+        if self.parent.frame or not self.is_resizing_enabled:
+            return
+        
         if event.button() == Qt.LeftButton:
-            if not self.parent.frame and self.is_resizing_enabled:
-                self.resize_direction = self.get_resize_direction(event.pos())
-                if self.resize_direction:
-                    self.is_resizing = True
-                    self.resize_start_pos = event.globalPos()
+            self.resize_direction = self.get_resize_direction(event.pos())
+            if self.resize_direction:
+                self.is_resizing = True
+                self.resize_start_pos = event.globalPos()
 
     def start_system_drag(self):
         """네이티브 시스템 창 이동 시작"""
@@ -96,21 +102,42 @@ class CustomWebEngineView(QWebEngineView):
             self.parent._window.windowHandle().startSystemMove()
 
     def mouse_move_event(self, event):
-        if self.is_resizing and self.is_resizing_enabled:
+        if self.parent.frame or not self.is_resizing_enabled:
+            return
+        
+        # 리사이징 방향 확인
+        was_in_resize_area = self.is_in_resize_area
+        resize_direction = self.get_resize_direction(event.pos())
+        self.is_in_resize_area = bool(resize_direction)
+        
+        if resize_direction and not self.is_resizing:
+            self.set_cursor_for_resize_direction(resize_direction)
+            
+        if self.is_resizing:
             self.resize_window(event.globalPos())
-        else:
-            # Change cursor based on resize direction
-            resize_direction = self.get_resize_direction(event.pos())
-            if resize_direction and self.is_resizing_enabled:
-                self.set_cursor_for_resize_direction(resize_direction)
+            return
+            
+        # 리사이징 영역 진입/이탈 시에만 커서 변경
+        if self.is_in_resize_area != was_in_resize_area:
+            if self.is_in_resize_area:
+                # self.setAttribute(Qt.WA_SetCursor, True)
+                pass
             else:
                 self.unsetCursor()
+                # self.setAttribute(Qt.WA_SetCursor, False)
 
     def mouse_release_event(self, event):
+        if self.parent.frame or not self.is_resizing_enabled:
+            return
+        
         if event.button() == Qt.LeftButton:
             self.is_resizing = False
-            self.resize_direction = None
-            self.unsetCursor()
+            
+            if self.resize_direction:
+                self.unsetCursor()     
+                self.resize_direction = None
+
+            self.setAttribute(Qt.WA_SetCursor, False)
 
     def eventFilter(self, source, event):
         if self.focusProxy() is source:
@@ -126,7 +153,7 @@ class CustomWebEngineView(QWebEngineView):
         if (
             not self.parent.frame and self.is_resizing_enabled
         ):  # Check if frame is not present and resizing is enabled
-            margin = 5  # Margin in pixels to detect edge
+            margin = 8  # Margin in pixels to detect edge
             rect = self.rect()
             direction = None
 
@@ -144,17 +171,20 @@ class CustomWebEngineView(QWebEngineView):
         return None
 
     def set_cursor_for_resize_direction(self, direction):
-        if (
-            not self.parent.frame and direction and self.is_resizing_enabled
-        ):  # Check if frame is not present and resizing is enabled
+        if not self.parent.frame and direction and self.is_resizing_enabled:
+            cursor = None
             if direction in ["left", "right"]:
-                self.setCursor(Qt.SizeHorCursor)
+                cursor = Qt.SizeHorCursor
             elif direction in ["top", "bottom"]:
-                self.setCursor(Qt.SizeVerCursor)
+                cursor = Qt.SizeVerCursor
             elif direction in ["left-top", "right-bottom"]:
-                self.setCursor(Qt.SizeFDiagCursor)
+                cursor = Qt.SizeFDiagCursor
             elif direction in ["right-top", "left-bottom"]:
-                self.setCursor(Qt.SizeBDiagCursor)
+                cursor = Qt.SizeBDiagCursor
+                
+            if cursor:
+                self.setCursor(cursor)
+                self.setAttribute(Qt.WA_SetCursor, True)
 
     def resize_window(self, global_pos):
         if (
@@ -372,7 +402,17 @@ class BrowserWindow:
                 new QWebChannel(qt.webChannelTransport, function (channel) {
                     window.pyloid = {
                         EventAPI: {
+                            _listeners: {},  // 콜백 함수들을 저장할 객체
+                            
                             listen: function(eventName, callback) {
+                                // 이벤트에 대한 콜백 배열이 없다면 생성
+                                if (!this._listeners[eventName]) {
+                                    this._listeners[eventName] = [];
+                                }
+                                
+                                // 콜백 함수 저장
+                                this._listeners[eventName].push(callback);
+                                
                                 document.addEventListener(eventName, function(event) {
                                     let eventData;
                                     try {
@@ -383,8 +423,16 @@ class BrowserWindow:
                                     callback(eventData);
                                 });
                             },
+                            
                             unlisten: function(eventName) {
-                                document.removeEventListener(eventName);
+                                // 해당 이벤트의 모든 리스너 제거
+                                if (this._listeners[eventName]) {
+                                    this._listeners[eventName].forEach(callback => {
+                                        document.removeEventListener(eventName, callback);
+                                    });
+                                    // 저장된 콜백 제거
+                                    delete this._listeners[eventName];
+                                }
                             }
                         }   
                     };
@@ -1838,7 +1886,7 @@ class BrowserWindow:
         Parameters
         ----------
         handler : callable
-            요청을 처리할 핸들러 함수. QWebEngineDesktopMediaRequest를 인자로 받습니다.
+            요청을 처리할 핸들러 함수. QWebEngineDesktopMediaRequest��� 인자로 받습니다.
             
         Examples
         --------

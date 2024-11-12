@@ -434,9 +434,6 @@ class Pyloid(QApplication):
         app.quit()
         ```
         """
-        # 먼저 스레드 풀 정리
-        thread_pool = self.get_thread_pool()
-        thread_pool.clear()  # 대기 중인 작업 제거
         
         # 윈도우 정리
         for window in self.windows:
