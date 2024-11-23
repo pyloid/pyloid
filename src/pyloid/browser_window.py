@@ -72,7 +72,7 @@ class CustomWebEngineView(QWebEngineView):
         super().__init__(parent._window)
         self.parent: "BrowserWindow" = parent
 
-        # 커스텀 웹 페이지 설정
+        # Custom Web Page
         self.custom_page = CustomWebPage()
         self.setPage(self.custom_page)
 
@@ -97,7 +97,7 @@ class CustomWebEngineView(QWebEngineView):
                 self.resize_start_pos = event.globalPos()
 
     def start_system_drag(self):
-        """네이티브 시스템 창 이동 시작"""
+        """Start system window move"""
         if self.parent._window.windowHandle():
             self.parent._window.windowHandle().startSystemMove()
 
@@ -105,7 +105,7 @@ class CustomWebEngineView(QWebEngineView):
         if self.parent.frame or not self.is_resizing_enabled:
             return
         
-        # 리사이징 방향 확인
+        # Check resize direction
         was_in_resize_area = self.is_in_resize_area
         resize_direction = self.get_resize_direction(event.pos())
         self.is_in_resize_area = bool(resize_direction)
@@ -117,7 +117,7 @@ class CustomWebEngineView(QWebEngineView):
             self.resize_window(event.globalPos())
             return
             
-        # 리사이징 영역 진입/이탈 시에만 커서 변경
+        # Change cursor when entering/leaving resize area
         if self.is_in_resize_area != was_in_resize_area:
             if self.is_in_resize_area:
                 # self.setAttribute(Qt.WA_SetCursor, True)
@@ -239,7 +239,7 @@ class BrowserWindow:
         self.frame = frame
         self.context_menu = context_menu
         self.dev_tools = dev_tools
-        self.js_apis = [WindowAPI(self.id, self.app)]
+        self.js_apis = [WindowAPI()]
         for js_api in js_apis:
             self.js_apis.append(js_api)
         self.shortcuts = {}
@@ -374,6 +374,11 @@ class BrowserWindow:
         # Register additional JS APIs
         if self.js_apis:
             for js_api in self.js_apis:
+                # Define window_id, window, and app for each JS API
+                js_api.window_id = self.id
+                js_api.window = self
+                js_api.app = self.app
+                
                 self.channel.registerObject(js_api.__class__.__name__, js_api)
 
         self.web_view.page().setWebChannel(self.channel)

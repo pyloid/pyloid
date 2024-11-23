@@ -1,4 +1,9 @@
 from PySide6.QtCore import QObject, Slot
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyloid.pyloid import Pyloid
+    from pyloid.browser_window import BrowserWindow
 
 
 class PyloidAPI(QObject):
@@ -45,6 +50,9 @@ class PyloidAPI(QObject):
 
     def __init__(self):
         super().__init__()
+        self.window_id: str = None
+        self.window: "BrowserWindow" = None
+        self.app: "Pyloid" = None
 
 
 def Bridge(*args, **kwargs):

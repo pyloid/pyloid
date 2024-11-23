@@ -2,41 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       document.addEventListener('pyloidReady', function () {
         console.log('pyloidReady');
       });
     </script>
     <title>Test Page</title>
-    <style>
-      .draggable {
-        width: 100%; /* 전체 너비로 확장 */
-        height: 50px; /* 높이 조정 */
-        background-color: #3498db;
-      }
-
-      .custom-cursor {
-    cursor: pointer; /* 또는 다른 커서 스타일 */
-    width: 100px;
-    height: 100px;
-        background-color: red;
-      }
-    </style>
   </head>
   <body>
     <div
-      class="draggable custom-cursor"
+      class="title-bar"
       data-pyloid-drag-region
+      style="
+        width: 100%;
+        height: 32px;
+        background-color: #2c3e50;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: white;
+        user-select: none;
+      "
     >
-      드래그 가능한 영역
-      <button>버튼</button>
-      <button>버튼</button>
-      <button>버튼</button>
-
-    <h1>안녕하세요</h1>
+      <div class="title">Pyloid Custom Titlebar</div>
+      <div class="controls">
+        <button onclick="window.pyloid.customAPI.customClose()">Close</button>
+      </div>
+    </div>
   </body>
 </html>
