@@ -24,12 +24,23 @@ def get_production_path(path: Optional[str] = None) -> Optional[str]:
     >>> else:
     >>>     print("Not in a production environment.")
     """
-    if getattr(sys, 'frozen', False):
-        # If built with PyInstaller
-        return sys._MEIPASS + "/" + path if path else sys._MEIPASS
+    if is_production():
+        if hasattr(sys, '_MEIPASS'):
+            # PyInstaller
+            base_path = sys._MEIPASS
+        else:
+            # Nuitka
+            base_path = os.path.dirname(sys.executable)
+
+            if base_path is None:
+                # 환경변수가 없는 경우 실행 파일 디렉토리 사용
+                base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+        
+        return os.path.join(base_path, path) if path else base_path
     else:
-        # If running as a regular Python script
         return None
+
 
 def is_production() -> bool:
     """
@@ -48,6 +59,10 @@ def is_production() -> bool:
     >>> else:
     >>>     print("Not in production environment.")
     """
+    # Nuitka 환경 확인을 추가
+    if '__compiled__' in globals():
+        return True
+    # PyInstaller 환경 확인
     return getattr(sys, 'frozen', False)
 
 

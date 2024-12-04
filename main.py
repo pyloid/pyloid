@@ -47,6 +47,7 @@ win = app.create_window("Pyloid", js_apis=[customAPI()])
 
 win.set_dev_tools(True)
 win.set_frame(True)
+# win.set_context_menu(True)
 
 if is_production():
     win.load_file(os.path.join(get_production_path(), "file/index3.html"))
