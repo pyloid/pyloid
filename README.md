@@ -70,7 +70,7 @@ This project uses PySide6, which is licensed under the LGPL (Lesser General Publ
 
 ## Contributing 🤝
 
-(Add information about how to contribute here)
+Not Yet
 
 ## Issues
 
