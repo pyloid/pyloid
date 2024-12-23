@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyloid"
-version = "0.18.4"
+version = "0.19.2"
 description = ""
 authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
 readme = "README.md"
@@ -11,6 +11,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.9,<3.14"
 pyside6 = "^6.8.1"
+pyinstaller = "^6.11.1"
 
 
 [build-system]

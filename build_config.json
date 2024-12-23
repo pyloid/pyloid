@@ -1,0 +1,34 @@
+{
+  "$schema": "./src/pyloid/builder/build_config.schema.json",
+  "before_build": {
+    "cleanup_patterns": [
+      "PySide6/opengl32sw.dll",
+      "PySide6/translations"
+    ]
+  },
+  "name": "pyloid-app",
+  "main_script": "main.py",
+  "datas": [
+    ["src-pyloid/icons/", "src-pyloid/icons/"],
+    ["dist-front/", "dist-front/"]
+  ],
+  "excludes": [
+    "PySide6.QtQml",
+    "PySide6.QtTest",
+    "PySide6.Qt3D",
+    "PySide6.QtSensors",
+    "PySide6.QtCharts",
+    "PySide6.QtGraphs",
+    "PySide6.QtDataVisualization",
+    "PySide6.QtQuick",
+    "PySide6.QtDesigner",
+    "PySide6.QtUiTools",
+    "PySide6.QtHelp"
+  ],
+  "icon": "src-pyloid/icons/icon.ico",
+  "bundle": {
+    "windows": "onefile",
+    "macos": "app",
+    "linux": "directory"
+  }
+}

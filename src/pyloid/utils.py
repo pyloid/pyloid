@@ -74,19 +74,28 @@ def get_platform() -> str:
 
     Returns
     -------
-    "Windows" | "Darwin" | "Linux"
-        - "Windows" for Windows systems
-        - "Darwin" for macOS systems
-        - "Linux" for Linux systems
+    "windows" | "macos" | "linux"
+        - "windows" for Windows systems
+        - "macos" for macOS systems
+        - "linux" for Linux systems
 
     Examples
     --------
     >>> from pyloid.utils import get_platform
     >>> platform_name = get_platform()
     >>> print(platform_name)
-    Windows
+    windows
     """
-    return platform.system()
+    os_name = platform.system().lower()
+    os_type = {
+        'darwin': 'macos',
+        'linux': 'linux',
+        'windows': 'windows'
+    }.get(os_name)
+    if os_type is None:
+        raise ValueError(f"Unsupported platform: {os_name}")
+    
+    return os_type
 
 def get_absolute_path(path: str) -> str:
     """
