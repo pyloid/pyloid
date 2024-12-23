@@ -59,6 +59,6 @@ win.show_and_focus()
 
 from pprint import pprint
 
-pprint(app.get_all_monitors()[0].info())
+# pprint(app.get_all_monitors()[0].info())
 
 app.run()

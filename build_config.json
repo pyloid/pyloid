@@ -3,7 +3,9 @@
   "before_build": {
     "cleanup_patterns": [
       "PySide6/opengl32sw.dll",
-      "PySide6/translations"
+      "PySide6/translations/*.qm",
+      "PySide6/translations/qtwebengine_locales/*.pak",
+      "!PySide6/translations/qtwebengine_locales/en-US.pak"
     ]
   },
   "name": "pyloid-app",

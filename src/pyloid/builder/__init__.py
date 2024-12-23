@@ -25,22 +25,23 @@ def cleanup_before_build(json_path):
         if not dist_dir.exists():
             raise Exception(f"Cannot find directory to clean: {dist_dir}")
 
-        if not cleanup_patterns:
-            print("\033[1;33mNo cleanup patterns found. Files may have already been removed.\033[0m")
-        else:
-            print("\033[1;34mCleaning up unnecessary files...\033[0m")
-            for pattern in cleanup_patterns:
-                matching_files = list(dist_dir.glob(pattern))
-                if not matching_files:
-                    print(f"\033[1;33mAleady removed: {pattern}\033[0m")
-                for file_path in matching_files:
-                    print(f"\033[33mRemoving: {file_path}\033[0m")
-                    if file_path.is_dir():
-                        shutil.rmtree(file_path)
-                    else:
-                        file_path.unlink()
-                    print(f"\033[32mRemoved: {file_path}\033[0m")
-                
+        print("\033[1;34mCleaning up unnecessary files...\033[0m")
+        exclude_patterns = [p[1:] for p in cleanup_patterns if p.startswith('!')]
+        include_patterns = [p for p in cleanup_patterns if not p.startswith('!')]  
+        
+        for pattern in include_patterns:
+            matching_files = list(dist_dir.glob(pattern))
+            for file_path in matching_files:
+                if any(file_path.match(p) for p in exclude_patterns):
+                    print(f"\033[33mSkipping: {file_path}\033[0m")
+                    continue
+                print(f"\033[33mRemoving: {file_path}\033[0m")
+                if file_path.is_dir():
+                    shutil.rmtree(file_path)
+                else:
+                    file_path.unlink()
+                print(f"\033[32mRemoved: {file_path}\033[0m")
+        
         print("\033[1;32mFile cleanup completed.\033[0m")
         
     except Exception as e:
