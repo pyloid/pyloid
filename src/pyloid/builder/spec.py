@@ -210,7 +210,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon={config.get('icon', 'src-pyloid/icons/icon.png')}
+    icon='{config.get('icon', 'src-pyloid/icons/icon.png')}'
 )
 """
     else:
@@ -231,7 +231,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon={config.get('icon', 'src-pyloid/icons/icon.png')}
+    icon='{config.get('icon', 'src-pyloid/icons/icon.png')}'
 )
 
 coll = COLLECT(
