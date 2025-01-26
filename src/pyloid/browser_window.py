@@ -11,7 +11,11 @@ from PySide6.QtGui import (
     QCursor,
 )
 from PySide6.QtCore import Qt, QPoint, QUrl, QEvent, QFile
-from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+from PySide6.QtWebEngineCore import (
+    QWebEnginePage,
+    QWebEngineSettings,
+    QWebEngineUrlRequestInterceptor,
+)
 from .api import PyloidAPI
 import uuid
 from typing import List, Optional, Dict, Callable
@@ -26,13 +30,12 @@ from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
 from PySide6.QtCore import QSize
 from typing import TYPE_CHECKING
-from PySide6.QtWebEngineCore import QWebEngineSettings
+from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEngineDesktopMediaRequest
 
 if TYPE_CHECKING:
     from ..pyloid import Pyloid
 
 
-# 어차피 load 부분에만 쓰이니까 나중에 분리해서 load 위에서 선언하자.
 class CustomWebPage(QWebEnginePage):
     def __init__(self, profile=None):
         super().__init__(profile)
@@ -40,10 +43,15 @@ class CustomWebPage(QWebEnginePage):
         self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
         self._permission_handlers = {}
         self._desktop_media_handler = None
+        self._url_handlers = {}  # URL 핸들러 저장을 위한 딕셔너리 추가
+
+        # interceptor ( all url request )
+        self.interceptor = CustomUrlInterceptor()
+        self.profile().setUrlRequestInterceptor(self.interceptor)
 
     def _handlePermissionRequest(self, origin: QUrl, feature: QWebEnginePage.Feature):
-        print(origin, feature)
-        
+        # print(origin, feature)
+
         """Default permission request handler"""
         if feature in self._permission_handlers:
             # Execute if a handler is registered
@@ -59,12 +67,43 @@ class CustomWebPage(QWebEnginePage):
         """Register a handler for a specific permission"""
         self._permission_handlers[feature] = handler
 
-    def _handleDesktopMediaRequest(self, *args, **kwargs):
-        print("Desktop media request received:", args, kwargs)
+    def _handleDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
+        return
+        print("Desktop media request received:", request)
 
-    # def setDesktopMediaHandler(self, handler):
-    #     """desktop media handler"""
-    #     self._desktop_media_handler = handler
+        # 사용 가능한 화면 목록 확인
+        screens_model = request.screensModel()
+        print("\n=== Available Screens ===")
+        for i in range(screens_model.rowCount()):
+            screen_index = screens_model.index(i)
+            screen_name = screens_model.data(screen_index)
+            print(f"Screen {i}: {screen_name}")
+
+        # 사용 가능한 창 목록 확인
+        windows_model = request.windowsModel()
+        print("\n=== Available Windows ===")
+        for i in range(windows_model.rowCount()):
+            window_index = windows_model.index(i)
+            window_name = windows_model.data(window_index)
+            print(f"Window {i}: {window_name}")
+
+        request.selectWindow(windows_model.index(3))
+
+    # # interceptor ( navigation request )
+    # def acceptNavigationRequest(self, url, navigation_type, is_main_frame):
+    #     """네비게이션 요청을 처리하는 메서드"""
+    #     print(f"Navigation Request - URL: {url.toString()}")
+    #     print(f"Navigation Type: {navigation_type}")
+    #     print(f"Is Main Frame: {is_main_frame}")
+
+    #     return True
+
+
+# interceptor ( all url request )
+class CustomUrlInterceptor(QWebEngineUrlRequestInterceptor):
+    def interceptRequest(self, info):
+        url = info.requestUrl().toString()
+        # print(url)
 
 
 class CustomWebEngineView(QWebEngineView):
@@ -81,15 +120,15 @@ class CustomWebEngineView(QWebEngineView):
         self.resize_direction = None
         self.screen_geometry = self.screen().virtualGeometry()
         self.is_resizing_enabled = True
-        
+
         self.setAttribute(Qt.WA_SetCursor, False)
-        
+
         self.is_in_resize_area = False
 
     def mouse_press_event(self, event):
         if self.parent.frame or not self.is_resizing_enabled:
             return
-        
+
         if event.button() == Qt.LeftButton:
             self.resize_direction = self.get_resize_direction(event.pos())
             if self.resize_direction:
@@ -104,19 +143,19 @@ class CustomWebEngineView(QWebEngineView):
     def mouse_move_event(self, event):
         if self.parent.frame or not self.is_resizing_enabled:
             return
-        
+
         # Check resize direction
         was_in_resize_area = self.is_in_resize_area
         resize_direction = self.get_resize_direction(event.pos())
         self.is_in_resize_area = bool(resize_direction)
-        
+
         if resize_direction and not self.is_resizing:
             self.set_cursor_for_resize_direction(resize_direction)
-            
+
         if self.is_resizing:
             self.resize_window(event.globalPos())
             return
-            
+
         # Change cursor when entering/leaving resize area
         if self.is_in_resize_area != was_in_resize_area:
             if self.is_in_resize_area:
@@ -129,12 +168,12 @@ class CustomWebEngineView(QWebEngineView):
     def mouse_release_event(self, event):
         if self.parent.frame or not self.is_resizing_enabled:
             return
-        
+
         if event.button() == Qt.LeftButton:
             self.is_resizing = False
-            
+
             if self.resize_direction:
-                self.unsetCursor()     
+                self.unsetCursor()
                 self.resize_direction = None
 
             self.setAttribute(Qt.WA_SetCursor, False)
@@ -181,7 +220,7 @@ class CustomWebEngineView(QWebEngineView):
                 cursor = Qt.SizeFDiagCursor
             elif direction in ["right-top", "left-bottom"]:
                 cursor = Qt.SizeBDiagCursor
-                
+
             if cursor:
                 self.setCursor(cursor)
                 self.setAttribute(Qt.WA_SetCursor, True)
@@ -378,7 +417,7 @@ class BrowserWindow:
                 js_api.window_id = self.id
                 js_api.window = self
                 js_api.app = self.app
-                
+
                 self.channel.registerObject(js_api.__class__.__name__, js_api)
 
         self.web_view.page().setWebChannel(self.channel)
@@ -1887,12 +1926,12 @@ class BrowserWindow:
     def set_desktop_media_handler(self, handler):
         """
         데스크톱 미디어(화면/윈도우) 선택 핸들러를 설정합니다.
-        
+
         Parameters
         ----------
         handler : callable
-            요청을 처리할 핸들러 함수. QWebEngineDesktopMediaRequest��� 인자로 받습니다.
-            
+            요청을 처리할 핸들러 함수. QWebEngineDesktopMediaRequest 인자로 받습니다.
+
         Examples
         --------
         ```python
@@ -1900,15 +1939,15 @@ class BrowserWindow:
             # 사용 가능한 화면 목록 출력
             for screen in request.screenList():
                 print(f"Screen: {screen.name}")
-            
+
             # 사용 가능한 윈도우 목록 출력
             for window in request.windowList():
                 print(f"Window: {window.name}")
-                
+
             # 첫 번째 화면 선택
             if request.screenList():
                 request.selectScreen(request.screenList()[0])
-            
+
         window.set_desktop_media_handler(custom_media_handler)
         ```
         """

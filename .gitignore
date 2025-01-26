@@ -153,3 +153,8 @@ cython_debug/
 # poetry
 poetry.lock
 venv-pyloid
+
+# nuitka
+main.build/
+main.dist/
+main.onefile-build/

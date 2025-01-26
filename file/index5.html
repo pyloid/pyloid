@@ -16,8 +16,13 @@
   </head>
   <body>
     <h1>WebRTC Media Test</h1>
-    <video id="localVideo" autoplay playsinline></video>
+    <video
+      id="localVideo"
+      autoplay
+      playsinline
+    ></video>
     <br />
+    <div id="trackInfo"></div>
     <button id="startButton">Start Screen Capture</button>
     <button id="stopButton">Stop Screen Capture</button>
 
@@ -25,6 +30,7 @@
       const localVideo = document.getElementById('localVideo');
       const startButton = document.getElementById('startButton');
       const stopButton = document.getElementById('stopButton');
+      const trackInfo = document.getElementById('trackInfo');
       let stream;
 
       navigator.mediaDevices
@@ -40,9 +46,20 @@
 
       startButton.addEventListener('click', async () => {
         try {
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
+          stream = await navigator.mediaDevices.getDisplayMedia();
+
+          const tracks = stream.getTracks();
+          let trackInfoText = '<h3>캡쳐된 미디어 정보:</h3>';
+          tracks.forEach((track) => {
+            trackInfoText += `<p>트랙 종류: ${track.kind} (${track.label})</p>`;
           });
+
+          const hasAudio = tracks.some((track) => track.kind === 'audio');
+          trackInfoText += `<p><strong>오디오 캡쳐: ${
+            hasAudio ? '예' : '아니오'
+          }</strong></p>`;
+
+          trackInfo.innerHTML = trackInfoText;
 
           localVideo.srcObject = stream;
           startButton.disabled = true;
@@ -61,6 +78,7 @@
         if (stream) {
           stream.getTracks().forEach((track) => track.stop());
           localVideo.srcObject = null;
+          trackInfo.innerHTML = '';
           startButton.disabled = false;
           stopButton.disabled = true;
         }

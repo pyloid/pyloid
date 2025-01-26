@@ -2,11 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <script>
       document.addEventListener('pyloidReady', function () {
         console.log('pyloidReady');
+
+        // API 요청 예시
+        fetch('https://api.example.com/data')
+          .then((response) => response.json())
+          .then((data) => {
+            console.log('받은 데이터:', data);
+          })
+          .catch((error) => {
+            console.error('에러 발생:', error);
+          });
       });
+
+      // 사용자 정의 함수들
+      function minimizeWindow() {
+        window.pyloid.customAPI.minimize();
+      }
+
+      function maximizeWindow() {
+        window.pyloid.customAPI.maximize();
+      }
     </script>
     <title>Test Page</title>
   </head>
@@ -25,10 +47,48 @@
         user-select: none;
       "
     >
-      <div class="title">Pyloid Custom Titlebar</div>
+      <div class="title">
+        <a
+          href="/a/b/c"
+          style="color: white; text-decoration: none"
+          >Pyloid Custom Titlebar</a
+        >
+      </div>
       <div class="controls">
-        <button onclick="window.pyloid.customAPI.customClose()">Close</button>
+        <button onclick="minimizeWindow()">최소화</button>
+        <button onclick="maximizeWindow()">최대화</button>
+        <button onclick="window.pyloid.customAPI.customClose()">
+          닫기
+        </button>
       </div>
     </div>
+
+    <!-- 새로운 컨텐츠 영역 추가 -->
+    <div
+      class="content"
+      style="padding: 20px"
+    >
+      <h1>Pyloid 데모</h1>
+      <button onclick="fetchData()">데이터 가져오기</button>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      function fetchData() {
+        fetch('https://api.example.com/data')
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById('result').textContent = JSON.stringify(
+              data,
+              null,
+              2
+            );
+          })
+          .catch((error) => {
+            document.getElementById('result').textContent =
+              '에러 발생: ' + error.message;
+          });
+      }
+    </script>
   </body>
 </html>

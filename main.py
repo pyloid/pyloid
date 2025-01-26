@@ -12,8 +12,8 @@ if is_production():
 else:
     app.set_icon("assets/icon.ico")
     app.set_tray_icon("assets/icon.ico")
-    
-    
+
+
 class customAPI(PyloidAPI):
     @Bridge(result=str)
     def create_window(self):
@@ -32,8 +32,7 @@ class customAPI(PyloidAPI):
         window.focus()
 
         return window.id
-    
-    
+
     @Bridge()
     def customClose(self):
         if len(self.app.get_windows()) > 1:

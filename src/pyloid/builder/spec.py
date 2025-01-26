@@ -2,27 +2,30 @@ from pyloid.utils import get_platform
 import json
 from pathlib import Path
 
+
 def create_spec_from_json(json_path):
-    with open(json_path, 'r', encoding='utf-8') as f:
+    with open(json_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
     os_type = get_platform()
-    
-    if os_type == 'macos':
+
+    if os_type == "macos":
         spec_content = _create_macos_spec(config)
-    elif os_type == 'linux':
+    elif os_type == "linux":
         spec_content = _create_linux_spec(config)
     else:  # windows
         spec_content = _create_windows_spec(config)
-    
+
     spec_path = Path(f"build-{os_type}.spec")
-    spec_path.write_text(spec_content, encoding='utf-8')
-    
+    spec_path.write_text(spec_content, encoding="utf-8")
+
     return str(spec_path)
 
+
 def _create_windows_spec(config):
-    bundle_type = config.get('bundle', {}).get('windows', 'directory')
-    
+    bundle_type = config.get("bundle", {}).get("windows", "directory")
+    console = config.get("console", False)
+
     base_spec = f"""# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
@@ -47,8 +50,10 @@ pyz = PYZ(a.pure, a.zipped_data,
           cipher=block_cipher)
 """
 
-    if bundle_type == 'onefile':
-        return base_spec + f"""
+    if bundle_type == "onefile":
+        return (
+            base_spec
+            + f"""
 exe = EXE(
     pyz,
     a.scripts,
@@ -63,7 +68,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console={console},
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -72,8 +77,11 @@ exe = EXE(
     icon='{config.get('icon', 'src-pyloid/icons/icon.ico')}'
 )
 """
+        )
     else:
-        return base_spec + f"""
+        return (
+            base_spec
+            + f"""
 exe = EXE(
     pyz,
     a.scripts,
@@ -84,7 +92,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console={console},
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -104,8 +112,11 @@ coll = COLLECT(
     name='{config.get("name", "pyloid-app")}'
 )
 """
+        )
+
 
 def _create_macos_spec(config):
+    console = config.get("console", False)
     return f"""# -*- mode: python ; coding: utf-8 -*-
 
 a = Analysis(
@@ -134,7 +145,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console={console},
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -161,9 +172,11 @@ app = BUNDLE(
 )
 """
 
+
 def _create_linux_spec(config):
-    bundle_type = config.get('bundle', {}).get('linux', 'directory')
-    
+    bundle_type = config.get("bundle", {}).get("linux", "directory")
+    console = config.get("console", False)
+
     base_spec = f"""# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
@@ -188,8 +201,10 @@ pyz = PYZ(a.pure, a.zipped_data,
           cipher=block_cipher)
 """
 
-    if bundle_type == 'onefile':
-        return base_spec + f"""
+    if bundle_type == "onefile":
+        return (
+            base_spec
+            + f"""
 exe = EXE(
     pyz,
     a.scripts,
@@ -204,7 +219,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console={console},
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -213,8 +228,11 @@ exe = EXE(
     icon='{config.get('icon', 'src-pyloid/icons/icon.png')}'
 )
 """
+        )
     else:
-        return base_spec + f"""
+        return (
+            base_spec
+            + f"""
 exe = EXE(
     pyz,
     a.scripts,
@@ -225,7 +243,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console={console},
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -245,3 +263,4 @@ coll = COLLECT(
     name='{config.get("name", "pyloid-app")}'
 )
 """
+        )
