@@ -30,7 +30,8 @@ from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
 from PySide6.QtCore import QSize
 from typing import TYPE_CHECKING
-from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEngineDesktopMediaRequest
+from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEngineDesktopMediaRequest, QWebEngineUrlRequestInterceptor
+from .utils import get_production_path, is_production
 
 if TYPE_CHECKING:
     from ..pyloid import Pyloid
@@ -68,7 +69,6 @@ class CustomWebPage(QWebEnginePage):
         self._permission_handlers[feature] = handler
 
     def _handleDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
-        return
         print("Desktop media request received:", request)
 
         # 사용 가능한 화면 목록 확인
@@ -86,7 +86,7 @@ class CustomWebPage(QWebEnginePage):
             window_index = windows_model.index(i)
             window_name = windows_model.data(window_index)
             print(f"Window {i}: {window_name}")
-
+            
         request.selectWindow(windows_model.index(3))
 
     # # interceptor ( navigation request )
@@ -103,7 +103,50 @@ class CustomWebPage(QWebEnginePage):
 class CustomUrlInterceptor(QWebEngineUrlRequestInterceptor):
     def interceptRequest(self, info):
         url = info.requestUrl().toString()
-        # print(url)
+        print(url)
+
+# class CustomInterceptor(QWebEngineUrlRequestInterceptor):
+#     def __init__(self, index_path=None):
+#         super().__init__()
+#         self.index_path = get_production_path()
+#         self.last_path = "/"
+        
+#     def interceptRequest(self, info):
+#         url = info.requestUrl()
+#         navigation_type = info.navigationType()
+
+#         print("--------------------------------")
+        
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeTyped:
+#             print("NavigationTypeTyped")
+            
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeReload:
+#             print("NavigationTypeReload")
+            
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeBackForward:
+#             print("NavigationTypeBackForward")
+        
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeLinkClicked:
+#             print("NavigationTypeLinkClicked")
+            
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeFormSubmitted:
+#             print("NavigationTypeFormSubmitted")
+            
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeTyped:
+#             print("NavigationTypeTyped")
+            
+#         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeOther:
+#             print("NavigationTypeOther")
+            
+#         print(navigation_type.value)
+        
+#         print(url)
+#         print(url.scheme())
+#         print(url.host())
+#         print(url.url())
+#         print(self.last_path)
+        
+#         self.last_path = url.path()
 
 
 class CustomWebEngineView(QWebEngineView):
@@ -430,6 +473,13 @@ class BrowserWindow:
 
         # Set F12 shortcut
         self.set_dev_tools(self.dev_tools)
+        
+        # 프로필 가져오기 및 인터셉터 설정
+        profile = self.web_view.page().profile()
+        
+        # # 기존 인터셉터가 있다면 제거
+        # if self.interceptor:
+        #     profile.setUrlRequestInterceptor(None)
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""

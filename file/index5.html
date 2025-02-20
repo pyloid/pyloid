@@ -16,11 +16,7 @@
   </head>
   <body>
     <h1>WebRTC Media Test</h1>
-    <video
-      id="localVideo"
-      autoplay
-      playsinline
-    ></video>
+    <video id="localVideo" autoplay playsinline></video>
     <br />
     <div id="trackInfo"></div>
     <button id="startButton">Start Screen Capture</button>
@@ -51,6 +47,7 @@
           const tracks = stream.getTracks();
           let trackInfoText = '<h3>캡쳐된 미디어 정보:</h3>';
           tracks.forEach((track) => {
+            console.log(track);
             trackInfoText += `<p>트랙 종류: ${track.kind} (${track.label})</p>`;
           });
 

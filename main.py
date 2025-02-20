@@ -49,9 +49,9 @@ win.set_frame(True)
 # win.set_context_menu(True)
 
 if is_production():
-    win.load_file(os.path.join(get_production_path(), "file/index3.html"))
+    win.load_file(os.path.join(get_production_path(), "file/index5.html"))
 else:
-    win.load_file("file/index3.html")
+    win.load_file("file/index5.html")
 
 
 win.show_and_focus()
