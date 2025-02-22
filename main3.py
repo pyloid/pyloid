@@ -2,13 +2,26 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayou
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaRecorder, QMediaFormat, QMediaCaptureSession, QAudioInput, QWindowCapture
 from PySide6.QtCore import QUrl
 import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QComboBox
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaRecorder, QMediaFormat, QMediaCaptureSession, QAudioInput, QMediaDevices
+from PySide6.QtCore import QUrl
+import sys
 
 class AudioPlayer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("오디오 플레이어")
         self.setGeometry(100, 100, 300, 150)
+class AudioPlayer(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("오디오 플레이어")
+        self.setGeometry(100, 100, 300, 200)
 
+        # 중앙 위젯 설정
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
         # 중앙 위젯 설정
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -18,7 +31,18 @@ class AudioPlayer(QMainWindow):
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
+        # 오디오 입력 디바이스 선택 콤보박스
+        self.input_device_combo = QComboBox()
+        self.input_device_combo.addItems([device.description() for device in QMediaDevices.audioInputs()])
+        layout.addWidget(self.input_device_combo)
+        # 미디어 플레이어 및 오디오 출력 설정
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
 
+        # 컨트롤 버튼 생성
+        self.play_button = QPushButton("재생")
+        self.stop_button = QPushButton("정지")
         # 컨트롤 버튼 생성
         self.play_button = QPushButton("재생")
         self.stop_button = QPushButton("정지")
@@ -26,7 +50,13 @@ class AudioPlayer(QMainWindow):
         # 버튼 이벤트 연결
         self.play_button.clicked.connect(self.play_audio)
         self.stop_button.clicked.connect(self.stop_audio)
+        # 버튼 이벤트 연결
+        self.play_button.clicked.connect(self.play_audio)
+        self.stop_button.clicked.connect(self.stop_audio)
 
+        # 레이아웃에 버튼 추가
+        layout.addWidget(self.play_button)
+        layout.addWidget(self.stop_button)
         # 레이아웃에 버튼 추가
         layout.addWidget(self.play_button)
         layout.addWidget(self.stop_button)
@@ -93,4 +123,5 @@ if __name__ == "__main__":
     player = AudioPlayer()
     
     player.show()
+    
     sys.exit(app.exec())
