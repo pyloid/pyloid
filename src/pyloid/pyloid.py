@@ -412,7 +412,6 @@ class _Pyloid(QApplication):
         ```
         """
         if self.windows_dict:
-            # 첫 번째 윈도우 가져오기
             main_window = next(iter(self.windows_dict.values()))
             main_window._window.show()
             main_window._window.activateWindow()
@@ -448,13 +447,11 @@ class _Pyloid(QApplication):
         ```
         """
         
-        # 윈도우 정리
         for window in self.windows_dict.values():
             window._window.close()
             window.web_page.deleteLater()
             window.web_view.deleteLater()
 
-        # 딕셔너리 비우기
         self.windows_dict.clear()
         QApplication.quit()
 

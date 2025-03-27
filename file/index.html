@@ -2,19 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
-    <script>
-      document.addEventListener('pyloidReady', function () {
-        // Load index.js script after pylon bridge functions are initialized
-        const script = document.createElement('script');
-        script.src = './index.js';
-        document.head.appendChild(script);
-      });
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Test Page</title>
     <style>
       body {
@@ -43,15 +32,13 @@
     </style>
   </head>
   <body>
-    <div
-      id="titlebar"
-      class="drag-region"
-    >
+    <div id="titlebar" class="drag-region">
       Custom Title Bar
       <button class="no-drag">Button</button>
     </div>
     <h1>Test Webpage</h1>
     <p>This page is created for testing purposes.</p>
     <button id="myButton">Create Window!</button>
+    <script src="/index.js"></script>
   </body>
 </html>
