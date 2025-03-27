@@ -1,10 +1,10 @@
 from src.pyloid.api import PyloidAPI, Bridge
-from src.pyloid.pyloid import Pyloid
+from src.pyloid.pyloid import _Pyloid
 from src.pyloid.utils import is_production, get_production_path
 import os
-from PySide6.QtWebEngineCore import QWebEngineSettings
+from src.pyloid.pyloid import TrayEvent
 
-app = Pyloid(app_name="Pyloid-App", single_instance=False)
+app = _Pyloid(app_name="Pyloid-App", single_instance=False)
 
 if is_production():
     app.set_icon(os.path.join(get_production_path(), "icon.ico"))
@@ -13,6 +13,14 @@ else:
     app.set_icon("assets/icon.ico")
     app.set_tray_icon("assets/icon.ico")
 
+app.set_tray_actions(
+    {
+        TrayEvent.DoubleClick: lambda: print("Tray icon was double-clicked."),
+        TrayEvent.MiddleClick: lambda: print("Tray icon was middle-clicked."),
+        TrayEvent.RightClick: lambda: print("Tray icon was right-clicked."),
+        TrayEvent.LeftClick: lambda: print("Tray icon was left-clicked."),
+    }
+)
 
 class customAPI(PyloidAPI):
     @Bridge(result=str)
@@ -58,6 +66,6 @@ win.show_and_focus()
 
 from pprint import pprint
 
-# pprint(app.get_all_monitors()[0].info())
+pprint(app.get_all_monitors()[0].info())
 
 app.run()

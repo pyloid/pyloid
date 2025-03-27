@@ -2,6 +2,7 @@ import sys
 import os
 import platform
 from typing import Optional
+import socket
 
 
 def get_production_path(path: Optional[str] = None) -> Optional[str]:
@@ -120,3 +121,7 @@ def get_absolute_path(path: str) -> str:
     """
     return os.path.normpath(os.path.abspath(path))
 
+def get_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
