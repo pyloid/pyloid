@@ -533,26 +533,10 @@ class _BrowserWindow:
                     
                     document.addEventListener('mousedown', function (e) {
                         if (e.target.hasAttribute('data-pyloid-drag-region')) {
-                            window.pyloid.WindowAPI.startSystemDrag();
+                            window.pyloid.BaseAPI.startSystemDrag();
                         }
                     });
                     
-                    function updateTheme(theme) {
-                        document.documentElement.setAttribute(
-                        'data-pyloid-theme',
-                        theme
-                        );
-                    }
-
-                    // 테마 변경 이벤트 리스너
-                    document.addEventListener('themeChange', (e) => {
-                        console.log('themeChange event received:', e);
-                        updateTheme(e.detail.theme);
-                    });
-                    
-                    updateTheme('%s');
-                    
-
                     // Dispatch a custom event to signal that the initialization is ready
                     const event = new CustomEvent('pyloidReady');
                     document.dispatchEvent(event);
@@ -568,7 +552,7 @@ class _BrowserWindow:
                     for js_api in self.js_apis
                 ]
             )
-            self.web_view.page().runJavaScript(js_code % (js_api_init, self.app.theme))
+            self.web_view.page().runJavaScript(js_code % (js_api_init))
 
             # if splash screen is set, close it when the page is loaded
             if self.close_on_load and self.splash_screen:
@@ -2013,7 +1997,7 @@ class BrowserWindow(QObject):
     
     def __init__(self, app, title: str, width: int, height: int, x: int, y: int, frame: bool, context_menu: bool, dev_tools: bool, js_apis: List[PyloidAPI]):
         super().__init__()
-        self.window = _BrowserWindow(app, title, width, height, x, y, frame, context_menu, dev_tools, js_apis)
+        self._window = _BrowserWindow(app, title, width, height, x, y, frame, context_menu, dev_tools, js_apis)
         self.command_signal.connect(self._handle_command)
     
     @Slot(str, str, object)
@@ -2029,97 +2013,97 @@ class BrowserWindow(QObject):
         result = None
 
         if command_type == "load_file":
-            result = self.window.load_file(params["file_path"])
+            result = self._window.load_file(params["file_path"])
         elif command_type == "load_url":
-            result = self.window.load_url(params["url"])
+            result = self._window.load_url(params["url"])
         elif command_type == "load_html":
             html_content = params.get("html_content", "")
             base_url = params.get("base_url", "")
-            result = self.window.load_html(html_content, base_url)
+            result = self._window.load_html(html_content, base_url)
         elif command_type == "set_title":
-            result = self.window.set_title(params["title"])
+            result = self._window.set_title(params["title"])
         elif command_type == "set_size":
-            result = self.window.set_size(params["width"], params["height"])
+            result = self._window.set_size(params["width"], params["height"])
         elif command_type == "set_position":
-            result = self.window.set_position(params["x"], params["y"])
+            result = self._window.set_position(params["x"], params["y"])
         elif command_type == "set_position_by_anchor":
-            result = self.window.set_position_by_anchor(params["anchor"])
+            result = self._window.set_position_by_anchor(params["anchor"])
         elif command_type == "set_frame":
-            result = self.window.set_frame(params["frame"])
+            result = self._window.set_frame(params["frame"])
         elif command_type == "set_context_menu":
-            result = self.window.set_context_menu(params["context_menu"])
+            result = self._window.set_context_menu(params["context_menu"])
         elif command_type == "set_dev_tools":
-            result = self.window.set_dev_tools(params["enable"])
+            result = self._window.set_dev_tools(params["enable"])
         elif command_type == "open_dev_tools":
-            result = self.window.open_dev_tools()
+            result = self._window.open_dev_tools()
         elif command_type == "hide":
-            result = self.window.hide()
+            result = self._window.hide()
         elif command_type == "show":
-            result = self.window.show()
+            result = self._window.show()
         elif command_type == "focus":
-            result = self.window.focus()
+            result = self._window.focus()
         elif command_type == "show_and_focus":
-            result = self.window.show_and_focus()
+            result = self._window.show_and_focus()
         elif command_type == "close":
-            result = self.window.close()
+            result = self._window.close()
         elif command_type == "fullscreen":
-            result = self.window.fullscreen()
+            result = self._window.fullscreen()
         elif command_type == "toggle_fullscreen":
-            result = self.window.toggle_fullscreen()
+            result = self._window.toggle_fullscreen()
         elif command_type == "minimize":
-            result = self.window.minimize()
+            result = self._window.minimize()
         elif command_type == "maximize":
-            result = self.window.maximize()
+            result = self._window.maximize()
         elif command_type == "unmaximize":
-            result = self.window.unmaximize()
+            result = self._window.unmaximize()
         elif command_type == "toggle_maximize":
-            result = self.window.toggle_maximize()
+            result = self._window.toggle_maximize()
         elif command_type == "is_fullscreen":
-            result = self.window.is_fullscreen()
+            result = self._window.is_fullscreen()
         elif command_type == "is_maximized":
-            result = self.window.is_maximized()
+            result = self._window.is_maximized()
         elif command_type == "capture":
-            result = self.window.capture(params["save_path"])
+            result = self._window.capture(params["save_path"])
         elif command_type == "add_shortcut":
-            result = self.window.add_shortcut(params["key_sequence"], params["callback"])
+            result = self._window.add_shortcut(params["key_sequence"], params["callback"])
         elif command_type == "remove_shortcut":
-            result = self.window.remove_shortcut(params["key_sequence"])
+            result = self._window.remove_shortcut(params["key_sequence"])
         elif command_type == "get_all_shortcuts":
-            result = self.window.get_all_shortcuts()
+            result = self._window.get_all_shortcuts()
         elif command_type == "emit":
             event_name = params["event_name"]
             data = params.get("data")
-            result = self.window.invoke(event_name, data)
+            result = self._window.invoke(event_name, data)
         elif command_type == "get_window_properties":
-            result = self.window.get_window_properties()
+            result = self._window.get_window_properties()
         elif command_type == "get_id":
-            result = self.window.get_id()
+            result = self._window.get_id()
         elif command_type == "get_size":
-            result = self.window.get_size()
+            result = self._window.get_size()
         elif command_type == "get_position":
-            result = self.window.get_position()
+            result = self._window.get_position()
         elif command_type == "get_title":
-            result = self.window.get_title()
+            result = self._window.get_title()
         elif command_type == "get_url":
-            result = self.window.get_url()
+            result = self._window.get_url()
         elif command_type == "get_visible":
-            result = self.window.get_visible()
+            result = self._window.get_visible()
         elif command_type == "get_frame":
-            result = self.window.get_frame()
+            result = self._window.get_frame()
         elif command_type == "set_resizable":
-            result = self.window.set_resizable(params["resizable"])
+            result = self._window.set_resizable(params["resizable"])
         elif command_type == "set_minimum_size":
-            result = self.window.set_minimum_size(params["min_width"], params["min_height"])
+            result = self._window.set_minimum_size(params["min_width"], params["min_height"])
         elif command_type == "set_maximum_size":
-            result = self.window.set_maximum_size(params["max_width"], params["max_height"])
+            result = self._window.set_maximum_size(params["max_width"], params["max_height"])
         elif command_type == "get_minimum_size":
-            result = self.window.get_minimum_size()
+            result = self._window.get_minimum_size()
         elif command_type == "get_maximum_size":
-            result = self.window.get_maximum_size()
+            result = self._window.get_maximum_size()
         elif command_type == "get_resizable":
-            result = self.window.get_resizable()
+            result = self._window.get_resizable()
         elif command_type == "set_static_image_splash_screen":
-            result = self.window.set_static_image_splash_screen(
+            result = self._window.set_static_image_splash_screen(
                 params["image_path"],
                 params.get("close_on_load", True),
                 params.get("stay_on_top", True),
@@ -2127,7 +2111,7 @@ class BrowserWindow(QObject):
                 params.get("position", "center")
             )
         elif command_type == "set_gif_splash_screen":
-            result = self.window.set_gif_splash_screen(
+            result = self._window.set_gif_splash_screen(
                 params["gif_path"],
                 params.get("close_on_load", True),
                 params.get("stay_on_top", True),
@@ -2135,7 +2119,7 @@ class BrowserWindow(QObject):
                 params.get("position", "center")
             )
         elif command_type == "close_splash_screen":
-            result = self.window.close_splash_screen()
+            result = self._window.close_splash_screen()
         else:
             return None
 

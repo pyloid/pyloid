@@ -29,15 +29,27 @@
       const trackInfo = document.getElementById('trackInfo');
       let stream;
 
+      // 오디오 장치 정보 표시
       navigator.mediaDevices
         .enumerateDevices()
         .then((devices) => {
+          console.log(devices);
+          let audioDevicesInfo = '<h3>사용 가능한 오디오 장치:</h3>';
           devices.forEach((device) => {
+            if (device.kind === 'audioinput') {
+              audioDevicesInfo += `
+                <p>장치명: ${device.label || '접근 권한 필요'}</p>
+                <p>장치 ID: ${device.deviceId}</p>
+                <hr>
+              `;
+            }
             console.log(device);
           });
+          trackInfo.innerHTML = audioDevicesInfo;
         })
         .catch((err) => {
-          console.error('Error enumerating devices:', err);
+          console.error('장치 열거 중 오류 발생:', err);
+          trackInfo.innerHTML = '<p>오디오 장치 정보를 가져올 수 없습니다.</p>';
         });
 
       startButton.addEventListener('click', async () => {

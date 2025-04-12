@@ -32,6 +32,9 @@ from PySide6.QtCore import QEventLoop
 import socket
 from typing import Any
 
+# software backend
+os.environ["QT_QUICK_BACKEND"] = "software"
+
 # for linux debug
 os.environ["QTWEBENGINE_DICTIONARIES_PATH"] = "/"
 
@@ -299,7 +302,7 @@ class _Pyloid(QApplication):
             dev_tools,
             js_apis,
         )
-        self.windows_dict[window.window.id] = window
+        self.windows_dict[window._window.id] = window
         return window
 
     def run(self):
@@ -1486,30 +1489,6 @@ class Pyloid(QObject):
         elif command_type == "get_window_by_id":
             result = self.app.get_window_by_id(params["window_id"])
 
-        elif command_type == "hide_window_by_id":
-            result = self.app.hide_window_by_id(params["window_id"])
-
-        elif command_type == "show_window_by_id":
-            result = self.app.show_window_by_id(params["window_id"])
-
-        elif command_type == "close_window_by_id":
-            result = self.app.close_window_by_id(params["window_id"])
-
-        elif command_type == "toggle_fullscreen_by_id":
-            result = self.app.toggle_fullscreen_by_id(params["window_id"])
-
-        elif command_type == "minimize_window_by_id":
-            result = self.app.minimize_window_by_id(params["window_id"])
-
-        elif command_type == "maximize_window_by_id":
-            result = self.app.maximize_window_by_id(params["window_id"])
-
-        elif command_type == "unmaximize_window_by_id":
-            result = self.app.unmaximize_window_by_id(params["window_id"])
-
-        elif command_type == "capture_window_by_id":
-            result = self.app.capture_window_by_id(params["window_id"], params["save_path"])
-
         elif command_type == "set_tray_icon":
             result = self.app.set_tray_icon(params["tray_icon_path"])
 
@@ -1801,141 +1780,6 @@ class Pyloid(QObject):
         >>> window = app.get_window_by_id("some-window-id")
         """
         return self.execute_command("get_window_by_id", {"window_id": window_id})
-    
-    def hide_window_by_id(self, window_id: str) -> None:
-        """
-        Hides the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to hide
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.hide_window_by_id("some-window-id")
-        """
-        return self.execute_command("hide_window_by_id", {"window_id": window_id})
-    
-    def show_window_by_id(self, window_id: str) -> None:
-        """
-        Shows and focuses the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to show
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.show_window_by_id("some-window-id")
-        """
-        return self.execute_command("show_window_by_id", {"window_id": window_id})
-    
-    def close_window_by_id(self, window_id: str) -> None:
-        """
-        Closes the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to close
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.close_window_by_id("some-window-id")
-        """
-        return self.execute_command("close_window_by_id", {"window_id": window_id})
-    
-    def toggle_fullscreen_by_id(self, window_id: str) -> None:
-        """
-        Toggles fullscreen mode for the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to toggle fullscreen mode
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.toggle_fullscreen_by_id("some-window-id")
-        """
-        return self.execute_command("toggle_fullscreen_by_id", {"window_id": window_id})
-    
-    def minimize_window_by_id(self, window_id: str) -> None:
-        """
-        Minimizes the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to minimize
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.minimize_window_by_id("some-window-id")
-        """
-        return self.execute_command("minimize_window_by_id", {"window_id": window_id})
-    
-    def maximize_window_by_id(self, window_id: str) -> None:
-        """
-        Maximizes the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to maximize
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.maximize_window_by_id("some-window-id")
-        """
-        return self.execute_command("maximize_window_by_id", {"window_id": window_id})
-    
-    def unmaximize_window_by_id(self, window_id: str) -> None:
-        """
-        Unmaximizes the window with the given ID.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to unmaximize
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> app.unmaximize_window_by_id("some-window-id")
-        """
-        return self.execute_command("unmaximize_window_by_id", {"window_id": window_id})
-    
-    def capture_window_by_id(self, window_id: str, save_path: str) -> Optional[str]:
-        """
-        Captures the specified window.
-
-        Parameters
-        ----------
-        window_id : str
-            The ID of the window to capture
-        save_path : str
-            The path to save the captured image
-
-        Returns
-        -------
-        Optional[str]
-            The path of the saved image. Returns None if the window is not found or an error occurs.
-
-        Examples
-        --------
-        >>> app = Pyloid(app_name="Pyloid-App")
-        >>> image_path = app.capture_window_by_id("some-window-id", "save/image.png")
-        """
-        return self.execute_command("capture_window_by_id", {"window_id": window_id, "save_path": save_path})
     
     def set_tray_icon(self, tray_icon_path: str) -> bool:
         """
