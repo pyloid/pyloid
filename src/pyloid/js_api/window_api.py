@@ -7,11 +7,12 @@
 # if TYPE_CHECKING:
 #     from ..pyloid import Pyloid
 
+
 # class WindowAPI(PyloidAPI):
-#     # def __init__(self, window_id: str, app: 'Pyloid'):
-#     #     super().__init__()
-#     #     self.window_id: str = window_id
-#     #     self.app: 'Pyloid' = app
+#     def __init__(self, window_id: str, app: "Pyloid"):
+#         super().__init__()
+#         self.window_id: str = window_id
+#         self.app: "Pyloid" = app
 
 #     @Bridge(result=str)
 #     def getWindowId(self):
@@ -107,7 +108,7 @@
 #         """Returns True if the window is fullscreen."""
 #         window = self.app.get_window_by_id(self.window_id)
 #         return window.is_fullscreen()
-    
+
 #     @Bridge(result=bool)
 #     def isMaximized(self):
 #         """Returns True if the window is maximized."""
@@ -142,45 +143,11 @@
 #         if window:
 #             window.set_frame(frame)
 
-#     @Bridge(bool)
-#     def setContextMenu(self, context_menu: bool):
-#         """Sets the context menu of the window."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         if window:
-#             window.set_context_menu(context_menu)
-
-#     @Bridge(bool)
-#     def setDevTools(self, enable: bool):
-#         """Sets the developer tools of the window."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         if window:
-#             window.set_dev_tools(enable)
-
-#     @Bridge(str, result=Optional[str])
-#     def capture(self, save_path: str) -> Optional[str]:
-#         """Captures the current window."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         if window:
-#             return window.capture(save_path)
-#         return None
-
 #     @Bridge(result=bool)
 #     def getFrame(self):
 #         """Returns whether the window has a frame."""
 #         window = self.app.get_window_by_id(self.window_id)
 #         return window.frame if window else False
-
-#     @Bridge(result=bool)
-#     def getContextMenu(self):
-#         """Returns whether the window has a context menu."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         return window.context_menu if window else False
-
-#     @Bridge(result=bool)
-#     def getDevTools(self):
-#         """Returns whether the window has developer tools."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         return window.dev_tools if window else False
 
 #     @Bridge(result=str)
 #     def getTitle(self):
@@ -204,13 +171,6 @@
 #         window = self.app.get_window_by_id(self.window_id)
 #         return {"x": window.x, "y": window.y} if window else {"x": 0, "y": 0}
 
-#     @Bridge()
-#     def startSystemDrag(self):
-#         """Starts the system drag."""
-#         window = self.app.get_window_by_id(self.window_id)
-#         if window:
-#             window.web_view.start_system_drag()
-
 #     ###############################################################
 #     # Clipboard
 #     ###############################################################
@@ -224,7 +184,7 @@
 #     def getClipboardText(self):
 #         """Gets the text from the clipboard."""
 #         return self.app.get_clipboard_text()
-    
+
 #     @Bridge(str, str)
 #     def setClipboardImage(self, image_path: str, format: str):
 #         """Sets the image to the clipboard."""
@@ -240,12 +200,12 @@
 #             buffer = QBuffer(byte_array)
 #             buffer.open(QIODeviceBase.WriteOnly)
 #             image.save(buffer, "PNG")  # PNG 형식으로 저장
-            
+
 #             # Base64로 인코딩
 #             base64_data = byte_array.toBase64().data().decode()
 #             return f"data:image/png;base64,{base64_data}"
 #         return ""
-    
+
 #     ###########################################################################################
 #     # Quit
 #     ###########################################################################################
@@ -253,6 +213,3 @@
 #     def quit(self):
 #         """Quits the application."""
 #         self.app.quit()
-        
-
-    

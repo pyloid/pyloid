@@ -9,7 +9,18 @@ from PySide6.QtGui import (
     QKeySequence,
     QShortcut,
 )
-from PySide6.QtCore import Qt, QPoint, QUrl, QEvent, QFile, QEventLoop, QTimer, QObject, Signal, Slot
+from PySide6.QtCore import (
+    Qt,
+    QPoint,
+    QUrl,
+    QEvent,
+    QFile,
+    QEventLoop,
+    QTimer,
+    QObject,
+    Signal,
+    Slot,
+)
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
     QWebEngineSettings,
@@ -27,7 +38,12 @@ from .js_api.base import BaseAPI
 from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtWidgets import QSplashScreen, QLabel
 from typing import TYPE_CHECKING, Any
-from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEngineDesktopMediaRequest
+from PySide6.QtWebEngineCore import (
+    QWebEngineSettings,
+    QWebEngineDesktopMediaRequest,
+)
+
+# from .url_interceptor import CustomUrlInterceptor
 
 if TYPE_CHECKING:
     from .pyloid import _Pyloid
@@ -83,7 +99,7 @@ class CustomWebPage(QWebEnginePage):
             window_index = windows_model.index(i)
             window_name = windows_model.data(window_index)
             print(f"Window {i}: {window_name}")
-            
+
         request.selectWindow(windows_model.index(3))
 
     # # interceptor ( navigation request )
@@ -96,53 +112,47 @@ class CustomWebPage(QWebEnginePage):
     #     return True
 
 
-# interceptor ( all url request )
-# class CustomUrlInterceptor(QWebEngineUrlRequestInterceptor):
-#     def interceptRequest(self, info):
-#         url = info.requestUrl().toString()
-#         print(url)
-
 # class CustomInterceptor(QWebEngineUrlRequestInterceptor):
 #     def __init__(self, index_path=None):
 #         super().__init__()
 #         self.index_path = get_production_path()
 #         self.last_path = "/"
-        
+
 #     def interceptRequest(self, info):
 #         url = info.requestUrl()
 #         navigation_type = info.navigationType()
 
 #         print("--------------------------------")
-        
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeTyped:
 #             print("NavigationTypeTyped")
-            
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeReload:
 #             print("NavigationTypeReload")
-            
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeBackForward:
 #             print("NavigationTypeBackForward")
-        
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeLinkClicked:
 #             print("NavigationTypeLinkClicked")
-            
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeFormSubmitted:
 #             print("NavigationTypeFormSubmitted")
-            
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeTyped:
 #             print("NavigationTypeTyped")
-            
+
 #         if navigation_type == QWebEnginePage.NavigationType.NavigationTypeOther:
 #             print("NavigationTypeOther")
-            
+
 #         print(navigation_type.value)
-        
+
 #         print(url)
 #         print(url.scheme())
 #         print(url.host())
 #         print(url.url())
 #         print(self.last_path)
-        
+
 #         self.last_path = url.path()
 
 
@@ -300,7 +310,7 @@ class _BrowserWindow:
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        js_apis: List[PyloidAPI] = [],
+        # js_apis: List[PyloidAPI] = [],
     ):
         ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
@@ -318,9 +328,12 @@ class _BrowserWindow:
         self.frame = frame
         self.context_menu = context_menu
         self.dev_tools = dev_tools
-        self.js_apis = [BaseAPI(self.id, self.app.data)]
-        for js_api in js_apis:
-            self.js_apis.append(js_api)
+
+        self.js_apis = [BaseAPI(self.id, self.app.data, self.app)]
+
+        # for js_api in js_apis:
+        #     self.js_apis.append(js_api)
+
         self.shortcuts = {}
         self.close_on_load = True
         self.splash_screen = None
@@ -453,12 +466,11 @@ class _BrowserWindow:
         # Register additional JS APIs
         if self.js_apis:
             for js_api in self.js_apis:
-                # Define window_id, window, and app for each JS API
-                js_api.window_id = self.id
-                js_api.window = self
-                js_api.app = self.app
 
-                self.channel.registerObject(js_api.__class__.__name__, js_api)
+                if js_api.__class__.__name__ == "BaseAPI":
+                    self.channel.registerObject("__PYLOID__", js_api)
+                else:
+                    self.channel.registerObject(js_api.__class__.__name__, js_api)
 
         self.web_view.page().setWebChannel(self.channel)
 
@@ -470,10 +482,10 @@ class _BrowserWindow:
 
         # Set F12 shortcut
         self.set_dev_tools(self.dev_tools)
-        
+
         # 프로필 가져오기 및 인터셉터 설정
         profile = self.web_view.page().profile()
-        
+
         # # 기존 인터셉터가 있다면 제거
         # if self.interceptor:
         #     profile.setUrlRequestInterceptor(None)
@@ -527,13 +539,13 @@ class _BrowserWindow:
                             }
                         }   
                     };
-                    console.log('pyloid.EventAPI object initialized:', window.pyloid.EventAPI);
-
+                    // console.log('pyloid.EventAPI object initialized:', window.pyloid.EventAPI);
+                    
                     %s
                     
                     document.addEventListener('mousedown', function (e) {
                         if (e.target.hasAttribute('data-pyloid-drag-region')) {
-                            window.pyloid.BaseAPI.startSystemDrag();
+                            window.__PYLOID__.startSystemDrag();
                         }
                     });
                     
@@ -547,12 +559,12 @@ class _BrowserWindow:
             """
             js_api_init = "\n".join(
                 [
-                    f"window.pyloid['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
-                    f"console.log('pyloid.{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
+                    f"window['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
+                    # f"console.log('{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
                     for js_api in self.js_apis
                 ]
             )
-            self.web_view.page().runJavaScript(js_code % (js_api_init))
+            self.web_view.page().runJavaScript(js_code % js_api_init)
 
             # if splash screen is set, close it when the page is loaded
             if self.close_on_load and self.splash_screen:
@@ -826,6 +838,7 @@ class _BrowserWindow:
         self.dev_tools_window = QMainWindow(self._window)
         dev_tools_view = QWebEngineView(self.dev_tools_window)
         dev_tools_view.setPage(self.web_view.page().devToolsPage())
+
         self.dev_tools_window.setCentralWidget(dev_tools_view)
         self.dev_tools_window.resize(800, 600)
         self.dev_tools_window.show()
@@ -1994,14 +2007,30 @@ class _BrowserWindow:
 class BrowserWindow(QObject):
     command_signal = Signal(str, str, object)
     result_signal = Signal(str, object)
-    
-    def __init__(self, app, title: str, width: int, height: int, x: int, y: int, frame: bool, context_menu: bool, dev_tools: bool, js_apis: List[PyloidAPI]):
+
+    def __init__(
+        self,
+        app,
+        title: str,
+        width: int,
+        height: int,
+        x: int,
+        y: int,
+        frame: bool,
+        context_menu: bool,
+        dev_tools: bool,
+        # js_apis: List[PyloidAPI],
+    ):
         super().__init__()
-        self._window = _BrowserWindow(app, title, width, height, x, y, frame, context_menu, dev_tools, js_apis)
+        self._window = _BrowserWindow(
+            app, title, width, height, x, y, frame, context_menu, dev_tools
+        )
         self.command_signal.connect(self._handle_command)
-    
+
     @Slot(str, str, object)
-    def _handle_command(self, command_id: str, command_type: str, params: object) -> None:
+    def _handle_command(
+        self, command_id: str, command_type: str, params: object
+    ) -> None:
         """
         Handles commands sent from multiple threads.
         Calls the corresponding method of _BrowserWindow based on the command type and returns the result.
@@ -2065,7 +2094,9 @@ class BrowserWindow(QObject):
         elif command_type == "capture":
             result = self._window.capture(params["save_path"])
         elif command_type == "add_shortcut":
-            result = self._window.add_shortcut(params["key_sequence"], params["callback"])
+            result = self._window.add_shortcut(
+                params["key_sequence"], params["callback"]
+            )
         elif command_type == "remove_shortcut":
             result = self._window.remove_shortcut(params["key_sequence"])
         elif command_type == "get_all_shortcuts":
@@ -2093,9 +2124,13 @@ class BrowserWindow(QObject):
         elif command_type == "set_resizable":
             result = self._window.set_resizable(params["resizable"])
         elif command_type == "set_minimum_size":
-            result = self._window.set_minimum_size(params["min_width"], params["min_height"])
+            result = self._window.set_minimum_size(
+                params["min_width"], params["min_height"]
+            )
         elif command_type == "set_maximum_size":
-            result = self._window.set_maximum_size(params["max_width"], params["max_height"])
+            result = self._window.set_maximum_size(
+                params["max_width"], params["max_height"]
+            )
         elif command_type == "get_minimum_size":
             result = self._window.get_minimum_size()
         elif command_type == "get_maximum_size":
@@ -2108,7 +2143,7 @@ class BrowserWindow(QObject):
                 params.get("close_on_load", True),
                 params.get("stay_on_top", True),
                 params.get("clickable", True),
-                params.get("position", "center")
+                params.get("position", "center"),
             )
         elif command_type == "set_gif_splash_screen":
             result = self._window.set_gif_splash_screen(
@@ -2116,7 +2151,7 @@ class BrowserWindow(QObject):
                 params.get("close_on_load", True),
                 params.get("stay_on_top", True),
                 params.get("clickable", True),
-                params.get("position", "center")
+                params.get("position", "center"),
             )
         elif command_type == "close_splash_screen":
             result = self._window.close_splash_screen()
@@ -2124,35 +2159,36 @@ class BrowserWindow(QObject):
             return None
 
         self.result_signal.emit(command_id, result)
-    
-    def execute_command(self, command_type: str, params: object, timeout: Optional[int] = None):
+
+    def execute_command(
+        self, command_type: str, params: object, timeout: Optional[int] = None
+    ):
         command_id = str(uuid.uuid4())
-        
+
         result_data = [None]
         loop = QEventLoop()
-        
+
         if timeout:
             timer = QTimer()
             timer.setSingleShot(True)
             timer.timeout.connect(loop.quit)
             timer.start(timeout)
-        
+
         def on_result(received_id, result):
             if received_id == command_id:
-                result_data[0] = result     
+                result_data[0] = result
                 loop.quit()
 
-        
         self.result_signal.connect(on_result, Qt.QueuedConnection)
-        
+
         self.command_signal.emit(command_id, command_type, params)
-                
+
         loop.exec()
-                
+
         self.result_signal.disconnect(on_result)
-        
+
         return result_data[0]
-    
+
     # -------------------------------------------------------------------
     # Execute_command wrapper functions
     # -------------------------------------------------------------------
@@ -2211,7 +2247,9 @@ class BrowserWindow(QObject):
         >>> window.load_html(html_content)
         >>> window.show()
         """
-        return self.execute_command("load_html", {"html_content": html_content, "base_url": base_url})
+        return self.execute_command(
+            "load_html", {"html_content": html_content, "base_url": base_url}
+        )
 
     def set_title(self, title: str) -> None:
         """
@@ -2558,7 +2596,9 @@ class BrowserWindow(QObject):
         >>> window.add_shortcut("Ctrl+C", on_shortcut)
         >>> app.run()
         """
-        return self.execute_command("add_shortcut", {"key_sequence": key_sequence, "callback": callback})
+        return self.execute_command(
+            "add_shortcut", {"key_sequence": key_sequence, "callback": callback}
+        )
 
     def remove_shortcut(self, key_sequence: str) -> None:
         """
@@ -2810,7 +2850,9 @@ class BrowserWindow(QObject):
         >>> window.set_minimum_size(400, 300)
         >>> app.run()
         """
-        return self.execute_command("set_minimum_size", {"min_width": min_width, "min_height": min_height})
+        return self.execute_command(
+            "set_minimum_size", {"min_width": min_width, "min_height": min_height}
+        )
 
     def set_maximum_size(self, max_width: int, max_height: int) -> None:
         """
@@ -2830,7 +2872,9 @@ class BrowserWindow(QObject):
         >>> window.set_maximum_size(1024, 768)
         >>> app.run()
         """
-        return self.execute_command("set_maximum_size", {"max_width": max_width, "max_height": max_height})
+        return self.execute_command(
+            "set_maximum_size", {"max_width": max_width, "max_height": max_height}
+        )
 
     def get_minimum_size(self) -> "Dict[str, int]":
         """
@@ -2889,7 +2933,14 @@ class BrowserWindow(QObject):
         """
         return self.execute_command("get_resizable", {})
 
-    def set_static_image_splash_screen(self, image_path: str, close_on_load: bool = True, stay_on_top: bool = True, clickable: bool = True, position: str = "center") -> None:
+    def set_static_image_splash_screen(
+        self,
+        image_path: str,
+        close_on_load: bool = True,
+        stay_on_top: bool = True,
+        clickable: bool = True,
+        position: str = "center",
+    ) -> None:
         """
         Sets the static image splash screen of the window.
 
@@ -2911,15 +2962,25 @@ class BrowserWindow(QObject):
         --------
         >>> window.set_static_image_splash_screen("./assets/loading.png", close_on_load=True, stay_on_top=True)
         """
-        return self.execute_command("set_static_image_splash_screen", {
-            "image_path": image_path,
-            "close_on_load": close_on_load,
-            "stay_on_top": stay_on_top,
-            "clickable": clickable,
-            "position": position
-        })
+        return self.execute_command(
+            "set_static_image_splash_screen",
+            {
+                "image_path": image_path,
+                "close_on_load": close_on_load,
+                "stay_on_top": stay_on_top,
+                "clickable": clickable,
+                "position": position,
+            },
+        )
 
-    def set_gif_splash_screen(self, gif_path: str, close_on_load: bool = True, stay_on_top: bool = True, clickable: bool = True, position: str = "center") -> None:
+    def set_gif_splash_screen(
+        self,
+        gif_path: str,
+        close_on_load: bool = True,
+        stay_on_top: bool = True,
+        clickable: bool = True,
+        position: str = "center",
+    ) -> None:
         """
         Sets the gif splash screen of the window.
 
@@ -2941,13 +3002,16 @@ class BrowserWindow(QObject):
         --------
         >>> window.set_gif_splash_screen("./assets/loading.gif", close_on_load=True, stay_on_top=True)
         """
-        return self.execute_command("set_gif_splash_screen", {
-            "gif_path": gif_path,
-            "close_on_load": close_on_load,
-            "stay_on_top": stay_on_top,
-            "clickable": clickable,
-            "position": position
-        })
+        return self.execute_command(
+            "set_gif_splash_screen",
+            {
+                "gif_path": gif_path,
+                "close_on_load": close_on_load,
+                "stay_on_top": stay_on_top,
+                "clickable": clickable,
+                "position": position,
+            },
+        )
 
     def close_splash_screen(self) -> None:
         """
@@ -2958,4 +3022,3 @@ class BrowserWindow(QObject):
         >>> window.close_splash_screen()
         """
         return self.execute_command("close_splash_screen", {})
-    
