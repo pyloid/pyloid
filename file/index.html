@@ -39,6 +39,28 @@
     <h1>Test Webpage</h1>
     <p>This page is created for testing purposes.</p>
     <button id="myButton">Create Window!</button>
-    <script src="/index.js"></script>
+    <script>
+      // Button click event binding
+      document
+        .getElementById('myButton')
+        .addEventListener('click', function () {
+          // Using the create_window method
+          console.log('rpc!!!');
+          fetch('http://pyloid.rpc', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'hello',
+              params: {},
+              id: 1,
+            }),
+          }).then((res) => {
+            console.log(res.json());
+          });
+        });
+    </script>
   </body>
 </html>

@@ -7,23 +7,43 @@ import socket
 
 def get_production_path(path: Optional[str] = None) -> Optional[str]:
     """
-    Returns the path to the resource files in a production environment.
-    If running as a regular Python script, returns None.
+    Constructs the absolute path to a resource file, adjusting based on the execution environment.
+
+    In a production environment (e.g., when packaged with PyInstaller or Nuitka),
+    it prepends the application's base directory (sys._MEIPASS for PyInstaller,
+    or the directory of the executable for Nuitka) to the provided relative path.
+    If no path is provided, it returns the base path itself.
+
+    If not running in a production environment (e.g., during development as a regular
+    Python script), it simply returns the provided path as is. If no path is provided,
+    it returns None in a non-production environment.
+
+    Parameters
+    ----------
+    path : Optional[str], optional
+        The relative path to the resource file from the application's root directory.
+        Defaults to None.
 
     Returns
     -------
-    str | None
-        The path to the resource files if in a production environment, 
-        otherwise None.
+    Optional[str]
+        - If in production: The absolute path to the resource file (or the base path if `path` is None).
+        - If not in production: The original `path` value passed to the function.
 
     Examples
     --------
-    >>> from pyloid.utils import get_production_path
-    >>> path = get_production_path("assets/icon.ico")
-    >>> if path:
-    >>>     print(f"Production path: {path}")
-    >>> else:
-    >>>     print("Not in a production environment.")
+    >>> # Assume running NOT in production
+    >>> get_production_path("assets/icon.ico")
+    'assets/icon.ico'
+    >>> get_production_path()
+    None
+
+    >>> # Assume running IN production (e.g., PyInstaller bundle)
+    >>> # where sys._MEIPASS might be '/tmp/_MEIabcde'
+    >>> get_production_path("assets/icon.ico") # doctest: +SKIP
+    '/tmp/_MEIabcde/assets/icon.ico'
+    >>> get_production_path() # doctest: +SKIP
+    '/tmp/_MEIabcde'
     """
     if is_production():
         if hasattr(sys, '_MEIPASS'):
@@ -40,7 +60,7 @@ def get_production_path(path: Optional[str] = None) -> Optional[str]:
         
         return os.path.join(base_path, path) if path else base_path
     else:
-        return None
+        return path
 
 
 def is_production() -> bool:

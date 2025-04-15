@@ -30,9 +30,12 @@ from PySide6.QtCore import Signal, QObject, Slot
 import uuid
 from PySide6.QtCore import QEventLoop
 import socket
-from typing import Any
+from typing import Any, Set
 from platformdirs import PlatformDirs
 from .store import Store
+from .rpc import PyloidRPC
+import threading
+import asyncio
 
 # software backend
 os.environ["QT_QUICK_BACKEND"] = "software"
@@ -76,7 +79,7 @@ qInstallMessageHandler(custom_message_handler)
 
 class _WindowController(QObject):
     create_window_signal = Signal(
-        QApplication, str, int, int, int, int, bool, bool, bool
+        QApplication, str, int, int, int, int, bool, bool, bool, PyloidRPC
     )
 
 
@@ -115,7 +118,7 @@ class _Pyloid(QApplication):
 
         self.data = data
 
-        self.windows_dict = {}  # 윈도우 ID를 키로 사용하는 딕셔너리
+        self.windows_dict: Dict[str, BrowserWindow] = {}  # 윈도우 ID를 키로 사용하는 딕셔너리
         self.server = None
 
         self.app_name = app_name
@@ -227,7 +230,7 @@ class _Pyloid(QApplication):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        # js_apis: List[PyloidAPI] = [],
+        rpc: Optional[PyloidRPC] = None,
     ) -> BrowserWindow:
         """
         Creates a new browser window.
@@ -250,6 +253,8 @@ class _Pyloid(QApplication):
             Whether to use the context menu (default is False)
         dev_tools : bool, optional
             Whether to use developer tools (default is False)
+        rpc : PyloidRPC, optional
+            The RPC server instance to be used in the window
 
         Returns
         -------
@@ -272,6 +277,7 @@ class _Pyloid(QApplication):
             frame,
             context_menu,
             dev_tools,
+            rpc,
         )
         latest_window_id = list(self.windows_dict.keys())[-1]
         return self.windows_dict[latest_window_id]
@@ -287,7 +293,8 @@ class _Pyloid(QApplication):
         frame: bool,
         context_menu: bool,
         dev_tools: bool,
-        js_apis: List[PyloidAPI] = [],
+        # js_apis: List[PyloidAPI] = [],
+        rpc: Optional[PyloidRPC] = None,
     ) -> BrowserWindow:
         """Function to create a new browser window."""
         window = BrowserWindow(
@@ -300,6 +307,7 @@ class _Pyloid(QApplication):
             frame,
             context_menu,
             dev_tools,
+            rpc,
         )
         self.windows_dict[window._window.id] = window
         return window
@@ -319,6 +327,19 @@ class _Pyloid(QApplication):
         app.run()
         ```
         """
+        
+        # Collect and deduplicate RPC servers
+        rpc_servers: Set[PyloidRPC] = set()
+        for window in self.windows_dict.values():
+            if window._window.rpc is not None:
+                rpc_servers.add(window._window.rpc)
+        
+        # 고유한 RPC 서버만 시작
+        for rpc in rpc_servers:
+            server_thread = threading.Thread(target=rpc.start, daemon=True)
+            server_thread.start()
+            
+        
         if is_production():
             sys.exit(self.exec())
         else:
@@ -347,20 +368,20 @@ class _Pyloid(QApplication):
     ###########################################################################################
     def get_windows(self) -> Dict[str, BrowserWindow]:
         """
-        Returns a list of all browser windows.
+        Returns a dictionary of all browser windows.
 
         Returns
         -------
-        List[BrowserWindow]
-            List of all browser windows
+        Dict[str, BrowserWindow]
+            Dictionary with window IDs as keys and BrowserWindow objects as values
 
         Examples
         --------
         ```python
         app = Pyloid(app_name="Pyloid-App")
         windows = app.get_windows()
-        for window in windows:
-            print(window.get_id())
+        for window_id, window in windows.items():
+            print(f"Window ID: {window_id}")
         ```
         """
         return self.windows_dict
@@ -464,8 +485,8 @@ class _Pyloid(QApplication):
 
         for window in self.windows_dict.values():
             window._window.close()
-            window.web_page.deleteLater()
-            window.web_view.deleteLater()
+            # window._window.web_view.page().deleteLater()
+            # window._window.web_view.deleteLater()
 
         self.windows_dict.clear()
         QApplication.quit()
@@ -1633,7 +1654,7 @@ class Pyloid(QObject):
         self,
         app_name: str,
         single_instance: bool = True,
-        data: Optional[Dict[str, Any]] = None,
+        # data: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the Pyloid application.
@@ -1648,8 +1669,6 @@ class Pyloid(QObject):
             The name of the application.
         single_instance : bool, optional
             Determines whether to run as a single instance. (Default is True)
-        data : dict, optional
-            Data to be transmitted to the frontend web engine via IPC
 
         Notes
         -----
@@ -1658,7 +1677,7 @@ class Pyloid(QObject):
         """
         super().__init__()
 
-        self.data = data
+        self.data = None # 나중에 데이터 필요 시 수정
 
         self.app = _Pyloid(app_name, single_instance, self.data)
 
@@ -1681,6 +1700,7 @@ class Pyloid(QObject):
                 frame=params.get("frame", True),
                 context_menu=params.get("context_menu", False),
                 dev_tools=params.get("dev_tools", False),
+                rpc=params.get("rpc", None),
             )
             result = window
 
@@ -1855,6 +1875,7 @@ class Pyloid(QObject):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
+        rpc: Optional[PyloidRPC] = None,
     ) -> BrowserWindow:
         """
         Creates a new browser window.
@@ -1877,6 +1898,8 @@ class Pyloid(QObject):
             Whether to use the context menu (default is False)
         dev_tools : bool, optional
             Whether to use developer tools (default is False)
+        rpc : PyloidRPC, optional
+            The RPC server instance to be used in the window
 
         Returns
         -------
@@ -1897,6 +1920,7 @@ class Pyloid(QObject):
             "frame": frame,
             "context_menu": context_menu,
             "dev_tools": dev_tools,
+            "rpc": rpc,
         }
         return self.execute_command("create_window", params)
 

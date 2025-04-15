@@ -6,15 +6,16 @@ import base64
 from ..utils import get_platform, is_production, get_production_path
 
 if TYPE_CHECKING:
-    from ..pyloid import Pyloid
+    from ..pyloid import _Pyloid
 
 
 class BaseAPI(PyloidAPI):
-    def __init__(self, window_id: str, data: dict, app: "Pyloid"):
+    def __init__(self, window_id: str, data: dict, app: "_Pyloid", rpc_url: Optional[str] = None):
         super().__init__()
         self.window_id: str = window_id
         self.data: dict = data
-        self.app: "Pyloid" = app
+        self.app: "_Pyloid" = app
+        self.rpc_url: Optional[str] = rpc_url
 
     @Bridge(result=dict)
     def getData(self):
@@ -37,7 +38,7 @@ class BaseAPI(PyloidAPI):
     def getWindowProperties(self):
         """Returns the properties of the window."""
         window = self.app.get_window_by_id(self.window_id)
-        window_properties = window.get_window_properties()
+        window_properties = window._window.get_window_properties()
         return window_properties
 
     @Bridge()
@@ -45,136 +46,136 @@ class BaseAPI(PyloidAPI):
         """Closes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.close()
+            window._window.close()
 
     @Bridge()
     def hide(self):
         """Hides the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.hide()
+            window._window.hide()
 
     @Bridge()
     def show(self):
         """Shows and focuses the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.show()
+            window._window.show()
 
     @Bridge()
     def focus(self):
         """Focuses the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.focus()
+            window._window.focus()
 
     @Bridge()
     def showAndFocus(self):
         """Shows and focuses the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.show_and_focus()
+            window._window.show_and_focus()
 
     @Bridge()
     def fullscreen(self):
         """Enters fullscreen mode."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.fullscreen()
+            window._window.fullscreen()
 
     @Bridge()
     def toggleFullscreen(self):
         """Toggles fullscreen mode for the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.toggle_fullscreen()
+            window._window.toggle_fullscreen()
 
     @Bridge()
     def minimize(self):
         """Minimizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.minimize()
+            window._window.minimize()
 
     @Bridge()
     def maximize(self):
         """Maximizes the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.maximize()
+            window._window.maximize()
 
     @Bridge()
     def unmaximize(self):
         """Restores the window to its normal state."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.unmaximize()
+            window._window.unmaximize()
 
     @Bridge()
     def toggleMaximize(self):
         """Toggles the maximized state of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.toggle_maximize()
+            window._window.toggle_maximize()
 
     @Bridge(result=bool)
     def isFullscreen(self):
         """Returns True if the window is fullscreen."""
         window = self.app.get_window_by_id(self.window_id)
-        return window.is_fullscreen()
+        return window._window.is_fullscreen()
 
     @Bridge(result=bool)
     def isMaximized(self):
         """Returns True if the window is maximized."""
         window = self.app.get_window_by_id(self.window_id)
-        return window.is_maximized()
+        return window._window.is_maximized()
 
     @Bridge(str)
     def setTitle(self, title: str):
         """Sets the title of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.set_title(title)
+            window._window.set_title(title)
 
     @Bridge(int, int)
     def setSize(self, width: int, height: int):
         """Sets the size of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.set_size(width, height)
+            window._window.set_size(width, height)
 
     @Bridge(int, int)
     def setPosition(self, x: int, y: int):
         """Sets the position of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.set_position(x, y)
+            window._window.set_position(x, y)
 
     @Bridge(bool)
     def setFrame(self, frame: bool):
         """Sets the frame of the window."""
         window = self.app.get_window_by_id(self.window_id)
         if window:
-            window.set_frame(frame)
+            window._window.set_frame(frame)
 
     @Bridge(result=bool)
     def getFrame(self):
         """Returns whether the window has a frame."""
         window = self.app.get_window_by_id(self.window_id)
-        return window.frame if window else False
+        return window._window.frame if window else False
 
     @Bridge(result=str)
     def getTitle(self):
         """Returns the title of the window."""
         window = self.app.get_window_by_id(self.window_id)
-        return window.title if window else ""
+        return window._window.title if window else ""
 
     @Bridge(result=dict)
     def getSize(self):
         """Returns the size of the window."""
         window = self.app.get_window_by_id(self.window_id)
         return (
-            {"width": window.width, "height": window.height}
+            {"width": window._window.width, "height": window._window.height}
             if window
             else {"width": 0, "height": 0}
         )
@@ -183,7 +184,7 @@ class BaseAPI(PyloidAPI):
     def getPosition(self):
         """Returns the position of the window."""
         window = self.app.get_window_by_id(self.window_id)
-        return {"x": window.x, "y": window.y} if window else {"x": 0, "y": 0}
+        return {"x": window._window.x, "y": window._window.y} if window else {"x": 0, "y": 0}
 
     ###############################################################
     # Clipboard
@@ -251,5 +252,10 @@ class BaseAPI(PyloidAPI):
     def getProductionPath(self, path: str):
         """Returns the production path of the application."""
         return get_production_path(path)
+    
+    @Bridge(result=str)
+    def getRpcUrl(self):
+        """Returns the RPC URL of the application."""
+        return self.rpc_url
     
     

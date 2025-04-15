@@ -44,6 +44,7 @@ from PySide6.QtWebEngineCore import (
 )
 
 # from .url_interceptor import CustomUrlInterceptor
+from .rpc import PyloidRPC
 
 if TYPE_CHECKING:
     from .pyloid import _Pyloid
@@ -57,10 +58,6 @@ class CustomWebPage(QWebEnginePage):
         self._permission_handlers = {}
         self._desktop_media_handler = None
         self._url_handlers = {}  # URL 핸들러 저장을 위한 딕셔너리 추가
-
-        # interceptor ( all url request )
-        # self.interceptor = CustomUrlInterceptor()
-        # self.profile().setUrlRequestInterceptor(self.interceptor)
 
     def _handlePermissionRequest(self, origin: QUrl, feature: QWebEnginePage.Feature):
         # print(origin, feature)
@@ -311,11 +308,23 @@ class _BrowserWindow:
         context_menu: bool = False,
         dev_tools: bool = False,
         # js_apis: List[PyloidAPI] = [],
+        rpc: Optional[PyloidRPC] = None,
     ):
         ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
+        
+        if rpc:
+            self.rpc = rpc
+            self.rpc_url = rpc.url
+        else:
+            self.rpc = None
+            self.rpc_url = None
+
+        # interceptor ( all url request )
+        # self.interceptor = CustomUrlInterceptor(rpc_url=self.rpc_url)
+        # self.web_view.page().setUrlRequestInterceptor(self.interceptor)
 
         self._window.closeEvent = self.closeEvent  # Override closeEvent method
         ###########################################################################################
@@ -329,7 +338,7 @@ class _BrowserWindow:
         self.context_menu = context_menu
         self.dev_tools = dev_tools
 
-        self.js_apis = [BaseAPI(self.id, self.app.data, self.app)]
+        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.rpc_url)]
 
         # for js_api in js_apis:
         #     self.js_apis.append(js_api)
@@ -557,14 +566,17 @@ class _BrowserWindow:
                 console.error('QWebChannel is not defined.');
             }
             """
-            js_api_init = "\n".join(
-                [
-                    f"window['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
-                    # f"console.log('{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
-                    for js_api in self.js_apis
-                ]
-            )
-            self.web_view.page().runJavaScript(js_code % js_api_init)
+            # js_api_init = "\n".join(
+            #     [
+            #         f"window['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
+            #         f"console.log('{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
+            #         for js_api in self.js_apis
+            #     ]
+            # )
+
+            base_api_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
+
+            self.web_view.page().runJavaScript(js_code % base_api_init)
 
             # if splash screen is set, close it when the page is loaded
             if self.close_on_load and self.splash_screen:
@@ -863,8 +875,8 @@ class _BrowserWindow:
 
     def _remove_from_app_windows(self):
         """Removes the window from the app's window list."""
-        if self in self.app.windows_dict:
-            self.app.windows_dict.pop(self.id)
+        self.app.windows_dict.pop(self.id)
+            
         if not self.app.windows_dict:
             self.app.quit()  # Quit the app if all windows are closed
 
@@ -1199,7 +1211,9 @@ class _BrowserWindow:
 
         (JavaScript)
         ```javascript
-        document.addEventListener('customEvent', (data) => {
+        import { event } from 'pyloid-js';
+
+        event.listen('customEvent', (data) => {
             console.log(data.message);
         });
         ```
@@ -2019,11 +2033,11 @@ class BrowserWindow(QObject):
         frame: bool,
         context_menu: bool,
         dev_tools: bool,
-        # js_apis: List[PyloidAPI],
+        rpc: Optional[PyloidRPC] = None,
     ):
         super().__init__()
         self._window = _BrowserWindow(
-            app, title, width, height, x, y, frame, context_menu, dev_tools
+            app, title, width, height, x, y, frame, context_menu, dev_tools, rpc
         )
         self.command_signal.connect(self._handle_command)
 
@@ -2101,7 +2115,7 @@ class BrowserWindow(QObject):
             result = self._window.remove_shortcut(params["key_sequence"])
         elif command_type == "get_all_shortcuts":
             result = self._window.get_all_shortcuts()
-        elif command_type == "emit":
+        elif command_type == "invoke":
             event_name = params["event_name"]
             data = params.get("data")
             result = self._window.invoke(event_name, data)
@@ -2656,9 +2670,13 @@ class BrowserWindow(QObject):
         >>> window.invoke("customEvent", {"message": "Hello, Pyloid!"})
 
         (JavaScript)
-        >>> document.addEventListener('customEvent', (data) => {
-        ...     console.log(data.message);
-        ... });
+        ```javascript
+        import { event } from 'pyloid-js';
+
+        event.listen('customEvent', (data) => {
+            console.log(data.message);
+        });
+        ```
         """
         return self.execute_command("invoke", {"event_name": event_name, "data": data})
 
