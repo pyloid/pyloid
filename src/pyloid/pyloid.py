@@ -87,6 +87,7 @@ class _WindowController(QObject):
 class _Pyloid(QApplication):
     def __init__(
         self,
+        pyloid_wrapper: "Pyloid",
         app_name,
         single_instance=True,
         data=None,
@@ -115,6 +116,8 @@ class _Pyloid(QApplication):
         ```
         """
         super().__init__(sys.argv)
+        
+        self.pyloid_wrapper = pyloid_wrapper
 
         self.data = data
 
@@ -160,6 +163,8 @@ class _Pyloid(QApplication):
         self.styleHints().colorSchemeChanged.connect(self._handle_color_scheme_change)
 
         self.dirs = PlatformDirs(self.app_name, appauthor=False)
+        
+        self.rpc_servers: Set[PyloidRPC] = set()
 
     # def set_theme(self, theme: Literal["system", "dark", "light"]):
     #     """
@@ -328,16 +333,16 @@ class _Pyloid(QApplication):
         ```
         """
         
-        # Collect and deduplicate RPC servers
-        rpc_servers: Set[PyloidRPC] = set()
-        for window in self.windows_dict.values():
-            if window._window.rpc is not None:
-                rpc_servers.add(window._window.rpc)
+        # # Collect and deduplicate RPC servers
+        # rpc_servers: Set[PyloidRPC] = set()
+        # for window in self.windows_dict.values():
+        #     if window._window.rpc is not None:
+        #         rpc_servers.add(window._window.rpc)
         
-        # 고유한 RPC 서버만 시작
-        for rpc in rpc_servers:
-            server_thread = threading.Thread(target=rpc.start, daemon=True)
-            server_thread.start()
+        # # Start unique RPC servers
+        # for rpc in rpc_servers:
+        #     server_thread = threading.Thread(target=rpc.start, daemon=True)
+        #     server_thread.start()
             
         
         if is_production():
@@ -414,20 +419,8 @@ class _Pyloid(QApplication):
         ```
         """
         if self.windows_dict:
-            # 첫 번째 윈도우 가져오기
             main_window = next(iter(self.windows_dict.values()))
-            was_on_top = bool(
-                main_window._window._window.windowFlags() & Qt.WindowStaysOnTopHint
-            )
-            if not was_on_top:
-                main_window._window._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-                main_window._window._window.show()
-            main_window._window.activateWindow()
-            if not was_on_top:
-                main_window._window._window.setWindowFlag(
-                    Qt.WindowStaysOnTopHint, False
-                )
-                main_window._window._window.show()
+            main_window.focus()
 
     def show_and_focus_main_window(self):
         """
@@ -441,21 +434,8 @@ class _Pyloid(QApplication):
         ```
         """
         if self.windows_dict:
-            main_window = next(iter(self.windows_dict.values()))
-            main_window._window.show()
-
-            was_on_top = bool(
-                main_window._window._window.windowFlags() & Qt.WindowStaysOnTopHint
-            )
-            if not was_on_top:
-                main_window._window._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-                main_window._window._window.show()
-            main_window._window._window.activateWindow()
-            if not was_on_top:
-                main_window._window._window.setWindowFlag(
-                    Qt.WindowStaysOnTopHint, False
-                )
-                main_window._window._window.show()
+            main_window = next(iter(self.windows_dict.values()))        
+            main_window.show_and_focus()
 
     def close_all_windows(self):
         """
@@ -1679,7 +1659,7 @@ class Pyloid(QObject):
 
         self.data = None # 나중에 데이터 필요 시 수정
 
-        self.app = _Pyloid(app_name, single_instance, self.data)
+        self.app = _Pyloid(self, app_name, single_instance, self.data)
 
         self.command_signal.connect(self._handle_command)
 

@@ -42,12 +42,13 @@ from PySide6.QtWebEngineCore import (
     QWebEngineSettings,
     QWebEngineDesktopMediaRequest,
 )
+import threading
 
 # from .url_interceptor import CustomUrlInterceptor
 from .rpc import PyloidRPC
 
 if TYPE_CHECKING:
-    from .pyloid import _Pyloid
+    from .pyloid import _Pyloid, Pyloid
 
 
 class CustomWebPage(QWebEnginePage):
@@ -299,6 +300,7 @@ class _BrowserWindow:
     def __init__(
         self,
         app: "_Pyloid",
+        window_wrapper: "BrowserWindow",
         title: str = "pyloid app",
         width: int = 800,
         height: int = 600,
@@ -315,6 +317,7 @@ class _BrowserWindow:
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
         
+        
         if rpc:
             self.rpc = rpc
             self.rpc_url = rpc.url
@@ -329,6 +332,7 @@ class _BrowserWindow:
         self._window.closeEvent = self.closeEvent  # Override closeEvent method
         ###########################################################################################
         self.app = app
+        self.window_wrapper = window_wrapper
         self.title = title
         self.width = width
         self.height = height
@@ -346,8 +350,27 @@ class _BrowserWindow:
         self.shortcuts = {}
         self.close_on_load = True
         self.splash_screen = None
-        ###########################################################################################
+        ###########################################################################################       
+        # RPC 서버가 없으면 추가하지 않음
+        if not self.rpc:
+            return;
+        
+        self.rpc.pyloid = self.app.pyloid_wrapper
+        # self.rpc.window = self.window_wrapper
+        
+        # RPC 서버 중복 방지
+        if self.rpc in self.app.rpc_servers:
+            return;
+        
+        # RPC 서버 추가
+        self.app.rpc_servers.add(self.rpc)
+        
+        # Start unique RPC servers
+        server_thread = threading.Thread(target=self.rpc.start, daemon=True)
+        server_thread.start()
+        ###########################################################################################   
 
+            
     def _set_custom_frame(
         self,
         use_custom: bool,
@@ -905,6 +928,9 @@ class _BrowserWindow:
         >>> window = app.create_window("pyloid-window")
         >>> window.show()
         """
+        # 최소화 상태라면 먼저 복원
+        if self._window.isMinimized():
+            self._window.showNormal()
         self._window.show()
 
     def focus(self):
@@ -917,14 +943,8 @@ class _BrowserWindow:
         >>> window = app.create_window("pyloid-window")
         >>> window.focus()
         """
-        was_on_top = bool(self._window.windowFlags() & Qt.WindowStaysOnTopHint)
-        if not was_on_top:
-            self._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-            self._window.show()
+        self._window.raise_()
         self._window.activateWindow()
-        if not was_on_top:
-            self._window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
-            self._window.show()
 
     def show_and_focus(self):
         """
@@ -936,14 +956,23 @@ class _BrowserWindow:
         >>> window = app.create_window("pyloid-window")
         >>> window.show_and_focus()
         """
-        was_on_top = bool(self._window.windowFlags() & Qt.WindowStaysOnTopHint)
-        if not was_on_top:
-            self._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-            self._window.show()
+        # 최소화 상태라면 먼저 복원
+        if self._window.isMinimized():
+            self._window.showNormal()
+        self._window.show()
+        self._window.raise_()
         self._window.activateWindow()
-        if not was_on_top:
-            self._window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
-            self._window.show()
+            
+        # was_on_top = bool(self._window.windowFlags() & Qt.WindowStaysOnTopHint)
+        # if not was_on_top:
+        #     self._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        #     self._window.show()
+            
+        # self._window.activateWindow()
+        
+        # if not was_on_top:
+        #     self._window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
+        #     self._window.show()
 
     def close(self):
         """
@@ -2037,7 +2066,7 @@ class BrowserWindow(QObject):
     ):
         super().__init__()
         self._window = _BrowserWindow(
-            app, title, width, height, x, y, frame, context_menu, dev_tools, rpc
+            app, self, title, width, height, x, y, frame, context_menu, dev_tools, rpc
         )
         self.command_signal.connect(self._handle_command)
 

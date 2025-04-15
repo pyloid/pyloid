@@ -1,12 +1,14 @@
 from src.pyloid.pyloid import Pyloid
 from src.pyloid.serve import pyloid_serve
-from src.pyloid.rpc import PyloidRPC
+from src.pyloid.rpc import PyloidRPC, RPCContext
+from src.pyloid.tray import TrayEvent
 from asyncio import sleep
 
 rpc = PyloidRPC()
 
 @rpc.method()
-async def hello():
+async def hello(ctx: RPCContext):
+    print(ctx.window.get_title())
     await sleep(3)
     print("hello")
     return "Hello, World!"
@@ -37,5 +39,23 @@ window = app_instance.create_window("Pyloid-App", rpc=rpc)
 window.load_file("file/index.html")
 window.show_and_focus()
 window.set_dev_tools(True)
+
+
+def on_double_click():
+    app_instance.show_main_window()
+    app_instance.show_and_focus_main_window()
+
+
+app_instance.set_tray_actions(
+    {
+        TrayEvent.DoubleClick: on_double_click,
+    }
+)
+app_instance.set_tray_menu_items(
+    [
+        {"label": "Show Window", "callback": app_instance.show_and_focus_main_window},
+        {"label": "Exit", "callback": app_instance.quit},
+    ]
+)
 
 app_instance.run()

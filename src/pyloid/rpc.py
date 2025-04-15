@@ -1,17 +1,37 @@
 import asyncio
 import json
 import logging
+import inspect
 from functools import wraps
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 from .utils import get_free_port
 from aiohttp import web
 import threading
 import time
-import aiohttp_cors  # CORS 지원을 위한 패키지 추가
+import aiohttp_cors
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .pyloid import Pyloid
+    from .browser_window import BrowserWindow
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("pyloid.rpc")
+
+class RPCContext:
+    """
+    Class that provides context information when calling RPC methods.
+    
+    Attributes
+    ----------
+    pyloid : Pyloid
+        Pyloid application instance.
+    window : BrowserWindow
+        Current browser window instance.
+    """
+    def __init__(self, pyloid: "Pyloid", window: "BrowserWindow"):
+        self.pyloid: "Pyloid" = pyloid
+        self.window: "BrowserWindow" = window
 
 class RPCError(Exception):
     """
@@ -109,6 +129,9 @@ class PyloidRPC:
         self._functions: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {}
         self._app = web.Application()
         
+        self.pyloid: Optional["Pyloid"] = None
+        # self.window: Optional["BrowserWindow"] = None
+        
         # CORS 설정 추가
         cors = aiohttp_cors.setup(self._app, defaults={
             "*": aiohttp_cors.ResourceOptions(
@@ -129,13 +152,15 @@ class PyloidRPC:
 
     def method(self, name: Optional[str] = None) -> Callable:
         """
-        Decorator to register an async function as an RPC method.
+        Use a decorator to register an async function as an RPC method.
+        
+        If there is a 'ctx' parameter, an RPCContext object is automatically injected.
+        This object allows access to the pyloid application and current window.
 
         Parameters
         ----------
         name : Optional[str], optional
-            The name to register the RPC method under. If None, the
-            function's name is used. Defaults to None.
+            Name to register the RPC method. If None, the function name is used. Default is None.
 
         Returns
         -------
@@ -152,12 +177,15 @@ class PyloidRPC:
         Examples
         --------
         ```python
-        from pyloid.rpc import PyloidRPC
+        from pyloid.rpc import PyloidRPC, RPCContext
         
         rpc = PyloidRPC()
         
         @rpc.method()
-        async def add(a: int, b: int) -> int:
+        async def add(ctx: RPCContext, a: int, b: int) -> int:
+            # Access the application and window through ctx.pyloid and ctx.window
+            if ctx.window:
+                print(f"Window title: {ctx.window.title}")
             return a + b
         ```
         """
@@ -168,13 +196,22 @@ class PyloidRPC:
             if rpc_name in self._functions:
                 raise ValueError(f"RPC function name '{rpc_name}' is already registered.")
 
+            # Analyze function signature
+            sig = inspect.signature(func)
+            has_ctx_param = 'ctx' in sig.parameters
+            
+            # Store the original function
             self._functions[rpc_name] = func
             log.info(f"RPC function registered: {rpc_name}")
 
             @wraps(func)
-            async def wrapper(*args, **kwargs):
-                 # This wrapper exists to follow the decorator pattern.
-                 # The actual call uses the original function stored in _functions.
+            async def wrapper(*args, _pyloid_window_id=None, **kwargs):
+                if has_ctx_param and 'ctx' not in kwargs:
+                    ctx = RPCContext(
+                        pyloid=self.pyloid,
+                        window=self.pyloid.get_window_by_id(_pyloid_window_id)
+                    )
+                    kwargs['ctx'] = ctx
                 return await func(*args, **kwargs)
             return wrapper
         return decorator
@@ -276,11 +313,39 @@ class PyloidRPC:
 
             try:
                 log.debug(f"Executing RPC method: {method_name}(params={params})")
+                
+                # 함수의 서명 분석하여 ctx 매개변수 유무 확인
+                sig = inspect.signature(func)
+                has_ctx_param = 'ctx' in sig.parameters
+                
+                # ctx 매개변수가 있으면 컨텍스트 객체 생성
+                if has_ctx_param and isinstance(params, dict) and 'ctx' not in params:
+                    ctx = RPCContext(
+                        pyloid=self.pyloid,
+                        window=self.pyloid.get_window_by_id(request_id)
+                    )
+                    # 딕셔너리 형태로 params 사용할 때
+                    params = params.copy()  # 원본 params 복사
+                    params['ctx'] = ctx
+                
                 # Call the function with positional or keyword arguments
                 if isinstance(params, list):
-                    result = await func(*params)
-                else: # isinstance(params, dict)
-                    result = await func(**params)
+                    # 리스트 형태로 params 사용할 때 처리 필요
+                    if has_ctx_param:
+                        ctx = RPCContext(pyloid=self.pyloid, window=self.pyloid.get_window_by_id(request_id))
+                        result = await func(ctx, *params, request_id=request_id)
+                    else:
+                        result = await func(*params, request_id=request_id)
+                else:  # isinstance(params, dict)
+                    internal_window_id = request_id
+                    params = params.copy()
+                    params['_pyloid_window_id'] = internal_window_id
+
+                    # 함수 시그니처에 맞는 인자만 추려서 전달
+                    sig = inspect.signature(func)
+                    allowed_params = set(sig.parameters.keys())
+                    filtered_params = {k: v for k, v in params.items() if k in allowed_params}
+                    result = await func(**filtered_params)
 
                 # 5. Format Success Response (only for non-notification requests)
                 if request_id is not None: # Notifications (id=null or absent) don't get responses
