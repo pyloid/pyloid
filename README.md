@@ -1,4 +1,4 @@
-<h1 style="text-align: center; font-size: 100px; font-weight: 500;">
+<h1 style="text-align: center; font-size: 200px; font-weight: 500;">
     <i>Pyloid</i>
 </h1>
 
