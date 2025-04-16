@@ -1,22 +1,44 @@
-# Pyloid 👋
-
-Pyloid is the Python backend version of Electron and Tauri, designed to simplify desktop application development. This open-source project, built on **QtWebEngine** and **PySide6**, provides seamless integration with various Python features, making it easy to build powerful applications effortlessly.
+<h1 style="text-align: center; font-size: 100px; font-weight: 500;">
+    <i>Pyloid</i>
+</h1>
 
 ![example image](example.png)
 
-## Why Pyloid?
+<h3 align="center" style="font-size: 28px;"><b>Pyloid: Thread-Safe Desktop Apps—Unified with Any Frontend and Python Technology</b></h3>
 
-With Pyloid, you can leverage the full power of Python in your desktop applications. Its simplicity and flexibility make it the perfect choice for both beginners and experienced developers looking for a Python-focused alternative to Electron or Tauri. It is especially optimized for building AI-powered desktop applications.
 
-## Documentation 📚
+## 💡 Key Features 
 
-[Pyloid Documentation](https://docs.pyloid.com/)
+- **All Frontend Frameworks** are supported
+- **All features necessary** for a desktop application are implemented
+- Through thread-safe implementation, it seamlessly **integrates with any Python framework**
+- **RPC** between Python and JavaScript
+- Single Instance Application / Multi Instance Application Support
+- Multi-Window Application Support
+- Clean and Intuitive Code Structure
+- **Cross-Platform Support**
+- Window Customization
+- **Detailed Numpy-style Docstrings**
 
-### Create Project 📦
+
+
+## 🚀 Getting Started
+
+### [Prerequisites](https://docs.pyloid.com/getting-started/prerequisites)
+
+- Node.js
+- Python
+- uv
+
+### [Create Project](https://docs.pyloid.com/getting-started/create-pyloid-app)
 
 ```bash
 npm create pyloid-app@latest
 ```
+
+## Documentation 📚
+
+[Pyloid Documentation](https://docs.pyloid.com/)
 
 ## License
 
