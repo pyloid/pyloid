@@ -877,8 +877,6 @@ class _BrowserWindow:
         self.dev_tools_window.setCentralWidget(dev_tools_view)
         self.dev_tools_window.resize(800, 600)
         self.dev_tools_window.show()
-
-        # Add this line to handle dev tools window closure
         self.dev_tools_window.closeEvent = lambda event: setattr(
             self, "dev_tools_window", None
         )

@@ -1,3 +1,4 @@
+import os
 from pickledb import PickleDB
 from typing import Any, List, Optional
 
@@ -16,6 +17,7 @@ class Store:
         --------
         >>> store = Store("data.json")
         """
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         self.db = PickleDB(path)
 
     def get(self, key: str) -> Any:

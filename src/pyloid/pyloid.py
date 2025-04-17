@@ -29,13 +29,11 @@ from PySide6.QtCore import QCoreApplication
 from PySide6.QtCore import Signal, QObject, Slot
 import uuid
 from PySide6.QtCore import QEventLoop
-import socket
 from typing import Any, Set
 from platformdirs import PlatformDirs
 from .store import Store
 from .rpc import PyloidRPC
 import threading
-import asyncio
 import signal
 
 # software backend
@@ -51,12 +49,12 @@ original_signal = signal.signal
 def safe_set_wakeup_fd(fd, *args, **kwargs):
     if threading.current_thread() is threading.main_thread():
         return original_set_wakeup_fd(fd, *args, **kwargs)
-    return -1  # 메인 스레드가 아닌 경우 아무것도 하지 않고 -1 반환
+    return -1  # If not in main thread, do nothing and return -1
 
 def safe_signal(signalnum, handler):
     if threading.current_thread() is threading.main_thread():
         return original_signal(signalnum, handler)
-    return None  # 메인 스레드가 아닌 경우 아무것도 하지 않음
+    return None  # If not in main thread, do nothing
 
 signal.set_wakeup_fd = safe_set_wakeup_fd
 signal.signal = safe_signal
