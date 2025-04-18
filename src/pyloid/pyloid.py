@@ -1666,11 +1666,6 @@ class Pyloid(QObject):
             The name of the application.
         single_instance : bool, optional
             Determines whether to run as a single instance. (Default is True)
-
-        Notes
-        -----
-        The generated or passed `id` is transmitted to the frontend via IPC,
-        and is used as an API key to connect to the integrated backend FastAPI server.
         """
         super().__init__()
 

@@ -36,7 +36,7 @@ app_instance.set_tray_icon("assets/icon.png")
 print(app_instance.is_auto_start())
 
 window = app_instance.create_window("Pyloid-App", rpc=rpc)
-window.load_file("file/index.html")
+window.load_file("file/index6.html")
 window.show_and_focus()
 window.set_dev_tools(True)
 
