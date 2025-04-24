@@ -37,7 +37,7 @@ import threading
 import signal
 
 # software backend
-os.environ["QT_QUICK_BACKEND"] = "software"
+# os.environ["QT_QUICK_BACKEND"] = "software"
 
 #########################################################################
 # for linux debug

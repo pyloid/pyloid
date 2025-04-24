@@ -6,6 +6,7 @@ from asyncio import sleep
 
 rpc = PyloidRPC()
 
+
 @rpc.method()
 async def hello(ctx: RPCContext):
     print(ctx.window.get_title())
@@ -13,11 +14,13 @@ async def hello(ctx: RPCContext):
     print("hello")
     return "Hello, World!"
 
+
 @rpc.method()
 async def hello2():
     await sleep(10)
     print("hello2")
     return "Hello, World2!"
+
 
 print(rpc.url)
 
@@ -33,10 +36,8 @@ app_instance.set_tray_icon("assets/icon.png")
 
 # store.save()
 
-print(app_instance.is_auto_start())
-
-window = app_instance.create_window("Pyloid-App", rpc=rpc)
-window.load_file("file/index6.html")
+window = app_instance.create_window("Pyloid-App")
+window.load_url("chrome://gpu")
 window.show_and_focus()
 window.set_dev_tools(True)
 
