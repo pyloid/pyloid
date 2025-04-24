@@ -1,10 +1,65 @@
-<style>
-  .custom-cursor {
-    cursor: pointer; /* 또는 다른 커서 스타일 */
-    width: 100px;
-    height: 100px;
-    background-color: red;
-  }
-</style>
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>PixiJS v8 미니멀</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #000000;
+      }
+      #app {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
 
-<div class="custom-cursor">마우스를 올리면 커서가 변경됩니다</div>
+    <!-- PixiJS v8 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.0.0/dist/pixi.min.js"></script>
+    <script>
+      // 비동기 함수로 감싸서 await 사용 가능하게 함
+      (async () => {
+        // 앱 생성 및 초기화
+        const app = new PIXI.Application();
+
+        await app.init({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x1099bb,
+        });
+
+        document.getElementById('app').appendChild(app.canvas);
+
+        app.canvas.style.display = 'block';
+        app.canvas.style.width = '100%';
+        app.canvas.style.height = '100%';
+
+        // 원 생성
+        const circle = new PIXI.Graphics()
+          .circle(0, 0, 100)
+          .fill({ color: 0xff0000 });
+
+        circle.position.set(window.innerWidth / 2, window.innerHeight / 2);
+        app.stage.addChild(circle);
+
+        // 애니메이션
+        app.ticker.add(() => (circle.rotation += 0.01));
+
+        console.log('Circle created:', circle);
+        console.log('Canvas added to DOM:', app.canvas);
+      })();
+    </script>
+  </body>
+</html>

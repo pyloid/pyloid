@@ -37,7 +37,9 @@ app_instance.set_tray_icon("assets/icon.png")
 # store.save()
 
 window = app_instance.create_window("Pyloid-App")
-window.load_url("chrome://gpu")
+# window.load_url("chrome://gpu")
+# window.load_url("https://www.google.com/earth/")
+window.load_file("file/index8.html")
 window.show_and_focus()
 window.set_dev_tools(True)
 
