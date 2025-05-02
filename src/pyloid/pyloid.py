@@ -93,13 +93,6 @@ def custom_message_handler(mode, context, message):
 
 qInstallMessageHandler(custom_message_handler)
 
-
-class _WindowController(QObject):
-    create_window_signal = Signal(
-        QApplication, str, int, int, int, int, bool, bool, bool, PyloidRPC
-    )
-
-
 # Only Work in Main Thread
 class _Pyloid(QApplication):
     def __init__(
@@ -151,10 +144,7 @@ class _Pyloid(QApplication):
         if self.single_instance:
             self._init_single_instance()
 
-        self.controller = _WindowController()
-        self.controller.create_window_signal.connect(
-            self._create_window_signal_function
-        )
+
 
         self.file_watcher = FileWatcher()
 
@@ -289,7 +279,7 @@ class _Pyloid(QApplication):
         >>> window = app.create_window(title="New Window", width=1024, height=768)
         >>> window.show()
         """
-        self.controller.create_window_signal.emit(
+        window = BrowserWindow(
             self,
             title,
             width,
@@ -301,37 +291,8 @@ class _Pyloid(QApplication):
             dev_tools,
             rpc,
         )
-        latest_window_id = list(self.windows_dict.keys())[-1]
-        return self.windows_dict[latest_window_id]
-
-    def _create_window_signal_function(
-        self,
-        app,
-        title: str,
-        width: int,
-        height: int,
-        x: int,
-        y: int,
-        frame: bool,
-        context_menu: bool,
-        dev_tools: bool,
-        # js_apis: List[PyloidAPI] = [],
-        rpc: Optional[PyloidRPC] = None,
-    ) -> BrowserWindow:
-        """Function to create a new browser window."""
-        window = BrowserWindow(
-            app,
-            title,
-            width,
-            height,
-            x,
-            y,
-            frame,
-            context_menu,
-            dev_tools,
-            rpc,
-        )
         self.windows_dict[window._window.id] = window
+        # latest_window_id = list(self.windows_dict.keys())[-1]
         return window
 
     def run(self):
