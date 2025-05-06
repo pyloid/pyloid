@@ -316,8 +316,7 @@ class _BrowserWindow:
         self.id = str(uuid.uuid4())  # Generate unique ID
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
-        
-        
+
         if rpc:
             self.rpc = rpc
             self.rpc_url = rpc.url
@@ -350,27 +349,26 @@ class _BrowserWindow:
         self.shortcuts = {}
         self.close_on_load = True
         self.splash_screen = None
-        ###########################################################################################       
+        ###########################################################################################
         # RPC 서버가 없으면 추가하지 않음
         if not self.rpc:
-            return;
-        
+            return
+
         self.rpc.pyloid = self.app.pyloid_wrapper
         # self.rpc.window = self.window_wrapper
-        
+
         # RPC 서버 중복 방지
         if self.rpc in self.app.rpc_servers:
-            return;
-        
+            return
+
         # RPC 서버 추가
         self.app.rpc_servers.add(self.rpc)
-        
+
         # Start unique RPC servers
         server_thread = threading.Thread(target=self.rpc.start, daemon=True)
         server_thread.start()
-        ###########################################################################################   
+        ###########################################################################################
 
-            
     def _set_custom_frame(
         self,
         use_custom: bool,
@@ -487,6 +485,9 @@ class _BrowserWindow:
         # Remove title bar and borders (if needed)
         if not self.frame:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
+            self._window.setAttribute(Qt.WA_TranslucentBackground)
+            self.web_view.setAttribute(Qt.WA_TranslucentBackground)
+            self.web_view.page().setBackgroundColor(Qt.transparent)
 
         # Disable default context menu
         if not self.context_menu:
@@ -810,6 +811,9 @@ class _BrowserWindow:
             self._window.setWindowFlags(Qt.Window)
         else:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
+            self._window.setAttribute(Qt.WA_TranslucentBackground)
+            self.web_view.setAttribute(Qt.WA_TranslucentBackground)
+            self.web_view.page().setBackgroundColor(Qt.transparent)
         if was_visible:
             self._window.show()
 
@@ -897,7 +901,7 @@ class _BrowserWindow:
     def _remove_from_app_windows(self):
         """Removes the window from the app's window list."""
         self.app.windows_dict.pop(self.id)
-            
+
         if not self.app.windows_dict:
             self.app.quit()  # Quit the app if all windows are closed
 
@@ -960,14 +964,14 @@ class _BrowserWindow:
         self._window.show()
         self._window.raise_()
         self._window.activateWindow()
-            
+
         # was_on_top = bool(self._window.windowFlags() & Qt.WindowStaysOnTopHint)
         # if not was_on_top:
         #     self._window.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         #     self._window.show()
-            
+
         # self._window.activateWindow()
-        
+
         # if not was_on_top:
         #     self._window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
         #     self._window.show()

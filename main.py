@@ -39,9 +39,10 @@ app_instance.set_tray_icon("assets/icon.png")
 window = app_instance.create_window("Pyloid-App")
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")
-window.load_file("file/index.html")
+window.load_file("file/index9.html")
 window.show_and_focus()
 window.set_dev_tools(True)
+window.set_frame(False)
 
 
 def on_double_click():
@@ -51,7 +52,6 @@ def on_double_click():
     window.load_url("chrome://gpu")
     window.show_and_focus()
     window.set_dev_tools(True)
-
 
 
 app_instance.set_tray_actions(
