@@ -228,12 +228,18 @@ class CustomWebEngineView(QWebEngineView):
 
     def eventFilter(self, source, event):
         if self.focusProxy() is source:
+            # 리사이징 영역에 있을 때는 모든 클릭 이벤트를 가로채기
+            if self.is_in_resize_area and event.type() == QEvent.MouseButtonPress:
+                self.mouse_press_event(event)
+                return True  # 이벤트를 소비하여 웹뷰로 전달되지 않도록 함
+
             if event.type() == QEvent.MouseButtonPress:
                 self.mouse_press_event(event)
             elif event.type() == QEvent.MouseMove:
                 self.mouse_move_event(event)
             elif event.type() == QEvent.MouseButtonRelease:
                 self.mouse_release_event(event)
+
         return super().eventFilter(source, event)
 
     def get_resize_direction(self, pos):
@@ -715,7 +721,7 @@ class _BrowserWindow:
         """
         self.width = width
         self.height = height
-        self._window.setGeometry(self.x, self.y, self.width, self.height)
+        self._window.resize(self.width, self.height)
 
     def set_position(self, x: int, y: int):
         """
@@ -736,7 +742,7 @@ class _BrowserWindow:
         """
         self.x = x
         self.y = y
-        self._window.setGeometry(self.x, self.y, self.width, self.height)
+        self._window.move(self.x, self.y)
 
     def set_position_by_anchor(self, anchor: str):
         """
@@ -1338,7 +1344,8 @@ class _BrowserWindow:
         app.run()
         ```
         """
-        return {"width": self.width, "height": self.height}
+        size = self._window.size()
+        return {"width": size.width(), "height": size.height()}
 
     def get_position(self) -> Dict[str, int]:
         """
@@ -1361,7 +1368,8 @@ class _BrowserWindow:
         app.run()
         ```
         """
-        return {"x": self.x, "y": self.y}
+        pos = self._window.pos()
+        return {"x": pos.x(), "y": pos.y()}
 
     def get_title(self) -> str:
         """

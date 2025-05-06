@@ -10,7 +10,9 @@ if TYPE_CHECKING:
 
 
 class BaseAPI(PyloidAPI):
-    def __init__(self, window_id: str, data: dict, app: "_Pyloid", rpc_url: Optional[str] = None):
+    def __init__(
+        self, window_id: str, data: dict, app: "_Pyloid", rpc_url: Optional[str] = None
+    ):
         super().__init__()
         self.window_id: str = window_id
         self.data: dict = data
@@ -174,17 +176,15 @@ class BaseAPI(PyloidAPI):
     def getSize(self):
         """Returns the size of the window."""
         window = self.app.get_window_by_id(self.window_id)
-        return (
-            {"width": window._window.width, "height": window._window.height}
-            if window
-            else {"width": 0, "height": 0}
-        )
+        size = window.get_size()
+        return size if window else {"width": 0, "height": 0}
 
     @Bridge(result=dict)
     def getPosition(self):
         """Returns the position of the window."""
         window = self.app.get_window_by_id(self.window_id)
-        return {"x": window._window.x, "y": window._window.y} if window else {"x": 0, "y": 0}
+        pos = window.get_position()
+        return pos if window else {"x": 0, "y": 0}
 
     ###############################################################
     # Clipboard
@@ -252,10 +252,8 @@ class BaseAPI(PyloidAPI):
     def getProductionPath(self, path: str):
         """Returns the production path of the application."""
         return get_production_path(path)
-    
+
     @Bridge(result=str)
     def getRpcUrl(self):
         """Returns the RPC URL of the application."""
         return self.rpc_url
-    
-    
