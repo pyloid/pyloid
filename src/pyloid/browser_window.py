@@ -155,9 +155,9 @@ class CustomWebPage(QWebEnginePage):
 
 
 class CustomWebEngineView(QWebEngineView):
-    def __init__(self, parent: "BrowserWindow" = None):
+    def __init__(self, parent: "_BrowserWindow" = None):
         super().__init__(parent._window)
-        self.parent: "BrowserWindow" = parent
+        self.parent: "_BrowserWindow" = parent
 
         # Custom Web Page
         self.custom_page = CustomWebPage()
