@@ -6,8 +6,7 @@
 
 <h2 align="center" style="font-size: 28px;"><b>Pyloid: Thread-Safe Desktop Apps—Unified with Any Frontend and Python Technology</b></h2>
 
-
-## 💡 Key Features 
+## 💡 Key Features
 
 - **All Frontend Frameworks** are supported
 - **All features necessary** for a desktop application are implemented
@@ -19,8 +18,6 @@
 - **Cross-Platform Support**
 - Window Customization
 - **Detailed Numpy-style Docstrings**
-
-
 
 ## 🚀 Getting Started
 
@@ -35,6 +32,10 @@
 ```bash
 npm create pyloid-app@latest
 ```
+
+## Discord 🎉
+
+[Our Discord!](https://discord.gg/VTqexxxTy9)
 
 ## Documentation 📚
 
