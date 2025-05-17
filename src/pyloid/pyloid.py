@@ -243,6 +243,7 @@ class _Pyloid(QApplication):
         context_menu: bool = False,
         dev_tools: bool = False,
         rpc: Optional[PyloidRPC] = None,
+        transparent: bool = False,
     ) -> BrowserWindow:
         """
         Creates a new browser window.
@@ -267,6 +268,8 @@ class _Pyloid(QApplication):
             Whether to use developer tools (default is False)
         rpc : PyloidRPC, optional
             The RPC server instance to be used in the window
+        transparent : bool, optional
+            Whether the window is transparent (default is False)
 
         Returns
         -------
@@ -290,6 +293,7 @@ class _Pyloid(QApplication):
             context_menu,
             dev_tools,
             rpc,
+            transparent,
         )
         self.windows_dict[window._window.id] = window
         # latest_window_id = list(self.windows_dict.keys())[-1]
@@ -1654,6 +1658,7 @@ class Pyloid(QObject):
                 context_menu=params.get("context_menu", False),
                 dev_tools=params.get("dev_tools", False),
                 rpc=params.get("rpc", None),
+                transparent=params.get("transparent", False),
             )
             result = window
 
@@ -1829,6 +1834,7 @@ class Pyloid(QObject):
         context_menu: bool = False,
         dev_tools: bool = False,
         rpc: Optional[PyloidRPC] = None,
+        transparent: bool = False,
     ) -> BrowserWindow:
         """
         Creates a new browser window.
@@ -1853,6 +1859,8 @@ class Pyloid(QObject):
             Whether to use developer tools (default is False)
         rpc : PyloidRPC, optional
             The RPC server instance to be used in the window
+        transparent : bool, optional
+            Whether the window is transparent (default is False)
 
         Returns
         -------
@@ -1874,6 +1882,7 @@ class Pyloid(QObject):
             "context_menu": context_menu,
             "dev_tools": dev_tools,
             "rpc": rpc,
+            "transparent": transparent,
         }
         return self.execute_command("create_window", params)
 

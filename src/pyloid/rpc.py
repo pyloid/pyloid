@@ -10,6 +10,7 @@ import threading
 import time
 import aiohttp_cors
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .pyloid import Pyloid
     from .browser_window import BrowserWindow
@@ -18,10 +19,11 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("pyloid.rpc")
 
+
 class RPCContext:
     """
     Class that provides context information when calling RPC methods.
-    
+
     Attributes
     ----------
     pyloid : Pyloid
@@ -29,9 +31,11 @@ class RPCContext:
     window : BrowserWindow
         Current browser window instance.
     """
+
     def __init__(self, pyloid: "Pyloid", window: "BrowserWindow"):
         self.pyloid: "Pyloid" = pyloid
         self.window: "BrowserWindow" = window
+
 
 class RPCError(Exception):
     """
@@ -50,6 +54,7 @@ class RPCError(Exception):
     data : Any, optional
         Additional information about the error, by default None.
     """
+
     def __init__(self, message: str, code: int = -32000, data: Any = None):
         """
         Initialize the RPCError.
@@ -82,6 +87,7 @@ class RPCError(Exception):
             error_obj["data"] = self.data
         return error_obj
 
+
 class PyloidRPC:
     """
     A simple JSON-RPC server wrapper based on aiohttp.
@@ -104,17 +110,23 @@ class PyloidRPC:
     _app : web.Application
         The underlying aiohttp web application instance.
     """
-    def __init__(self):
+
+    def __init__(self, client_max_size: int = 1024 * 1024 * 10):
         """
         Initialize the PyloidRPC server instance.
-        
+
+        Parameters
+        ----------
+        client_max_size : int, optional
+            The maximum size of client requests (bytes). Default is 10MB.
+
         Examples
         --------
         ```python
         from pyloid.rpc import PyloidRPC
-        
+
         rpc = PyloidRPC()
-        
+
         @rpc.method()
         async def add(a: int, b: int) -> int:
             return a + b
@@ -123,29 +135,32 @@ class PyloidRPC:
         self._host = "127.0.0.1"
         self._port = get_free_port()
         self._rpc_path = "/rpc"
-        
+
         self.url = f"http://{self._host}:{self._port}{self._rpc_path}"
-        
+
         self._functions: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {}
-        self._app = web.Application()
-        
+        self._app = web.Application(client_max_size=client_max_size)
+
         self.pyloid: Optional["Pyloid"] = None
         # self.window: Optional["BrowserWindow"] = None
-        
+
         # CORS 설정 추가
-        cors = aiohttp_cors.setup(self._app, defaults={
-            "*": aiohttp_cors.ResourceOptions(
-                allow_credentials=True,
-                expose_headers="*",
-                allow_headers="*",
-                allow_methods=["POST"]
-            )
-        })
-        
+        cors = aiohttp_cors.setup(
+            self._app,
+            defaults={
+                "*": aiohttp_cors.ResourceOptions(
+                    allow_credentials=True,
+                    expose_headers="*",
+                    allow_headers="*",
+                    allow_methods=["POST"],
+                )
+            },
+        )
+
         # CORS 적용된 라우트 추가
         resource = cors.add(self._app.router.add_resource(self._rpc_path))
         cors.add(resource.add_route("POST", self._handle_rpc))
-        
+
         log.info(f"RPC server initialized.")
         self._runner: Optional[web.AppRunner] = None
         self._site: Optional[web.TCPSite] = None
@@ -153,7 +168,7 @@ class PyloidRPC:
     def method(self, name: Optional[str] = None) -> Callable:
         """
         Use a decorator to register an async function as an RPC method.
-        
+
         If there is a 'ctx' parameter, an RPCContext object is automatically injected.
         This object allows access to the pyloid application and current window.
 
@@ -173,14 +188,14 @@ class PyloidRPC:
             If the decorated function is not an async function (`coroutinefunction`).
         ValueError
             If an RPC function with the specified name is already registered.
-            
+
         Examples
         --------
         ```python
         from pyloid.rpc import PyloidRPC, RPCContext
-        
+
         rpc = PyloidRPC()
-        
+
         @rpc.method()
         async def add(ctx: RPCContext, a: int, b: int) -> int:
             # Access the application and window through ctx.pyloid and ctx.window
@@ -189,31 +204,36 @@ class PyloidRPC:
             return a + b
         ```
         """
+
         def decorator(func: Callable[..., Coroutine[Any, Any, Any]]):
             rpc_name = name or func.__name__
             if not asyncio.iscoroutinefunction(func):
                 raise TypeError(f"RPC function '{rpc_name}' must be an async function.")
             if rpc_name in self._functions:
-                raise ValueError(f"RPC function name '{rpc_name}' is already registered.")
+                raise ValueError(
+                    f"RPC function name '{rpc_name}' is already registered."
+                )
 
             # Analyze function signature
             sig = inspect.signature(func)
-            has_ctx_param = 'ctx' in sig.parameters
-            
+            has_ctx_param = "ctx" in sig.parameters
+
             # Store the original function
             self._functions[rpc_name] = func
             log.info(f"RPC function registered: {rpc_name}")
 
             @wraps(func)
             async def wrapper(*args, _pyloid_window_id=None, **kwargs):
-                if has_ctx_param and 'ctx' not in kwargs:
+                if has_ctx_param and "ctx" not in kwargs:
                     ctx = RPCContext(
                         pyloid=self.pyloid,
-                        window=self.pyloid.get_window_by_id(_pyloid_window_id)
+                        window=self.pyloid.get_window_by_id(_pyloid_window_id),
                     )
-                    kwargs['ctx'] = ctx
+                    kwargs["ctx"] = ctx
                 return await func(*args, **kwargs)
+
             return wrapper
+
         return decorator
 
     def _validate_jsonrpc_request(self, data: Any) -> Optional[Dict[str, Any]]:
@@ -239,19 +259,31 @@ class PyloidRPC:
         request_id = data.get("id") if isinstance(data, dict) else None
 
         if not isinstance(data, dict):
-            return {"code": -32600, "message": "Invalid Request: Request must be a JSON object."}
+            return {
+                "code": -32600,
+                "message": "Invalid Request: Request must be a JSON object.",
+            }
         if data.get("jsonrpc") != "2.0":
-            return {"code": -32600, "message": "Invalid Request: 'jsonrpc' version must be '2.0'."}
+            return {
+                "code": -32600,
+                "message": "Invalid Request: 'jsonrpc' version must be '2.0'.",
+            }
         if "method" not in data or not isinstance(data["method"], str):
-            return {"code": -32600, "message": "Invalid Request: 'method' must be a string."}
+            return {
+                "code": -32600,
+                "message": "Invalid Request: 'method' must be a string.",
+            }
         if "params" in data and not isinstance(data["params"], (list, dict)):
             # JSON-RPC 2.0: "params" must be array or object if present
-            return {"code": -32602, "message": "Invalid params: 'params' must be an array or object."}
+            return {
+                "code": -32602,
+                "message": "Invalid params: 'params' must be an array or object.",
+            }
         # JSON-RPC 2.0: "id" is optional, but if present, must be string, number, or null.
         # This validation is simplified here. A more robust check could be added.
         # if "id" in data and not isinstance(data.get("id"), (str, int, float, type(None))):
         #     return {"code": -32600, "message": "Invalid Request: 'id', if present, must be a string, number, or null."}
-        return None # Request structure is valid
+        return None  # Request structure is valid
 
     async def _handle_rpc(self, request: web.Request) -> web.Response:
         """
@@ -272,14 +304,23 @@ class PyloidRPC:
             An aiohttp JSON response object containing the JSON-RPC response or error.
         """
         request_id: Optional[Union[str, int, None]] = None
-        data: Any = None # Define data outside try block for broader scope if needed
+        data: Any = None  # Define data outside try block for broader scope if needed
 
         try:
             # 1. Check Content-Type
-            if request.content_type != 'application/json':
-                 # Cannot determine ID if content type is wrong, respond with null ID
-                 error_resp = {"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error: Content-Type must be application/json."}, "id": None}
-                 return web.json_response(error_resp, status=415) # Unsupported Media Type
+            if request.content_type != "application/json":
+                # Cannot determine ID if content type is wrong, respond with null ID
+                error_resp = {
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32700,
+                        "message": "Parse error: Content-Type must be application/json.",
+                    },
+                    "id": None,
+                }
+                return web.json_response(
+                    error_resp, status=415
+                )  # Unsupported Media Type
 
             # 2. Parse JSON Body
             try:
@@ -287,18 +328,29 @@ class PyloidRPC:
                 data = json.loads(raw_data)
                 # Extract ID early for inclusion in potential error responses
                 if isinstance(data, dict):
-                    request_id = data.get("id") # Can be str, int, null, or absent
+                    request_id = data.get("id")  # Can be str, int, null, or absent
             except json.JSONDecodeError:
                 # Invalid JSON, ID might be unknown, respond with null ID
-                error_resp = {"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error: Invalid JSON format."}, "id": None}
-                return web.json_response(error_resp, status=400) # Bad Request
+                error_resp = {
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32700,
+                        "message": "Parse error: Invalid JSON format.",
+                    },
+                    "id": None,
+                }
+                return web.json_response(error_resp, status=400)  # Bad Request
 
             # 3. Validate JSON-RPC Structure
             validation_error = self._validate_jsonrpc_request(data)
             if validation_error:
-                 # Use extracted ID if available, otherwise it remains None
-                 error_resp = {"jsonrpc": "2.0", "error": validation_error, "id": request_id}
-                 return web.json_response(error_resp, status=400) # Bad Request
+                # Use extracted ID if available, otherwise it remains None
+                error_resp = {
+                    "jsonrpc": "2.0",
+                    "error": validation_error,
+                    "id": request_id,
+                }
+                return web.json_response(error_resp, status=400)  # Bad Request
 
             # Assuming validation passed, data is a dict with 'method'
             method_name: str = data["method"]
@@ -308,48 +360,63 @@ class PyloidRPC:
             # 4. Find and Call Method
             func = self._functions.get(method_name)
             if func is None:
-                error_resp = {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found."}, "id": request_id}
-                return web.json_response(error_resp, status=404) # Not Found
+                error_resp = {
+                    "jsonrpc": "2.0",
+                    "error": {"code": -32601, "message": "Method not found."},
+                    "id": request_id,
+                }
+                return web.json_response(error_resp, status=404)  # Not Found
 
             try:
                 log.debug(f"Executing RPC method: {method_name}(params={params})")
-                
+
                 # 함수의 서명 분석하여 ctx 매개변수 유무 확인
                 sig = inspect.signature(func)
-                has_ctx_param = 'ctx' in sig.parameters
-                
+                has_ctx_param = "ctx" in sig.parameters
+
                 # ctx 매개변수가 있으면 컨텍스트 객체 생성
-                if has_ctx_param and isinstance(params, dict) and 'ctx' not in params:
+                if has_ctx_param and isinstance(params, dict) and "ctx" not in params:
                     ctx = RPCContext(
                         pyloid=self.pyloid,
-                        window=self.pyloid.get_window_by_id(request_id)
+                        window=self.pyloid.get_window_by_id(request_id),
                     )
                     # 딕셔너리 형태로 params 사용할 때
                     params = params.copy()  # 원본 params 복사
-                    params['ctx'] = ctx
-                
+                    params["ctx"] = ctx
+
                 # Call the function with positional or keyword arguments
                 if isinstance(params, list):
                     # 리스트 형태로 params 사용할 때 처리 필요
                     if has_ctx_param:
-                        ctx = RPCContext(pyloid=self.pyloid, window=self.pyloid.get_window_by_id(request_id))
+                        ctx = RPCContext(
+                            pyloid=self.pyloid,
+                            window=self.pyloid.get_window_by_id(request_id),
+                        )
                         result = await func(ctx, *params, request_id=request_id)
                     else:
                         result = await func(*params, request_id=request_id)
                 else:  # isinstance(params, dict)
                     internal_window_id = request_id
                     params = params.copy()
-                    params['_pyloid_window_id'] = internal_window_id
+                    params["_pyloid_window_id"] = internal_window_id
 
                     # 함수 시그니처에 맞는 인자만 추려서 전달
                     sig = inspect.signature(func)
                     allowed_params = set(sig.parameters.keys())
-                    filtered_params = {k: v for k, v in params.items() if k in allowed_params}
+                    filtered_params = {
+                        k: v for k, v in params.items() if k in allowed_params
+                    }
                     result = await func(**filtered_params)
 
                 # 5. Format Success Response (only for non-notification requests)
-                if request_id is not None: # Notifications (id=null or absent) don't get responses
-                    response_data = {"jsonrpc": "2.0", "result": result, "id": request_id}
+                if (
+                    request_id is not None
+                ):  # Notifications (id=null or absent) don't get responses
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "result": result,
+                        "id": request_id,
+                    }
                     return web.json_response(response_data)
                 else:
                     # No response for notifications, return 204 No Content might be appropriate
@@ -357,32 +424,57 @@ class PyloidRPC:
                     # For clarity/standard compliance, maybe return 204?
                     return web.Response(status=204)
 
-
             except RPCError as e:
-                 # Application-specific error during method execution
-                 log.warning(f"RPC execution error in method '{method_name}': {e}", exc_info=False)
-                 if request_id is not None:
-                     error_resp = {"jsonrpc": "2.0", "error": e.to_dict(), "id": request_id}
-                     # Use 500 or a more specific 4xx/5xx if applicable based on error code?
-                     # Sticking to 500 for server-side execution errors.
-                     return web.json_response(error_resp, status=500)
-                 else:
-                     return web.Response(status=204) # No response for notification errors
+                # Application-specific error during method execution
+                log.warning(
+                    f"RPC execution error in method '{method_name}': {e}",
+                    exc_info=False,
+                )
+                if request_id is not None:
+                    error_resp = {
+                        "jsonrpc": "2.0",
+                        "error": e.to_dict(),
+                        "id": request_id,
+                    }
+                    # Use 500 or a more specific 4xx/5xx if applicable based on error code?
+                    # Sticking to 500 for server-side execution errors.
+                    return web.json_response(error_resp, status=500)
+                else:
+                    return web.Response(
+                        status=204
+                    )  # No response for notification errors
             except Exception as e:
                 # Unexpected error during method execution
-                log.exception(f"Unexpected error during execution of RPC method '{method_name}':") # Log full traceback
+                log.exception(
+                    f"Unexpected error during execution of RPC method '{method_name}':"
+                )  # Log full traceback
                 if request_id is not None:
                     # Minimize internal details exposed to the client
-                    error_resp = {"jsonrpc": "2.0", "error": {"code": -32000, "message": f"Server error: {type(e).__name__}"}, "id": request_id}
-                    return web.json_response(error_resp, status=500) # Internal Server Error
+                    error_resp = {
+                        "jsonrpc": "2.0",
+                        "error": {
+                            "code": -32000,
+                            "message": f"Server error: {type(e).__name__}",
+                        },
+                        "id": request_id,
+                    }
+                    return web.json_response(
+                        error_resp, status=500
+                    )  # Internal Server Error
                 else:
-                    return web.Response(status=204) # No response for notification errors
+                    return web.Response(
+                        status=204
+                    )  # No response for notification errors
 
         except Exception as e:
             # Catch-all for fatal errors during request handling itself (before/after method call)
             log.exception("Fatal error in RPC handler:")
             # ID might be uncertain at this stage, include if available
-            error_resp = {"jsonrpc": "2.0", "error": {"code": -32603, "message": "Internal error"}, "id": request_id}
+            error_resp = {
+                "jsonrpc": "2.0",
+                "error": {"code": -32603, "message": "Internal error"},
+                "id": request_id,
+            }
             return web.json_response(error_resp, status=500)
 
     async def start_async(self, **kwargs):
@@ -419,7 +511,7 @@ class PyloidRPC:
         """
         log.info(f"Starting RPC server")
         # Default to print=None to avoid duplicate startup messages, can be overridden via kwargs
-        run_app_kwargs = {'print': None, 'access_log': None}
+        run_app_kwargs = {"print": None, "access_log": None}
         run_app_kwargs.update(kwargs)
         try:
             web.run_app(self._app, host=self._host, port=self._port, **run_app_kwargs)

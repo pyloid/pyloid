@@ -4,7 +4,7 @@ from src.pyloid.rpc import PyloidRPC, RPCContext
 from src.pyloid.tray import TrayEvent
 from asyncio import sleep
 
-rpc = PyloidRPC()
+rpc = PyloidRPC(client_max_size=1024 * 1024 * 10)
 
 
 @rpc.method()
@@ -36,7 +36,7 @@ app_instance.set_tray_icon("assets/icon.png")
 
 # store.save()
 
-window = app_instance.create_window("Pyloid-App")
+window = app_instance.create_window("Pyloid-App", transparent=True)
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")
 window.load_file("file/index9.html")

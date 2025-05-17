@@ -317,6 +317,7 @@ class _BrowserWindow:
         dev_tools: bool = False,
         # js_apis: List[PyloidAPI] = [],
         rpc: Optional[PyloidRPC] = None,
+        transparent: bool = False,
     ):
         ###########################################################################################
         self.id = str(uuid.uuid4())  # Generate unique ID
@@ -344,6 +345,7 @@ class _BrowserWindow:
         self.x = x
         self.y = y
         self.frame = frame
+        self.transparent = transparent
         self.context_menu = context_menu
         self.dev_tools = dev_tools
 
@@ -412,6 +414,20 @@ class _BrowserWindow:
             self.custom_title_bar = None
 
         self._window.show()
+
+    def _apply_transparency(self):
+        """Applies transparency settings based on self.transparent and self.frame."""
+        if self.transparent:
+            # It's generally better if FramelessWindowHint is set for full transparency,
+            # but WA_TranslucentBackground can still have effects otherwise.
+            self._window.setAttribute(Qt.WA_TranslucentBackground, True)
+            self.web_view.setAttribute(Qt.WA_TranslucentBackground, True)
+            self.web_view.page().setBackgroundColor(Qt.transparent)
+        else:
+            self._window.setAttribute(Qt.WA_TranslucentBackground, False)
+            self.web_view.setAttribute(Qt.WA_TranslucentBackground, False)
+            # Reset background color for web_view page, QColor() or a specific color like Qt.white
+            self.web_view.page().setBackgroundColor(Qt.white)
 
     def _load(self):
         self.set_title(self.title)
@@ -491,9 +507,11 @@ class _BrowserWindow:
         # Remove title bar and borders (if needed)
         if not self.frame:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
-            self._window.setAttribute(Qt.WA_TranslucentBackground)
-            self.web_view.setAttribute(Qt.WA_TranslucentBackground)
-            self.web_view.page().setBackgroundColor(Qt.transparent)
+        else:
+            # Ensure standard window flags if frame is True, otherwise flags might be missing
+            self._window.setWindowFlags(Qt.Window)
+
+        self._apply_transparency()
 
         # Disable default context menu
         if not self.context_menu:
@@ -817,11 +835,42 @@ class _BrowserWindow:
             self._window.setWindowFlags(Qt.Window)
         else:
             self._window.setWindowFlags(Qt.FramelessWindowHint)
-            self._window.setAttribute(Qt.WA_TranslucentBackground)
-            self.web_view.setAttribute(Qt.WA_TranslucentBackground)
-            self.web_view.page().setBackgroundColor(Qt.transparent)
+
+        self._apply_transparency()
+
         if was_visible:
             self._window.show()
+
+    def set_transparent(self, transparent: bool):
+        """
+        Sets the transparency of the window.
+
+        Parameters
+        ----------
+        transparent : bool
+            If True, the window background will be transparent.
+            If False, it will be opaque.
+
+        Examples
+        --------
+        >>> window.set_transparent(True)
+        """
+        self.transparent = transparent
+        self._apply_transparency()
+
+        if self._window.isVisible():
+            self._window.show()
+
+    def get_transparent(self) -> bool:
+        """
+        Returns the transparency state of the window.
+
+        Returns
+        -------
+        bool
+            True if the window is set to be transparent, False otherwise.
+        """
+        return self.transparent
 
     def set_context_menu(self, context_menu: bool):
         """
@@ -1296,6 +1345,7 @@ class _BrowserWindow:
             "x": self.x,
             "y": self.y,
             "frame": self.frame,
+            "transparent": self.transparent,  # Add transparent to properties
             "context_menu": self.context_menu,
             "dev_tools": self.dev_tools,
         }
@@ -2069,14 +2119,26 @@ class BrowserWindow(QObject):
         height: int,
         x: int,
         y: int,
-        frame: bool,
-        context_menu: bool,
-        dev_tools: bool,
+        frame: bool = True,
+        context_menu: bool = False,
+        dev_tools: bool = False,
         rpc: Optional[PyloidRPC] = None,
+        transparent: bool = False,
     ):
         super().__init__()
         self._window = _BrowserWindow(
-            app, self, title, width, height, x, y, frame, context_menu, dev_tools, rpc
+            app,
+            self,
+            title,
+            width,
+            height,
+            x,
+            y,
+            frame,
+            context_menu,
+            dev_tools,
+            rpc,
+            transparent,
         )
         self.command_signal.connect(self._handle_command)
 
@@ -2112,6 +2174,10 @@ class BrowserWindow(QObject):
             result = self._window.set_position_by_anchor(params["anchor"])
         elif command_type == "set_frame":
             result = self._window.set_frame(params["frame"])
+        elif command_type == "set_transparent":
+            result = self._window.set_transparent(params["transparent"])
+        elif command_type == "get_transparent":
+            result = self._window.get_transparent()
         elif command_type == "set_context_menu":
             result = self._window.set_context_menu(params["context_menu"])
         elif command_type == "set_dev_tools":
@@ -2394,6 +2460,34 @@ class BrowserWindow(QObject):
         >>> window.set_frame(False)
         """
         return self.execute_command("set_frame", {"frame": frame})
+
+    # TODO: Can't use this function in runtime
+    # def set_transparent(self, transparent: bool) -> None:
+    #     """
+    #     Sets the transparency of the window.
+
+    #     Parameters
+    #     ----------
+    #     transparent : bool
+    #         If True, the window background will be transparent.
+    #         If False, it will be opaque.
+
+    #     Examples
+    #     --------
+    #     >>> window.set_transparent(True)
+    #     """
+    #     return self.execute_command("set_transparent", {"transparent": transparent})
+
+    def get_transparent(self) -> bool:
+        """
+        Returns the transparency state of the window.
+
+        Returns
+        -------
+        bool
+            True if the window is set to be transparent, False otherwise.
+        """
+        return self.execute_command("get_transparent", {})
 
     def set_context_menu(self, context_menu: bool) -> None:
         """
