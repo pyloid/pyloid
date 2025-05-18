@@ -20,7 +20,7 @@ class Store:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         self.db = PickleDB(path)
 
-    def get(self, key: str) -> Any:
+    def get(self, key: str, default: Any = None) -> Any:
         """
         Retrieve the value associated with the specified key.
 
@@ -28,6 +28,8 @@ class Store:
         ----------
         key: str
             The key to look up in the database
+        default: Any
+            The value to return if the value does not exist in the database
 
         Returns
         -------
@@ -44,8 +46,11 @@ class Store:
         {'name': 'John Doe', 'age': 30}
         >>> print(store.get("non_existent_key"))
         None
+        >>> print(store.get("non_existent_key", "default_value"))
+        'default_value'
         """
-        return self.db.get(key)
+        stored_value = self.db.get(key)
+        return stored_value if stored_value is not None else default
 
     def set(self, key: str, value: Any) -> bool:
         """
