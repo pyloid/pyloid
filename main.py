@@ -31,8 +31,8 @@ app_instance.set_tray_icon("assets/icon.png")
 
 # url = pyloid_serve(directory="file/build-next")
 
-# store = app_instance.store("store.json")
-# print(store.get("test"))
+store = app_instance.store("store.json")
+print(store.get("key3", "default_value"))
 
 # store.save()
 

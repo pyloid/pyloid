@@ -40,7 +40,7 @@ from PySide6.QtWidgets import QSplashScreen, QLabel
 from typing import TYPE_CHECKING, Any
 from PySide6.QtWebEngineCore import (
     QWebEngineSettings,
-    QWebEngineDesktopMediaRequest,
+    # QWebEngineDesktopMediaRequest, # 6.8.3 부터
 )
 import threading
 
@@ -55,7 +55,7 @@ class CustomWebPage(QWebEnginePage):
     def __init__(self, profile=None):
         super().__init__(profile)
         self.featurePermissionRequested.connect(self._handlePermissionRequest)
-        self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
+        # self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
         self._permission_handlers = {}
         self._desktop_media_handler = None
         self._url_handlers = {}  # URL 핸들러 저장을 위한 딕셔너리 추가
@@ -78,27 +78,27 @@ class CustomWebPage(QWebEnginePage):
         """Register a handler for a specific permission"""
         self._permission_handlers[feature] = handler
 
-    def _handleDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
-        return
-        print("Desktop media request received:", request)
+    # def _handleDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
+    #     return
+    #     print("Desktop media request received:", request)
 
-        # 사용 가능한 화면 목록 확인
-        screens_model = request.screensModel()
-        print("\n=== Available Screens ===")
-        for i in range(screens_model.rowCount()):
-            screen_index = screens_model.index(i)
-            screen_name = screens_model.data(screen_index)
-            print(f"Screen {i}: {screen_name}")
+    #     # 사용 가능한 화면 목록 확인
+    #     screens_model = request.screensModel()
+    #     print("\n=== Available Screens ===")
+    #     for i in range(screens_model.rowCount()):
+    #         screen_index = screens_model.index(i)
+    #         screen_name = screens_model.data(screen_index)
+    #         print(f"Screen {i}: {screen_name}")
 
-        # 사용 가능한 창 목록 확인
-        windows_model = request.windowsModel()
-        print("\n=== Available Windows ===")
-        for i in range(windows_model.rowCount()):
-            window_index = windows_model.index(i)
-            window_name = windows_model.data(window_index)
-            print(f"Window {i}: {window_name}")
+    #     # 사용 가능한 창 목록 확인
+    #     windows_model = request.windowsModel()
+    #     print("\n=== Available Windows ===")
+    #     for i in range(windows_model.rowCount()):
+    #         window_index = windows_model.index(i)
+    #         window_name = windows_model.data(window_index)
+    #         print(f"Window {i}: {window_name}")
 
-        request.selectWindow(windows_model.index(3))
+    #     request.selectWindow(windows_model.index(3))
 
     # # interceptor ( navigation request )
     # def acceptNavigationRequest(self, url, navigation_type, is_main_frame):
