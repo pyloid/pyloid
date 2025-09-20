@@ -82,7 +82,7 @@ class CustomWebPage(QWebEnginePage):
     #     return
     #     print("Desktop media request received:", request)
 
-    #     # 사용 가능한 화면 목록 확인
+    #     # check the available screen list
     #     screens_model = request.screensModel()
     #     print("\n=== Available Screens ===")
     #     for i in range(screens_model.rowCount()):
@@ -90,7 +90,7 @@ class CustomWebPage(QWebEnginePage):
     #         screen_name = screens_model.data(screen_index)
     #         print(f"Screen {i}: {screen_name}")
 
-    #     # 사용 가능한 창 목록 확인
+    #     # check the available window list
     #     windows_model = request.windowsModel()
     #     print("\n=== Available Windows ===")
     #     for i in range(windows_model.rowCount()):
@@ -102,7 +102,7 @@ class CustomWebPage(QWebEnginePage):
 
     # # interceptor ( navigation request )
     # def acceptNavigationRequest(self, url, navigation_type, is_main_frame):
-    #     """네비게이션 요청을 처리하는 메서드"""
+    #     """method to handle navigation requests"""
     #     print(f"Navigation Request - URL: {url.toString()}")
     #     print(f"Navigation Type: {navigation_type}")
     #     print(f"Is Main Frame: {is_main_frame}")
@@ -228,10 +228,10 @@ class CustomWebEngineView(QWebEngineView):
 
     def eventFilter(self, source, event):
         if self.focusProxy() is source:
-            # 리사이징 영역에 있을 때는 모든 클릭 이벤트를 가로채기
+            # when in the resize area, all click events are intercepted
             if self.is_in_resize_area and event.type() == QEvent.MouseButtonPress:
                 self.mouse_press_event(event)
-                return True  # 이벤트를 소비하여 웹뷰로 전달되지 않도록 함
+                return True  # consume the event so it is not passed to the web view
 
             if event.type() == QEvent.MouseButtonPress:
                 self.mouse_press_event(event)
@@ -358,18 +358,18 @@ class _BrowserWindow:
         self.close_on_load = True
         self.splash_screen = None
         ###########################################################################################
-        # RPC 서버가 없으면 추가하지 않음
+        # if the RPC server is not present, do not add it
         if not self.rpc:
             return
 
         self.rpc.pyloid = self.app.pyloid_wrapper
         # self.rpc.window = self.window_wrapper
 
-        # RPC 서버 중복 방지
+        # prevent duplicate RPC servers
         if self.rpc in self.app.rpc_servers:
             return
 
-        # RPC 서버 추가
+        # add the RPC server
         self.app.rpc_servers.add(self.rpc)
 
         # Start unique RPC servers
@@ -405,7 +405,7 @@ class _BrowserWindow:
             central_widget.setLayout(layout)
             self._window.setCentralWidget(central_widget)
 
-            # Add properties for window movement
+            # add properties for window movement
             self._window.moving = False
             self._window.offset = QPoint()
         else:
@@ -543,10 +543,10 @@ class _BrowserWindow:
         # Set F12 shortcut
         self.set_dev_tools(self.dev_tools)
 
-        # 프로필 가져오기 및 인터셉터 설정
+        # get the profile and set the interceptor
         profile = self.web_view.page().profile()
 
-        # # 기존 인터셉터가 있다면 제거
+        # # if the existing interceptor is present, remove it
         # if self.interceptor:
         #     profile.setUrlRequestInterceptor(None)
 
@@ -565,15 +565,15 @@ class _BrowserWindow:
                 new QWebChannel(qt.webChannelTransport, function (channel) {
                     window.pyloid = {
                         EventAPI: {
-                            _listeners: {},  // 콜백 함수들을 저장할 객체
+                            _listeners: {},  // object to store the callback functions
                             
                             listen: function(eventName, callback) {
-                                // 이벤트에 대한 콜백 배열이 없다면 생성
+                                // if the callback array for the event is not present, create it
                                 if (!this._listeners[eventName]) {
                                     this._listeners[eventName] = [];
                                 }
                                 
-                                // 콜백 함수 저장
+                                // save the callback function
                                 this._listeners[eventName].push(callback);
                                 
                                 document.addEventListener(eventName, function(event) {
@@ -588,12 +588,12 @@ class _BrowserWindow:
                             },
                             
                             unlisten: function(eventName) {
-                                // 해당 이벤트의 모든 리스너 제거
+                                // remove all listeners for the event
                                 if (this._listeners[eventName]) {
                                     this._listeners[eventName].forEach(callback => {
                                         document.removeEventListener(eventName, callback);
                                     });
-                                    // 저장된 콜백 제거
+                                    // remove the saved callback
                                     delete this._listeners[eventName];
                                 }
                             }
