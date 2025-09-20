@@ -490,6 +490,9 @@ class _BrowserWindow:
         self.web_view.settings().setAttribute(
             QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, False
         )
+        self.web_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.WebGLEnabled, True
+        )
 
         # Set icon
         if self.app.icon:
