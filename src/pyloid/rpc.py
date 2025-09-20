@@ -220,7 +220,7 @@ class PyloidRPC:
 
             # Store the original function
             self._functions[rpc_name] = func
-            log.info(f"RPC function registered: {rpc_name}")
+            # log.info(f"RPC function registered: {rpc_name}")
 
             @wraps(func)
             async def wrapper(*args, _pyloid_window_id=None, **kwargs):
@@ -518,3 +518,31 @@ class PyloidRPC:
         except Exception as e:
             log.exception(f"Failed to start or run the server: {e}")
             raise
+        
+    def run(self):
+        """
+        Runs start_async in a separate thread.
+
+        This method is useful when you want to start the aiohttp server in the background
+        without blocking the main thread. It creates a new thread, sets up a new asyncio event loop
+        in that thread, and starts the asynchronous server. The thread is marked as daemon so that
+        it will not prevent the program from exiting if only daemon threads remain.
+        """
+        import asyncio
+
+        def _run_asyncio():
+            # Create a new event loop for this thread.
+            loop = asyncio.new_event_loop()
+            # Set the newly created event loop as the current event loop for this thread.
+            asyncio.set_event_loop(loop)
+            # Start the asynchronous server; this coroutine will set up the server.
+            loop.run_until_complete(self.start_async())
+            # Keep the event loop running forever to handle incoming requests.
+            loop.run_forever()
+
+        # Create a new thread to run the event loop and server in the background.
+        # The thread is set as a daemon so it will not block program exit.
+        server_thread = threading.Thread(target=_run_asyncio, daemon=True)
+        # Start the background server thread.
+        server_thread.start()
+    

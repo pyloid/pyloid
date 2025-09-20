@@ -25,7 +25,7 @@ async def hello2():
 print(rpc.url)
 
 # Pyloid 앱 생성 및 설정
-app_instance = Pyloid(app_name="Pyloid-App", single_instance=False)
+app_instance = Pyloid(app_name="Pyloid-App", single_instance=False, server=rpc)
 app_instance.set_icon("assets/icon.png")
 app_instance.set_tray_icon("assets/icon.png")
 

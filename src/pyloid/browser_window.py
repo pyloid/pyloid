@@ -45,7 +45,6 @@ from PySide6.QtWebEngineCore import (
 import threading
 
 # from .url_interceptor import CustomUrlInterceptor
-from .rpc import PyloidRPC
 
 if TYPE_CHECKING:
     from .pyloid import _Pyloid, Pyloid
@@ -316,7 +315,6 @@ class _BrowserWindow:
         context_menu: bool = False,
         dev_tools: bool = False,
         # js_apis: List[PyloidAPI] = [],
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ):
         ###########################################################################################
@@ -324,15 +322,9 @@ class _BrowserWindow:
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
 
-        if rpc:
-            self.rpc = rpc
-            self.rpc_url = rpc.url
-        else:
-            self.rpc = None
-            self.rpc_url = None
+
 
         # interceptor ( all url request )
-        # self.interceptor = CustomUrlInterceptor(rpc_url=self.rpc_url)
         # self.web_view.page().setUrlRequestInterceptor(self.interceptor)
 
         self._window.closeEvent = self.closeEvent  # Override closeEvent method
@@ -349,7 +341,7 @@ class _BrowserWindow:
         self.context_menu = context_menu
         self.dev_tools = dev_tools
 
-        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.rpc_url)]
+        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.app.server.url)]
 
         # for js_api in js_apis:
         #     self.js_apis.append(js_api)
@@ -357,25 +349,6 @@ class _BrowserWindow:
         self.shortcuts = {}
         self.close_on_load = True
         self.splash_screen = None
-        ###########################################################################################
-        # if the RPC server is not present, do not add it
-        if not self.rpc:
-            return
-
-        self.rpc.pyloid = self.app.pyloid_wrapper
-        # self.rpc.window = self.window_wrapper
-
-        # prevent duplicate RPC servers
-        if self.rpc in self.app.rpc_servers:
-            return
-
-        # add the RPC server
-        self.app.rpc_servers.add(self.rpc)
-
-        # Start unique RPC servers
-        server_thread = threading.Thread(target=self.rpc.start, daemon=True)
-        server_thread.start()
-        ###########################################################################################
 
     def _set_custom_frame(
         self,
@@ -2125,7 +2098,6 @@ class BrowserWindow(QObject):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ):
         super().__init__()
@@ -2140,7 +2112,6 @@ class BrowserWindow(QObject):
             frame,
             context_menu,
             dev_tools,
-            rpc,
             transparent,
         )
         self.command_signal.connect(self._handle_command)
