@@ -1632,6 +1632,10 @@ class Pyloid(QObject):
         super().__init__()
 
         self.data = None # 나중에 데이터 필요 시 수정
+        
+        # server 에 Pyloid 주입
+        if server:
+            server.pyloid = self
 
         self.app = _Pyloid(self, app_name, single_instance, server, self.data)
 
