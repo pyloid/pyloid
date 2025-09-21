@@ -24,10 +24,10 @@ from PySide6.QtCore import (
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
     QWebEngineSettings,
+    # QWebEngineUrlRequestInterceptor,
 )
-from .api import PyloidAPI
 import uuid
-from typing import List, Optional, Dict, Callable
+from typing import Optional, Dict, Callable
 import json
 from PySide6.QtWidgets import (
     QWidget,
@@ -42,9 +42,8 @@ from PySide6.QtWebEngineCore import (
     QWebEngineSettings,
     # QWebEngineDesktopMediaRequest, # 6.8.3 부터
 )
-import threading
 
-# from .url_interceptor import CustomUrlInterceptor
+# from .url_interceptor import ServerUrlInterceptor
 
 if TYPE_CHECKING:
     from .pyloid import _Pyloid, Pyloid
@@ -112,7 +111,7 @@ class CustomWebPage(QWebEnginePage):
 # class CustomInterceptor(QWebEngineUrlRequestInterceptor):
 #     def __init__(self, index_path=None):
 #         super().__init__()
-#         self.index_path = get_production_path()
+#         # self.index_path = get_production_path()
 #         self.last_path = "/"
 
 #     def interceptRequest(self, info):
@@ -322,10 +321,8 @@ class _BrowserWindow:
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
 
-
-
         # interceptor ( all url request )
-        # self.web_view.page().setUrlRequestInterceptor(self.interceptor)
+        # self.web_view.page().profile().setUrlRequestInterceptor(CustomInterceptor())
 
         self._window.closeEvent = self.closeEvent  # Override closeEvent method
         ###########################################################################################
@@ -477,7 +474,7 @@ class _BrowserWindow:
         if sys.platform == "win32":
             import ctypes
 
-            myappid = "mycompany.myproduct.subproduct.version"
+            myappid = f"pyloid.{self.app.app_name}.com"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         # Remove title bar and borders (if needed)
@@ -517,11 +514,10 @@ class _BrowserWindow:
         self.set_dev_tools(self.dev_tools)
 
         # get the profile and set the interceptor
-        profile = self.web_view.page().profile()
+        # profile = self.web_view.page().profile()
+        # profile.setUrlRequestInterceptor(ServerUrlInterceptor(self.app.server.url, self.id))
 
-        # # if the existing interceptor is present, remove it
-        # if self.interceptor:
-        #     profile.setUrlRequestInterceptor(None)
+
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""

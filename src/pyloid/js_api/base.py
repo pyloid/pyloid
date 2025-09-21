@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 
 class BaseAPI(PyloidAPI):
     def __init__(
-        self, window_id: str, data: dict, app: "_Pyloid", rpc_url: Optional[str] = None
+        self, window_id: str, data: dict, app: "_Pyloid", server_url: Optional[str] = None
     ):
         super().__init__()
         self.window_id: str = window_id
         self.data: dict = data
         self.app: "_Pyloid" = app
-        self.rpc_url: Optional[str] = rpc_url
+        self.server_url: Optional[str] = server_url
 
     @Bridge(result=dict)
     def getData(self):
@@ -254,6 +254,6 @@ class BaseAPI(PyloidAPI):
         return get_production_path(path)
 
     @Bridge(result=str)
-    def getRpcUrl(self):
+    def getServerUrl(self):
         """Returns the RPC URL of the application."""
-        return self.rpc_url
+        return self.server_url

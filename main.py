@@ -39,10 +39,10 @@ print(store.get("key3", "default_value"))
 window = app_instance.create_window("Pyloid-App", transparent=True)
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")
-window.load_file("file/index9.html")
+window.load_file("file/index.html")
 window.show_and_focus()
 window.set_dev_tools(True)
-window.set_frame(False)
+# window.set_frame(False)
 
 
 def on_double_click():

@@ -97,10 +97,10 @@ class _Pyloid(QApplication):
     def __init__(
         self,
         pyloid_wrapper: "Pyloid",
-        app_name,
-        single_instance=True,
-        server=None,
-        data=None,
+        app_name: str,
+        single_instance: bool = True,
+        server = None,
+        data = None,
     ):
         """
         Initializes the Pyloid application.
@@ -150,7 +150,7 @@ class _Pyloid(QApplication):
         self.tray_menu_items = []
         self.tray_actions = {}
 
-        self.app_name = app_name
+        self.app_name: str = app_name
         self.app_path = sys.executable
 
         self.auto_start = AutoStart(self.app_name, self.app_path)
