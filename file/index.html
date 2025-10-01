@@ -2,10 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Test Page</title>
     <style>
@@ -36,20 +33,16 @@
     </style>
   </head>
   <body>
-    <div
-      id="titlebar"
-      class="drag-region"
-    >
+    <div id="titlebar" class="drag-region">
       Custom Title Bar
       <button class="no-drag">Button</button>
     </div>
     <h1>Test Webpage</h1>
     <p>This page is created for testing purposes.</p>
     <button id="myButton">Create Window!</button>
-    <input
-      type="text"
-      id="myInput"
-    />
+    <input type="text" id="myInput" />
+    <a href="https://www.google.com">Google</a>
+    <button id="myButton2" onclick="fetchData()">fetch</button>
     <script>
       // Button click event binding
       document
@@ -57,7 +50,7 @@
         .addEventListener('click', function () {
           // Using the create_window method
           console.log('rpc!!!');
-          fetch('http://pyloid.rpc', {
+          fetch('http://127.0.0.1:8000/rpc', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -72,6 +65,12 @@
             console.log(res.json());
           });
         });
+
+      function fetchData() {
+        fetch('https://www.example.com').then((res) => {
+          console.log(res);
+        });
+      }
     </script>
   </body>
 </html>

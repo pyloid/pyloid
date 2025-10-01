@@ -24,10 +24,10 @@ from PySide6.QtCore import (
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
     QWebEngineSettings,
+    # QWebEngineUrlRequestInterceptor,
 )
-from .api import PyloidAPI
 import uuid
-from typing import List, Optional, Dict, Callable
+from typing import Optional, Dict, Callable
 import json
 from PySide6.QtWidgets import (
     QWidget,
@@ -42,10 +42,8 @@ from PySide6.QtWebEngineCore import (
     QWebEngineSettings,
     # QWebEngineDesktopMediaRequest, # 6.8.3 부터
 )
-import threading
 
-# from .url_interceptor import CustomUrlInterceptor
-from .rpc import PyloidRPC
+# from .url_interceptor import ServerUrlInterceptor
 
 if TYPE_CHECKING:
     from .pyloid import _Pyloid, Pyloid
@@ -82,7 +80,7 @@ class CustomWebPage(QWebEnginePage):
     #     return
     #     print("Desktop media request received:", request)
 
-    #     # 사용 가능한 화면 목록 확인
+    #     # check the available screen list
     #     screens_model = request.screensModel()
     #     print("\n=== Available Screens ===")
     #     for i in range(screens_model.rowCount()):
@@ -90,7 +88,7 @@ class CustomWebPage(QWebEnginePage):
     #         screen_name = screens_model.data(screen_index)
     #         print(f"Screen {i}: {screen_name}")
 
-    #     # 사용 가능한 창 목록 확인
+    #     # check the available window list
     #     windows_model = request.windowsModel()
     #     print("\n=== Available Windows ===")
     #     for i in range(windows_model.rowCount()):
@@ -102,7 +100,7 @@ class CustomWebPage(QWebEnginePage):
 
     # # interceptor ( navigation request )
     # def acceptNavigationRequest(self, url, navigation_type, is_main_frame):
-    #     """네비게이션 요청을 처리하는 메서드"""
+    #     """method to handle navigation requests"""
     #     print(f"Navigation Request - URL: {url.toString()}")
     #     print(f"Navigation Type: {navigation_type}")
     #     print(f"Is Main Frame: {is_main_frame}")
@@ -113,7 +111,7 @@ class CustomWebPage(QWebEnginePage):
 # class CustomInterceptor(QWebEngineUrlRequestInterceptor):
 #     def __init__(self, index_path=None):
 #         super().__init__()
-#         self.index_path = get_production_path()
+#         # self.index_path = get_production_path()
 #         self.last_path = "/"
 
 #     def interceptRequest(self, info):
@@ -228,10 +226,10 @@ class CustomWebEngineView(QWebEngineView):
 
     def eventFilter(self, source, event):
         if self.focusProxy() is source:
-            # 리사이징 영역에 있을 때는 모든 클릭 이벤트를 가로채기
+            # when in the resize area, all click events are intercepted
             if self.is_in_resize_area and event.type() == QEvent.MouseButtonPress:
                 self.mouse_press_event(event)
-                return True  # 이벤트를 소비하여 웹뷰로 전달되지 않도록 함
+                return True  # consume the event so it is not passed to the web view
 
             if event.type() == QEvent.MouseButtonPress:
                 self.mouse_press_event(event)
@@ -316,7 +314,6 @@ class _BrowserWindow:
         context_menu: bool = False,
         dev_tools: bool = False,
         # js_apis: List[PyloidAPI] = [],
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ):
         ###########################################################################################
@@ -324,16 +321,8 @@ class _BrowserWindow:
         self._window = QMainWindow()
         self.web_view = CustomWebEngineView(self)
 
-        if rpc:
-            self.rpc = rpc
-            self.rpc_url = rpc.url
-        else:
-            self.rpc = None
-            self.rpc_url = None
-
         # interceptor ( all url request )
-        # self.interceptor = CustomUrlInterceptor(rpc_url=self.rpc_url)
-        # self.web_view.page().setUrlRequestInterceptor(self.interceptor)
+        # self.web_view.page().profile().setUrlRequestInterceptor(CustomInterceptor())
 
         self._window.closeEvent = self.closeEvent  # Override closeEvent method
         ###########################################################################################
@@ -349,7 +338,7 @@ class _BrowserWindow:
         self.context_menu = context_menu
         self.dev_tools = dev_tools
 
-        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.rpc_url)]
+        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.app.server.url)]
 
         # for js_api in js_apis:
         #     self.js_apis.append(js_api)
@@ -357,25 +346,6 @@ class _BrowserWindow:
         self.shortcuts = {}
         self.close_on_load = True
         self.splash_screen = None
-        ###########################################################################################
-        # RPC 서버가 없으면 추가하지 않음
-        if not self.rpc:
-            return
-
-        self.rpc.pyloid = self.app.pyloid_wrapper
-        # self.rpc.window = self.window_wrapper
-
-        # RPC 서버 중복 방지
-        if self.rpc in self.app.rpc_servers:
-            return
-
-        # RPC 서버 추가
-        self.app.rpc_servers.add(self.rpc)
-
-        # Start unique RPC servers
-        server_thread = threading.Thread(target=self.rpc.start, daemon=True)
-        server_thread.start()
-        ###########################################################################################
 
     def _set_custom_frame(
         self,
@@ -405,7 +375,7 @@ class _BrowserWindow:
             central_widget.setLayout(layout)
             self._window.setCentralWidget(central_widget)
 
-            # Add properties for window movement
+            # add properties for window movement
             self._window.moving = False
             self._window.offset = QPoint()
         else:
@@ -504,7 +474,7 @@ class _BrowserWindow:
         if sys.platform == "win32":
             import ctypes
 
-            myappid = "mycompany.myproduct.subproduct.version"
+            myappid = f"pyloid.{self.app.app_name}.com"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         # Remove title bar and borders (if needed)
@@ -543,12 +513,11 @@ class _BrowserWindow:
         # Set F12 shortcut
         self.set_dev_tools(self.dev_tools)
 
-        # 프로필 가져오기 및 인터셉터 설정
-        profile = self.web_view.page().profile()
+        # get the profile and set the interceptor
+        # profile = self.web_view.page().profile()
+        # profile.setUrlRequestInterceptor(ServerUrlInterceptor(self.app.server.url, self.id))
 
-        # # 기존 인터셉터가 있다면 제거
-        # if self.interceptor:
-        #     profile.setUrlRequestInterceptor(None)
+
 
     def _on_load_finished(self, ok):
         """Handles the event when the web page finishes loading."""
@@ -565,15 +534,15 @@ class _BrowserWindow:
                 new QWebChannel(qt.webChannelTransport, function (channel) {
                     window.pyloid = {
                         EventAPI: {
-                            _listeners: {},  // 콜백 함수들을 저장할 객체
+                            _listeners: {},  // object to store the callback functions
                             
                             listen: function(eventName, callback) {
-                                // 이벤트에 대한 콜백 배열이 없다면 생성
+                                // if the callback array for the event is not present, create it
                                 if (!this._listeners[eventName]) {
                                     this._listeners[eventName] = [];
                                 }
                                 
-                                // 콜백 함수 저장
+                                // save the callback function
                                 this._listeners[eventName].push(callback);
                                 
                                 document.addEventListener(eventName, function(event) {
@@ -588,12 +557,12 @@ class _BrowserWindow:
                             },
                             
                             unlisten: function(eventName) {
-                                // 해당 이벤트의 모든 리스너 제거
+                                // remove all listeners for the event
                                 if (this._listeners[eventName]) {
                                     this._listeners[eventName].forEach(callback => {
                                         document.removeEventListener(eventName, callback);
                                     });
-                                    // 저장된 콜백 제거
+                                    // remove the saved callback
                                     delete this._listeners[eventName];
                                 }
                             }
@@ -2125,7 +2094,6 @@ class BrowserWindow(QObject):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ):
         super().__init__()
@@ -2140,7 +2108,6 @@ class BrowserWindow(QObject):
             frame,
             context_menu,
             dev_tools,
-            rpc,
             transparent,
         )
         self.command_signal.connect(self._handle_command)

@@ -1,24 +1,25 @@
-from PySide6.QtWebEngineCore import QWebEngineUrlRequestInterceptor
-from PySide6.QtCore import QUrl
-from typing import Optional
+from PySide6.QtWebEngineCore import QWebEngineUrlRequestInterceptor, QWebEngineUrlRequestInfo
 
 # interceptor ( all url request )
-class CustomUrlInterceptor(QWebEngineUrlRequestInterceptor):
-    def __init__(self, rpc_url: Optional[str] = None):
+class ServerUrlInterceptor(QWebEngineUrlRequestInterceptor):
+    def __init__(self, server_url: str, window_id: str):
         super().__init__()
-        self.rpc_url = rpc_url
+        self.server_url = server_url
+        self.headers = {
+            "X-Pyloid-Window-Id": window_id,
+        }
+        
+        print("interceptor init")
 
     def interceptRequest(self, info):
-        host = info.requestUrl().host()
+        # host = info.requestUrl().host()
         url = info.requestUrl().toString()
-
-        server_url = self.rpc_url
         
-        if self.rpc_url is None:
-            return
-        
-        if url.startswith(self.rpc_url):
-            return
+        print(url)
 
-        if host == "pyloid.rpc":
-            info.redirect(QUrl(server_url))
+        if url.startswith(self.server_url):
+            headers = info.httpHeaders()
+            print("before", headers)
+            headers.update(self.headers)
+            print("after", headers)
+            return

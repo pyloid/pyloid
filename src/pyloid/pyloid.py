@@ -32,7 +32,6 @@ from PySide6.QtCore import QEventLoop
 from typing import Any, Set
 from platformdirs import PlatformDirs
 from .store import Store
-from .rpc import PyloidRPC
 import threading
 import signal
 
@@ -98,9 +97,10 @@ class _Pyloid(QApplication):
     def __init__(
         self,
         pyloid_wrapper: "Pyloid",
-        app_name,
-        single_instance=True,
-        data=None,
+        app_name: str,
+        single_instance: bool = True,
+        server = None,
+        data = None,
     ):
         """
         Initializes the Pyloid application.
@@ -132,7 +132,6 @@ class _Pyloid(QApplication):
         self.data = data
 
         self.windows_dict: Dict[str, BrowserWindow] = {}  # 윈도우 ID를 키로 사용하는 딕셔너리
-        self.server = None
 
         self.app_name = app_name
         self.icon = None
@@ -151,7 +150,7 @@ class _Pyloid(QApplication):
         self.tray_menu_items = []
         self.tray_actions = {}
 
-        self.app_name = app_name
+        self.app_name: str = app_name
         self.app_path = sys.executable
 
         self.auto_start = AutoStart(self.app_name, self.app_path)
@@ -171,7 +170,14 @@ class _Pyloid(QApplication):
 
         self.dirs = PlatformDirs(self.app_name, appauthor=False)
         
-        self.rpc_servers: Set[PyloidRPC] = set()
+        
+        ###################################################
+        # Pyloid Server Integration
+        if server:
+            self.server = server
+        else:
+            self.server = None
+        ###################################################
 
     # def set_theme(self, theme: Literal["system", "dark", "light"]):
     #     """
@@ -242,7 +248,6 @@ class _Pyloid(QApplication):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ) -> BrowserWindow:
         """
@@ -266,8 +271,6 @@ class _Pyloid(QApplication):
             Whether to use the context menu (default is False)
         dev_tools : bool, optional
             Whether to use developer tools (default is False)
-        rpc : PyloidRPC, optional
-            The RPC server instance to be used in the window
         transparent : bool, optional
             Whether the window is transparent (default is False)
 
@@ -292,7 +295,6 @@ class _Pyloid(QApplication):
             frame,
             context_menu,
             dev_tools,
-            rpc,
             transparent,
         )
         self.windows_dict[window._window.id] = window
@@ -315,17 +317,9 @@ class _Pyloid(QApplication):
         ```
         """
         
-        # # Collect and deduplicate RPC servers
-        # rpc_servers: Set[PyloidRPC] = set()
-        # for window in self.windows_dict.values():
-        #     if window._window.rpc is not None:
-        #         rpc_servers.add(window._window.rpc)
-        
-        # # Start unique RPC servers
-        # for rpc in rpc_servers:
-        #     server_thread = threading.Thread(target=rpc.start, daemon=True)
-        #     server_thread.start()
-            
+        # Start Pyloid Integrated Server
+        if self.server:
+            self.server.run()
         
         if is_production():
             sys.exit(self.exec())
@@ -341,10 +335,10 @@ class _Pyloid(QApplication):
             # Another instance is already running
             sys.exit(1)
 
-        # Create a new server
-        self.server = QLocalServer()
-        self.server.listen(self.app_name)
-        self.server.newConnection.connect(self._handle_new_connection)
+        # Create a new Single Instance server
+        self.single_instance_server = QLocalServer()
+        self.single_instance_server.listen(self.app_name)
+        self.single_instance_server.newConnection.connect(self._handle_new_connection)
 
     def _handle_new_connection(self):
         """Handles new connections for the single instance server."""
@@ -1616,6 +1610,7 @@ class Pyloid(QObject):
         self,
         app_name: str,
         single_instance: bool = True,
+        server = None,
         # data: Optional[Dict[str, Any]] = None,
     ):
         """
@@ -1631,12 +1626,18 @@ class Pyloid(QObject):
             The name of the application.
         single_instance : bool, optional
             Determines whether to run as a single instance. (Default is True)
+        server : optional
+            The pyloid server instance to be used in the application
         """
         super().__init__()
 
         self.data = None # 나중에 데이터 필요 시 수정
+        
+        # server 에 Pyloid 주입
+        if server:
+            server.pyloid = self
 
-        self.app = _Pyloid(self, app_name, single_instance, self.data)
+        self.app = _Pyloid(self, app_name, single_instance, server, self.data)
 
         self.command_signal.connect(self._handle_command)
 
@@ -1657,7 +1658,6 @@ class Pyloid(QObject):
                 frame=params.get("frame", True),
                 context_menu=params.get("context_menu", False),
                 dev_tools=params.get("dev_tools", False),
-                rpc=params.get("rpc", None),
                 transparent=params.get("transparent", False),
             )
             result = window
@@ -1833,7 +1833,6 @@ class Pyloid(QObject):
         frame: bool = True,
         context_menu: bool = False,
         dev_tools: bool = False,
-        rpc: Optional[PyloidRPC] = None,
         transparent: bool = False,
     ) -> BrowserWindow:
         """
@@ -1857,8 +1856,6 @@ class Pyloid(QObject):
             Whether to use the context menu (default is False)
         dev_tools : bool, optional
             Whether to use developer tools (default is False)
-        rpc : PyloidRPC, optional
-            The RPC server instance to be used in the window
         transparent : bool, optional
             Whether the window is transparent (default is False)
 
@@ -1881,7 +1878,6 @@ class Pyloid(QObject):
             "frame": frame,
             "context_menu": context_menu,
             "dev_tools": dev_tools,
-            "rpc": rpc,
             "transparent": transparent,
         }
         return self.execute_command("create_window", params)

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyloid"
-version = "0.24.8"
+version = "0.26.2"
 description = ""
 authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
 readme = "README.md"
@@ -10,10 +10,11 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.14"
-pyside6 = "6.9.1"
+pyside6 = "6.9.2"
 platformdirs = "^4.3.7"
 pickledb = "^1.3.2"
 aiohttp-cors = "^0.8.1"
+aiofiles = "^24.1.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -25,7 +25,7 @@ async def hello2():
 print(rpc.url)
 
 # Pyloid 앱 생성 및 설정
-app_instance = Pyloid(app_name="Pyloid-App", single_instance=False)
+app_instance = Pyloid(app_name="Pyloid-App", single_instance=False, server=rpc)
 app_instance.set_icon("assets/icon.png")
 app_instance.set_tray_icon("assets/icon.png")
 
@@ -39,10 +39,10 @@ print(store.get("key3", "default_value"))
 window = app_instance.create_window("Pyloid-App", transparent=True)
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")
-window.load_file("file/index9.html")
+window.load_file("file/index.html")
 window.show_and_focus()
 window.set_dev_tools(True)
-window.set_frame(False)
+# window.set_frame(False)
 
 
 def on_double_click():
