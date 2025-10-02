@@ -31,18 +31,10 @@ class Monitor:
 	def capture(
 		self,
 		save_path: str,
-		x: Optional[
-			int
-		] = None,
-		y: Optional[
-			int
-		] = None,
-		width: Optional[
-			int
-		] = None,
-		height: Optional[
-			int
-		] = None,
+		x: Optional[int] = None,
+		y: Optional[int] = None,
+		width: Optional[int] = None,
+		height: Optional[int] = None,
 	):
 		"""
 		Captures the entire desktop screen.
@@ -68,17 +60,11 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
-		save_path = monitor.capture(
-		    'screenshot.png'
-		)
-		print(
-		    f'Screenshot saved at: {save_path}'
-		)
+		save_path = monitor.capture('screenshot.png')
+		print(f'Screenshot saved at: {save_path}')
 		```
 		"""
 		try:
@@ -89,15 +75,11 @@ class Monitor:
 				width,
 				height,
 			)
-			screenshot.save(
-				save_path
-			)
+			screenshot.save(save_path)
 			return save_path
 
 		except Exception as e:
-			print(
-				f'Error occurred while capturing the desktop: {e}'
-			)
+			print(f'Error occurred while capturing the desktop: {e}')
 			return None
 
 	def info(
@@ -117,9 +99,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		info = monitor.info()
@@ -285,23 +265,14 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
-		monitor = app.get_all_monitors()[
-		    1
-		]
+		monitor = app.get_all_monitors()[1]
 		is_primary = monitor.is_primary()
-		print(
-		    f'Is primary monitor: {is_primary}'
-		)  # False
+		print(f'Is primary monitor: {is_primary}')  # False
 		```
 		"""
-		return (
-			self.index
-			== 0
-		)
+		return self.index == 0
 
 	def size(
 		self,
@@ -320,9 +291,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		size = monitor.size()
@@ -357,9 +326,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		geometry = monitor.geometry()
@@ -396,9 +363,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		available_geometry = monitor.available_geometry()
@@ -435,9 +400,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		available_size = monitor.available_size()
@@ -472,9 +435,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		virtual_geometry = monitor.virtual_geometry()
@@ -511,9 +472,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		virtual_size = monitor.virtual_size()
@@ -548,9 +507,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		available_virtual_geometry = monitor.available_virtual_geometry()
@@ -587,9 +544,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		available_virtual_size = monitor.available_virtual_size()
@@ -624,9 +579,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		physical_size = monitor.physical_size()
@@ -658,9 +611,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		depth = monitor.depth()
@@ -689,9 +640,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		device_pixel_ratio = monitor.device_pixel_ratio()
@@ -720,9 +669,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		logical_dpi = monitor.logical_dots_per_inch()
@@ -751,9 +698,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		logical_dpi_x = monitor.logical_dots_per_inch_x()
@@ -782,9 +727,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		logical_dpi_y = monitor.logical_dots_per_inch_y()
@@ -813,9 +756,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		orientation = monitor.orientation()
@@ -844,9 +785,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		physical_dpi = monitor.physical_dots_per_inch()
@@ -875,9 +814,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		physical_dpi_x = monitor.physical_dots_per_inch_x()
@@ -906,9 +843,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		physical_dpi_y = monitor.physical_dots_per_inch_y()
@@ -937,9 +872,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		refresh_rate = monitor.refresh_rate()
@@ -968,9 +901,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		manufacturer = monitor.manufacturer()
@@ -999,9 +930,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		model = monitor.model()
@@ -1030,9 +959,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		name = monitor.name()
@@ -1061,9 +988,7 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 		monitor = app.get_primary_monitor()
 		serial_number = monitor.serial_number()
@@ -1091,27 +1016,19 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 
 		def on_geometry_changed():
-		    print(
-		        'Geometry changed!'
-		    )
+		    print('Geometry changed!')
 
 
 		monitor = app.get_primary_monitor()
-		monitor.geometry_changed(
-		    on_geometry_changed
-		)
+		monitor.geometry_changed(on_geometry_changed)
 		```
 		"""
 		monitor = self.screen
-		monitor.geometryChanged.connect(
-			callback
-		)
+		monitor.geometryChanged.connect(callback)
 
 	def orientation_changed(
 		self,
@@ -1128,27 +1045,19 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 
 		def on_orientation_changed():
-		    print(
-		        'Orientation changed!'
-		    )
+		    print('Orientation changed!')
 
 
 		monitor = app.get_primary_monitor()
-		monitor.orientation_changed(
-		    on_orientation_changed
-		)
+		monitor.orientation_changed(on_orientation_changed)
 		```
 		"""
 		monitor = self.screen
-		monitor.orientationChanged.connect(
-			callback
-		)
+		monitor.orientationChanged.connect(callback)
 
 	def refresh_rate_changed(
 		self,
@@ -1165,27 +1074,19 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 
 		def on_refresh_rate_changed():
-		    print(
-		        'Refresh rate changed!'
-		    )
+		    print('Refresh rate changed!')
 
 
 		monitor = app.get_primary_monitor()
-		monitor.refresh_rate_changed(
-		    on_refresh_rate_changed
-		)
+		monitor.refresh_rate_changed(on_refresh_rate_changed)
 		```
 		"""
 		monitor = self.screen
-		monitor.refreshRateChanged.connect(
-			callback
-		)
+		monitor.refreshRateChanged.connect(callback)
 
 	def virtual_geometry_changed(
 		self,
@@ -1202,24 +1103,16 @@ class Monitor:
 		Examples
 		--------
 		```python
-		app = Pyloid(
-		    'Pyloid-App'
-		)
+		app = Pyloid('Pyloid-App')
 
 
 		def on_virtual_geometry_changed():
-		    print(
-		        'Virtual geometry changed!'
-		    )
+		    print('Virtual geometry changed!')
 
 
 		monitor = app.get_primary_monitor()
-		monitor.virtual_geometry_changed(
-		    on_virtual_geometry_changed
-		)
+		monitor.virtual_geometry_changed(on_virtual_geometry_changed)
 		```
 		"""
 		monitor = self.screen
-		monitor.virtualGeometryChanged.connect(
-			callback
-		)
+		monitor.virtualGeometryChanged.connect(callback)

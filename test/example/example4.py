@@ -16,18 +16,12 @@ html = """
 </html>
 """
 
-app = QApplication(
-	sys.argv
-)
+app = QApplication(sys.argv)
 view = QWebEngineView()
-view.setHtml(
-	html
-)
+view.setHtml(html)
 view.resize(
 	800,
 	600,
 )
 view.show()
-sys.exit(
-	app.exec()
-)
+sys.exit(app.exec())

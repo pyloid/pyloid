@@ -16,47 +16,31 @@ from PySide6.QtCore import (
 )
 
 
-class CustomTitleBar(
-	QWidget
-):
+class CustomTitleBar(QWidget):
 	def __init__(
 		self,
 		parent=None,
 	):
-		super().__init__(
-			parent
-		)
-		self.layout = QHBoxLayout(
-			self
-		)
+		super().__init__(parent)
+		self.layout = QHBoxLayout(self)
 		self.layout.setContentsMargins(
 			5,
 			0,
 			5,
 			0,
 		)
-		self.layout.setSpacing(
-			0
-		)
+		self.layout.setSpacing(0)
 
 		self.icon_label = QLabel()
 		self.icon_label.setFixedSize(
 			20,
 			20,
 		)
-		self.title = QLabel(
-			'Custom Title'
-		)
+		self.title = QLabel('Custom Title')
 
-		self.minimize_button = QPushButton(
-			'－'
-		)
-		self.maximize_button = QPushButton(
-			'❐'
-		)
-		self.close_button = QPushButton(
-			'×'
-		)
+		self.minimize_button = QPushButton('－')
+		self.maximize_button = QPushButton('❐')
+		self.close_button = QPushButton('×')
 
 		for button in (
 			self.minimize_button,
@@ -67,45 +51,21 @@ class CustomTitleBar(
 				45,
 				30,
 			)
-			button.setFlat(
-				True
-			)
+			button.setFlat(True)
 
-		self.layout.addWidget(
-			self.icon_label
-		)
-		self.layout.addSpacing(
-			5
-		)
-		self.layout.addWidget(
-			self.title
-		)
-		self.layout.addStretch(
-			1
-		)
-		self.layout.addWidget(
-			self.minimize_button
-		)
-		self.layout.addWidget(
-			self.maximize_button
-		)
-		self.layout.addWidget(
-			self.close_button
-		)
+		self.layout.addWidget(self.icon_label)
+		self.layout.addSpacing(5)
+		self.layout.addWidget(self.title)
+		self.layout.addStretch(1)
+		self.layout.addWidget(self.minimize_button)
+		self.layout.addWidget(self.maximize_button)
+		self.layout.addWidget(self.close_button)
 
-		self.minimize_button.clicked.connect(
-			self.window().showMinimized
-		)
-		self.maximize_button.clicked.connect(
-			self.toggle_maximize
-		)
-		self.close_button.clicked.connect(
-			self.window().close
-		)
+		self.minimize_button.clicked.connect(self.window().showMinimized)
+		self.maximize_button.clicked.connect(self.toggle_maximize)
+		self.close_button.clicked.connect(self.window().close)
 
-		self.setFixedHeight(
-			30
-		)
+		self.setFixedHeight(30)
 		self.set_style(
 			'darkblue',
 			'white',
@@ -116,16 +76,10 @@ class CustomTitleBar(
 		bg_color,
 		text_color,
 	):
-		self.setAutoFillBackground(
-			True
-		)
+		self.setAutoFillBackground(True)
 		palette = self.palette()
-		bg_qcolor = QColor(
-			bg_color
-		)
-		text_qcolor = QColor(
-			text_color
-		)
+		bg_qcolor = QColor(bg_color)
+		text_qcolor = QColor(text_color)
 		palette.setColor(
 			QPalette.Window,
 			bg_qcolor,
@@ -134,13 +88,9 @@ class CustomTitleBar(
 			QPalette.WindowText,
 			text_qcolor,
 		)
-		self.setPalette(
-			palette
-		)
+		self.setPalette(palette)
 
-		self.title.setStyleSheet(
-			f'color: {text_color}; font-weight: bold;'
-		)
+		self.title.setStyleSheet(f'color: {text_color}; font-weight: bold;')
 
 		button_style = f"""
             QPushButton {{
@@ -164,9 +114,7 @@ class CustomTitleBar(
 			self.maximize_button,
 			self.close_button,
 		):
-			button.setStyleSheet(
-				button_style
-			)
+			button.setStyleSheet(button_style)
 
 		self.close_button.setStyleSheet(
 			button_style
@@ -182,10 +130,7 @@ class CustomTitleBar(
 		self,
 		event,
 	):
-		if (
-			event.button()
-			== Qt.LeftButton
-		):
+		if event.button() == Qt.LeftButton:
 			self.window().moving = True
 			self.window().offset = event.pos()
 
@@ -194,19 +139,13 @@ class CustomTitleBar(
 		event,
 	):
 		if self.window().moving:
-			self.window().move(
-				event.globalPos()
-				- self.window().offset
-			)
+			self.window().move(event.globalPos() - self.window().offset)
 
 	def mouseReleaseEvent(
 		self,
 		event,
 	):
-		if (
-			event.button()
-			== Qt.LeftButton
-		):
+		if event.button() == Qt.LeftButton:
 			self.window().moving = False
 
 	def toggle_maximize(
@@ -214,22 +153,16 @@ class CustomTitleBar(
 	):
 		if self.window().isMaximized():
 			self.window().showNormal()
-			self.maximize_button.setText(
-				'❐'
-			)
+			self.maximize_button.setText('❐')
 		else:
 			self.window().showMaximized()
-			self.maximize_button.setText(
-				'❐'
-			)
+			self.maximize_button.setText('❐')
 
 	def set_icon(
 		self,
 		icon_path,
 	):
-		pixmap = QPixmap(
-			icon_path
-		)
+		pixmap = QPixmap(icon_path)
 		self.icon_label.setPixmap(
 			pixmap.scaled(
 				20,
@@ -243,6 +176,4 @@ class CustomTitleBar(
 		self,
 		title,
 	):
-		self.title.setText(
-			title
-		)
+		self.title.setText(title)

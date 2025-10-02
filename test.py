@@ -15,43 +15,27 @@ from asyncio import (
 	sleep,
 )
 
-rpc = PyloidRPC(
-	client_max_size=1024
-	* 1024
-	* 10
-)
+rpc = PyloidRPC(client_max_size=1024 * 1024 * 10)
 
 
 @rpc.method()
 async def hello(
 	ctx: RPCContext,
 ):
-	print(
-		ctx.window.get_title()
-	)
-	await sleep(
-		3
-	)
-	print(
-		'hello'
-	)
+	print(ctx.window.get_title())
+	await sleep(3)
+	print('hello')
 	return 'Hello, World!'
 
 
 @rpc.method()
 async def hello2():
-	await sleep(
-		10
-	)
-	print(
-		'hello2'
-	)
+	await sleep(10)
+	print('hello2')
 	return 'Hello, World2!'
 
 
-print(
-	rpc.url
-)
+print(rpc.url)
 
 # Pyloid 앱 생성 및 설정
 app_instance = Pyloid(
@@ -59,18 +43,12 @@ app_instance = Pyloid(
 	single_instance=False,
 	server=rpc,
 )
-app_instance.set_icon(
-	'assets/icon.png'
-)
-app_instance.set_tray_icon(
-	'assets/icon.png'
-)
+app_instance.set_icon('assets/icon.png')
+app_instance.set_tray_icon('assets/icon.png')
 
 # url = pyloid_serve(directory="file/build-next")
 
-store = app_instance.store(
-	'store.json'
-)
+store = app_instance.store('store.json')
 print(
 	store.get(
 		'key3',
@@ -86,29 +64,19 @@ window = app_instance.create_window(
 )
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")
-window.load_file(
-	'file/index.html'
-)
+window.load_file('file/index.html')
 window.show_and_focus()
-window.set_dev_tools(
-	True
-)
+window.set_dev_tools(True)
 # window.set_frame(False)
 
 
 def on_double_click():
 	# app_instance.show_main_window()
 	# app_instance.show_and_focus_main_window()
-	window = app_instance.create_window(
-		'Pyloid-App'
-	)
-	window.load_url(
-		'chrome://gpu'
-	)
+	window = app_instance.create_window('Pyloid-App')
+	window.load_url('chrome://gpu')
 	window.show_and_focus()
-	window.set_dev_tools(
-		True
-	)
+	window.set_dev_tools(True)
 
 
 app_instance.set_tray_actions(

@@ -12,9 +12,7 @@ from typing import (
 )
 
 
-class PyloidRunnable(
-	QRunnable
-):
+class PyloidRunnable(QRunnable):
 	"""
 	A runnable task class that extends QRunnable from Qt.
 
@@ -30,9 +28,7 @@ class PyloidRunnable(
 		By default, auto-delete is enabled.
 		"""
 		super().__init__()
-		self.setAutoDelete(
-			True
-		)
+		self.setAutoDelete(True)
 
 	def get_auto_delete(
 		self,
@@ -56,24 +52,16 @@ class PyloidRunnable(
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed'
-		        )
+		        time.sleep(1)
+		        print('Task executed')
 
 
 		worker = Worker()
-		print(
-		    worker.get_auto_delete()
-		)
+		print(worker.get_auto_delete())
 		```
 		"""
 		return self.autoDelete()
@@ -100,29 +88,19 @@ class PyloidRunnable(
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed'
-		        )
+		        time.sleep(1)
+		        print('Task executed')
 
 
 		worker = Worker()
-		worker.set_auto_delete(
-		    False
-		)
+		worker.set_auto_delete(False)
 		```
 		"""
-		self.setAutoDelete(
-			value
-		)
+		self.setAutoDelete(value)
 
 	def run(
 		self,
@@ -142,33 +120,23 @@ class PyloidRunnable(
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed'
-		        )
+		        time.sleep(1)
+		        print('Task executed')
 
 
 		worker = Worker()
 		thread_pool = PyloidThreadPool()
-		thread_pool.start(
-		    worker
-		)
+		thread_pool.start(worker)
 		```
 		"""
 		pass
 
 
-class PyloidDefaultSignals(
-	QObject
-):
+class PyloidDefaultSignals(QObject):
 	"""
 	Default signal class.
 
@@ -196,9 +164,7 @@ class PyloidDefaultSignals(
 	import time
 
 
-	class Worker(
-	    PyloidRunnable
-	):
+	class Worker(PyloidRunnable):
 	    def __init__(
 	        self,
 	    ):
@@ -208,50 +174,26 @@ class PyloidDefaultSignals(
 	    def run(
 	        self,
 	    ):
-	        for i in range(
-	            101
-	        ):
-	            self.signals.progress.emit(
-	                i
-	            )
-	            time.sleep(
-	                0.1
-	            )
+	        for i in range(101):
+	            self.signals.progress.emit(i)
+	            time.sleep(0.1)
 
 
 	worker = Worker()
 
-	worker.signals.finished.connect(
-	    lambda: print(
-	        'Task completed.'
-	    )
-	)
-	worker.signals.error.connect(
-	    lambda error: print(
-	        f'Error occurred: {error}'
-	    )
-	)
-	worker.signals.progress.connect(
-	    lambda progress: print(
-	        f'Progress: {progress}%'
-	    )
-	)
+	worker.signals.finished.connect(lambda: print('Task completed.'))
+	worker.signals.error.connect(lambda error: print(f'Error occurred: {error}'))
+	worker.signals.progress.connect(lambda progress: print(f'Progress: {progress}%'))
 
 	thread_pool = PyloidThreadPool()
-	thread_pool.start(
-	    worker
-	)
+	thread_pool.start(worker)
 	```
 	"""
 
 	started = Signal()
 	finished = Signal()
-	error = Signal(
-		str
-	)
-	progress = Signal(
-		int
-	)
+	error = Signal(str)
+	progress = Signal(int)
 
 
 class PyloidThreadPool:
@@ -288,25 +230,17 @@ class PyloidThreadPool:
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed'
-		        )
+		        time.sleep(1)
+		        print('Task executed')
 
 
 		worker = Worker()
 		thread_pool = PyloidThreadPool()
-		thread_pool.start(
-		    worker
-		)
+		thread_pool.start(worker)
 		```
 		"""
 		self.thread_pool.start(
@@ -333,9 +267,7 @@ class PyloidThreadPool:
 		)
 
 		thread_pool = PyloidThreadPool()
-		print(
-		    thread_pool.active_thread_count()
-		)
+		print(thread_pool.active_thread_count())
 		```
 		"""
 		return self.thread_pool.activeThreadCount()
@@ -359,9 +291,7 @@ class PyloidThreadPool:
 		)
 
 		thread_pool = PyloidThreadPool()
-		print(
-		    thread_pool.max_thread_count()
-		)
+		print(thread_pool.max_thread_count())
 		```
 		"""
 		return self.thread_pool.maxThreadCount()
@@ -386,14 +316,10 @@ class PyloidThreadPool:
 		)
 
 		thread_pool = PyloidThreadPool()
-		thread_pool.set_max_thread_count(
-		    10
-		)
+		thread_pool.set_max_thread_count(10)
 		```
 		"""
-		self.thread_pool.setMaxThreadCount(
-			max_thread_count
-		)
+		self.thread_pool.setMaxThreadCount(max_thread_count)
 
 	def reserve_thread(
 		self,
@@ -411,18 +337,12 @@ class PyloidThreadPool:
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed on reserved thread'
-		        )
+		        time.sleep(1)
+		        print('Task executed on reserved thread')
 
 
 		# Create thread pool
@@ -434,9 +354,7 @@ class PyloidThreadPool:
 		try:
 		    # Execute task on reserved thread
 		    worker = Worker()
-		    thread_pool.start_on_reserved_thread(
-		        worker
-		    )
+		    thread_pool.start_on_reserved_thread(worker)
 
 		    # Wait for task completion
 		    thread_pool.wait_for_done()
@@ -507,9 +425,7 @@ class PyloidThreadPool:
 		)
 
 		thread_pool = PyloidThreadPool()
-		print(
-		    thread_pool.get_expiry_timeout()
-		)
+		print(thread_pool.get_expiry_timeout())
 		```
 		"""
 		return self.thread_pool.expiryTimeout()
@@ -534,14 +450,10 @@ class PyloidThreadPool:
 		)
 
 		thread_pool = PyloidThreadPool()
-		thread_pool.set_expiry_timeout(
-		    1000
-		)
+		thread_pool.set_expiry_timeout(1000)
 		```
 		"""
-		self.thread_pool.setExpiryTimeout(
-			expiry_timeout
-		)
+		self.thread_pool.setExpiryTimeout(expiry_timeout)
 
 	# def set_stack_size(self, stack_size: int) -> None:
 	#     self.thread_pool.setStackSize(stack_size)
@@ -577,33 +489,23 @@ class PyloidThreadPool:
 		import time
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        time.sleep(
-		            1
-		        )
-		        print(
-		            'Task executed on reserved thread'
-		        )
+		        time.sleep(1)
+		        print('Task executed on reserved thread')
 
 
 		worker = Worker()
 		thread_pool = PyloidThreadPool()
 		thread_pool.reserve_thread()
-		thread_pool.start_on_reserved_thread(
-		    worker
-		)
+		thread_pool.start_on_reserved_thread(worker)
 		thread_pool.wait_for_done()
 		thread_pool.release_thread()
 		```
 		"""
-		self.thread_pool.startOnReservedThread(
-			runnable
-		)
+		self.thread_pool.startOnReservedThread(runnable)
 
 	def try_start(
 		self,
@@ -638,35 +540,23 @@ class PyloidThreadPool:
 		)
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        print(
-		            'Task executed'
-		        )
+		        print('Task executed')
 
 
 		thread_pool = PyloidThreadPool()
 		worker = Worker()
 
-		if thread_pool.try_start(
-		    worker
-		):
-		    print(
-		        'Task started'
-		    )
+		if thread_pool.try_start(worker):
+		    print('Task started')
 		else:
-		    print(
-		        'Task could not be started because the thread pool is full'
-		    )
+		    print('Task could not be started because the thread pool is full')
 		```
 		"""
-		return self.thread_pool.tryStart(
-			runnable
-		)
+		return self.thread_pool.tryStart(runnable)
 
 	def try_take(
 		self,
@@ -698,47 +588,31 @@ class PyloidThreadPool:
 		)
 
 
-		class Worker(
-		    PyloidRunnable
-		):
+		class Worker(PyloidRunnable):
 		    def run(
 		        self,
 		    ):
-		        print(
-		            'Task executed'
-		        )
+		        print('Task executed')
 
 
 		thread_pool = PyloidThreadPool()
 		worker = Worker()
 
 		# Add task
-		thread_pool.start(
-		    worker
-		)
+		thread_pool.start(worker)
 
 		# Attempt to remove task
-		if thread_pool.try_take(
-		    worker
-		):
-		    print(
-		        'Task removed from queue'
-		    )
+		if thread_pool.try_take(worker):
+		    print('Task removed from queue')
 		else:
-		    print(
-		        'Task could not be removed (already running or not found)'
-		    )
+		    print('Task could not be removed (already running or not found)')
 		```
 		"""
-		return self.thread_pool.tryTake(
-			runnable
-		)
+		return self.thread_pool.tryTake(runnable)
 
 	def wait_for_done(
 		self,
-		timeout: Optional[
-			int
-		] = None,
+		timeout: Optional[int] = None,
 	) -> bool:
 		"""
 		Waits for tasks to complete.
@@ -765,19 +639,10 @@ class PyloidThreadPool:
 		thread_pool = PyloidThreadPool()
 		thread_pool.wait_for_done()
 
-		print(
-		    'Tasks completed.'
-		)
+		print('Tasks completed.')
 		```
 		"""
-		if (
-			timeout
-			is None
-		):
-			return self.thread_pool.waitForDone(
-				-1
-			)
+		if timeout is None:
+			return self.thread_pool.waitForDone(-1)
 		else:
-			return self.thread_pool.waitForDone(
-				timeout
-			)
+			return self.thread_pool.waitForDone(timeout)

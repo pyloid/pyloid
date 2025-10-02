@@ -22,23 +22,13 @@ app = Pyloid(
 	single_instance=True,
 )
 
-win = app.create_window(
-	'main2'
-)
-win.load_url(
-	'https://www.example.com'
-)
+win = app.create_window('main2')
+win.load_url('https://www.example.com')
 win.show_and_focus()
 
-print(
-	app.open_file_dialog()
-)
-print(
-	app.save_file_dialog()
-)
-print(
-	app.select_directory_dialog()
-)
+print(app.open_file_dialog())
+print(app.save_file_dialog())
+print(app.select_directory_dialog())
 
 # timer = PyloidTimer()
 # timer.start_precise_periodic_timer(1000, lambda: print("1000ms"))

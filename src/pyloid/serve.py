@@ -20,16 +20,10 @@ from .utils import (
 )
 import logging
 
-logging.getLogger(
-	'aiohttp'
-).setLevel(
-	logging.WARNING
-)
+logging.getLogger('aiohttp').setLevel(logging.WARNING)
 
 
-class ZeroCopyFileResponse(
-	FileResponse
-):
+class ZeroCopyFileResponse(FileResponse):
 	"""zero-copy optimized file response class"""
 
 	def __init__(
@@ -59,9 +53,7 @@ class ZeroCopyStaticHandler:
 		self,
 		directory: str,
 	):
-		self.directory = Path(
-			directory
-		).resolve()
+		self.directory = Path(directory).resolve()
 		self.chunk_size = 65536  # 64KB chunk
 
 	async def handle_request(
@@ -71,40 +63,20 @@ class ZeroCopyStaticHandler:
 		"""HTTP request processing"""
 		try:
 			# URL path parsing
-			path = request.path_qs.split(
-				'?'
-			)[
-				0
-			]  # remove query parameters
-			if path.endswith(
-				'/'
-			):
+			path = request.path_qs.split('?')[0]  # remove query parameters
+			if path.endswith('/'):
 				path += 'index.html'
 
 			# Security: prevent directory traversal attacks
-			file_path = (
-				self.directory
-				/ path.lstrip(
-					'/'
-				)
-			).resolve()
-			if not str(
-				file_path
-			).startswith(
-				str(
-					self.directory
-				)
-			):
+			file_path = (self.directory / path.lstrip('/')).resolve()
+			if not str(file_path).startswith(str(self.directory)):
 				return web.Response(
 					status=403,
 					text='Forbidden',
 				)
 
 			# Check if the file exists
-			if (
-				not file_path.exists()
-				or not file_path.is_file()
-			):
+			if not file_path.exists() or not file_path.is_file():
 				return web.Response(
 					status=404,
 					text='File not found',
@@ -116,16 +88,10 @@ class ZeroCopyStaticHandler:
 			(
 				content_type,
 				_,
-			) = mimetypes.guess_type(
-				str(
-					file_path
-				)
-			)
+			) = mimetypes.guess_type(str(file_path))
 
 			# Range request processing (partial download supported)
-			range_header = request.headers.get(
-				'Range'
-			)
+			range_header = request.headers.get('Range')
 			if range_header:
 				return await self._handle_range_request(
 					file_path,
@@ -142,26 +108,16 @@ class ZeroCopyStaticHandler:
 
 			# zero-copy file response creation
 			headers = {
-				'Content-Type': content_type
-				or 'application/octet-stream',
-				'Content-Length': str(
-					file_size
-				),
+				'Content-Type': content_type or 'application/octet-stream',
+				'Content-Length': str(file_size),
 				'Accept-Ranges': 'bytes',
 				'Cache-Control': cache_control,
 				'ETag': f'"{stat.st_mtime}-{file_size}"',
 			}
 
 			# ETag based cache check
-			if_none_match = request.headers.get(
-				'If-None-Match'
-			)
-			if (
-				if_none_match
-				== headers[
-					'ETag'
-				]
-			):
+			if_none_match = request.headers.get('If-None-Match')
+			if if_none_match == headers['ETag']:
 				return web.Response(
 					status=304,
 					headers=headers,
@@ -194,61 +150,22 @@ class ZeroCopyStaticHandler:
 			range_match = range_header.replace(
 				'bytes=',
 				'',
-			).split(
-				'-'
-			)
-			start = (
-				int(
-					range_match[
-						0
-					]
-				)
-				if range_match[
-					0
-				]
-				else 0
-			)
-			end = (
-				int(
-					range_match[
-						1
-					]
-				)
-				if range_match[
-					1
-				]
-				else file_size
-				- 1
-			)
+			).split('-')
+			start = int(range_match[0]) if range_match[0] else 0
+			end = int(range_match[1]) if range_match[1] else file_size - 1
 
 			# Range validation
-			if (
-				start
-				>= file_size
-				or end
-				>= file_size
-				or start
-				> end
-			):
+			if start >= file_size or end >= file_size or start > end:
 				return web.Response(
 					status=416,  # Range Not Satisfiable
-					headers={
-						'Content-Range': f'bytes */{file_size}'
-					},
+					headers={'Content-Range': f'bytes */{file_size}'},
 				)
 
-			content_length = (
-				end
-				- start
-				+ 1
-			)
+			content_length = end - start + 1
 
 			headers = {
-				'Content-Type': content_type
-				or 'application/octet-stream',
-				'Content-Length': str(
-					content_length
-				),
+				'Content-Type': content_type or 'application/octet-stream',
+				'Content-Length': str(content_length),
 				'Content-Range': f'bytes {start}-{end}/{file_size}',
 				'Accept-Ranges': 'bytes',
 			}
@@ -258,41 +175,26 @@ class ZeroCopyStaticHandler:
 				status=206,
 				headers=headers,
 			)
-			await response.prepare(
-				request
-			)
+			await response.prepare(request)
 
 			# aiofiles to async zero-copy transfer
-			async with (
-				aiofiles.open(
-					file_path,
-					'rb',
-				) as f
-			):
-				await f.seek(
-					start
-				)
+			async with aiofiles.open(
+				file_path,
+				'rb',
+			) as f:
+				await f.seek(start)
 				remaining = content_length
 
-				while (
-					remaining
-					> 0
-				):
+				while remaining > 0:
 					chunk_size = min(
 						self.chunk_size,
 						remaining,
 					)
-					chunk = await f.read(
-						chunk_size
-					)
+					chunk = await f.read(chunk_size)
 					if not chunk:
 						break
-					await response.write(
-						chunk
-					)
-					remaining -= len(
-						chunk
-					)
+					await response.write(chunk)
+					remaining -= len(chunk)
 
 			await response.write_eof()
 			return response
@@ -309,9 +211,7 @@ async def start_zero_copy_server(
 	port: int,
 ):
 	"""zero-copy optimized server starts"""
-	handler = ZeroCopyStaticHandler(
-		directory
-	)
+	handler = ZeroCopyStaticHandler(directory)
 
 	# aiohttp app creation
 	app = web.Application()
@@ -349,9 +249,7 @@ async def start_zero_copy_server(
 
 def pyloid_serve(
 	directory: str,
-	port: Optional[
-		int
-	] = None,
+	port: Optional[int] = None,
 ) -> str:
 	"""
 	zero-copy optimized static file server starts.
@@ -376,34 +274,21 @@ def pyloid_serve(
 	    pyloid_serve,
 	)
 
-	app = Pyloid(
-	    'Pyloid-App'
-	)
-	url = pyloid_serve(
-	    'dist'
-	)
-	window = app.create_window(
-	    'Pyloid-App'
-	)
-	window.load_url(
-	    url
-	)
+	app = Pyloid('Pyloid-App')
+	url = pyloid_serve('dist')
+	window = app.create_window('Pyloid-App')
+	window.load_url(url)
 	window.show_and_focus()
 	```
 	"""
 
-	if (
-		port
-		is None
-	):
+	if port is None:
 		port = get_free_port()
 
 	def run_zero_copy_server():
 		"""run async server in a separate thread"""
 		loop = asyncio.new_event_loop()
-		asyncio.set_event_loop(
-			loop
-		)
+		asyncio.set_event_loop(loop)
 
 		try:
 			(
@@ -416,23 +301,15 @@ def pyloid_serve(
 				)
 			)
 
-			print(
-				f'🚀 Zero-copy frontend server started on http://127.0.0.1:{port}'
-			)
-			print(
-				f'📁 Serving directory: {directory}'
-			)
-			print(
-				f'⚡ Features: sendfile, Range requests, ETag caching'
-			)
+			print(f'🚀 Zero-copy frontend server started on http://127.0.0.1:{port}')
+			print(f'📁 Serving directory: {directory}')
+			print(f'⚡ Features: sendfile, Range requests, ETag caching')
 
 			# wait until the server starts
 			loop.run_forever()
 
 		except Exception as e:
-			print(
-				f'Zero-copy server error: {e}'
-			)
+			print(f'Zero-copy server error: {e}')
 		finally:
 			loop.close()
 

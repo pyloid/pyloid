@@ -39,43 +39,26 @@ html = """
 """
 
 
-class MainWindow(
-	QMainWindow
-):
+class MainWindow(QMainWindow):
 	def __init__(
 		self,
 	):
 		super().__init__()
-		self.setWindowFlags(
-			Qt.FramelessWindowHint
-		)
-		self.setAttribute(
-			Qt.WA_TranslucentBackground
-		)
+		self.setWindowFlags(Qt.FramelessWindowHint)
+		self.setAttribute(Qt.WA_TranslucentBackground)
 		self.resize(
 			600,
 			400,
 		)
 
 		view = QWebEngineView()
-		view.page().setBackgroundColor(
-			Qt.transparent
-		)
-		view.setHtml(
-			html
-		)
-		self.setCentralWidget(
-			view
-		)
+		view.page().setBackgroundColor(Qt.transparent)
+		view.setHtml(html)
+		self.setCentralWidget(view)
 
 
-if (
-	__name__
-	== '__main__'
-):
-	app = QApplication(
-		[]
-	)
+if __name__ == '__main__':
+	app = QApplication([])
 	window = MainWindow()
 	window.show()
 	app.exec()

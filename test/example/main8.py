@@ -26,21 +26,13 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
 if is_production():
 	win.load_file(
@@ -50,9 +42,7 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index6.html'
-	)
+	win.load_file('file/index6.html')
 
 win.show_and_focus()
 
@@ -64,15 +54,9 @@ import time
 
 
 def progress_worker():
-	for i in range(
-		1001
-	):
-		print(
-			f'진행률: {i}%'
-		)
-		time.sleep(
-			0.1
-		)
+	for i in range(1001):
+		print(f'진행률: {i}%')
+		time.sleep(0.1)
 
 
 # ThreadPool 사용
@@ -83,8 +67,6 @@ thread_pool.start(
 	5,
 )
 
-print(
-	thread_pool.active_thread_count()
-)
+print(thread_pool.active_thread_count())
 
 app.run()

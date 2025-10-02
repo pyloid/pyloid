@@ -24,19 +24,13 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		"""
 		os.makedirs(
-			os.path.dirname(
-				path
-			),
+			os.path.dirname(path),
 			exist_ok=True,
 		)
-		self.db = PickleDB(
-			path
-		)
+		self.db = PickleDB(path)
 
 	def get(
 		self,
@@ -60,9 +54,7 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'user',
 		...     {
@@ -71,18 +63,10 @@ class Store:
 		...     },
 		... )
 		True
-		>>> user = store.get(
-		...     'user'
-		... )
-		>>> print(
-		...     user
-		... )
+		>>> user = store.get('user')
+		>>> print(user)
 		{'name': 'John Doe', 'age': 30}
-		>>> print(
-		...     store.get(
-		...         'non_existent_key'
-		...     )
-		... )
+		>>> print(store.get('non_existent_key'))
 		None
 		>>> print(
 		...     store.get(
@@ -92,15 +76,8 @@ class Store:
 		... )
 		'default_value'
 		"""
-		stored_value = self.db.get(
-			key
-		)
-		return (
-			stored_value
-			if stored_value
-			is not None
-			else default
-		)
+		stored_value = self.db.get(key)
+		return stored_value if stored_value is not None else default
 
 	def set(
 		self,
@@ -124,9 +101,7 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'settings',
 		...     {
@@ -174,32 +149,22 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'temp',
 		...     'temporary data',
 		... )
 		True
-		>>> store.remove(
-		...     'temp'
-		... )
+		>>> store.remove('temp')
 		True
-		>>> store.remove(
-		...     'non_existent_key'
-		... )
+		>>> store.remove('non_existent_key')
 		False
 		"""
-		return self.db.remove(
-			key
-		)
+		return self.db.remove(key)
 
 	def all(
 		self,
-	) -> List[
-		str
-	]:
+	) -> List[str]:
 		"""
 		Retrieve a list of all keys in the database.
 
@@ -210,9 +175,7 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'key1',
 		...     'value1',
@@ -224,9 +187,7 @@ class Store:
 		... )
 		True
 		>>> keys = store.all()
-		>>> print(
-		...     keys
-		... )
+		>>> print(keys)
 		['key1', 'key2']
 		"""
 		return self.db.all()
@@ -244,9 +205,7 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'key1',
 		...     'value1',
@@ -259,18 +218,14 @@ class Store:
 		True
 		>>> store.purge()
 		True
-		>>> print(
-		...     store.all()
-		... )
+		>>> print(store.all())
 		[]
 		"""
 		return self.db.purge()
 
 	def save(
 		self,
-		option: Optional[
-			int
-		] = None,
+		option: Optional[int] = None,
 	) -> bool:
 		"""
 		Save the current state of the database to file.
@@ -288,9 +243,7 @@ class Store:
 
 		Examples
 		--------
-		>>> store = Store(
-		...     'data.json'
-		... )
+		>>> store = Store('data.json')
 		>>> store.set(
 		...     'key',
 		...     'value',
@@ -299,11 +252,6 @@ class Store:
 		>>> store.save()
 		True
 		"""
-		if (
-			option
-			is not None
-		):
-			return self.db.save(
-				option
-			)
+		if option is not None:
+			return self.db.save(option)
 		return self.db.save()

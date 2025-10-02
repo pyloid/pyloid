@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 	)
 
 
-class PyloidAPI(
-	QObject
-):
+class PyloidAPI(QObject):
 	"""
 	PyloidAPI class is derived from PySide6's QObject.
 	It enables communication between JavaScript and Python.
@@ -32,14 +30,10 @@ class PyloidAPI(
 	    Bridge,
 	)
 
-	app = Pyloid(
-	    'Pyloid-App'
-	)
+	app = Pyloid('Pyloid-App')
 
 
-	class CustomAPI(
-	    PyloidAPI
-	):
+	class CustomAPI(PyloidAPI):
 	    @Bridge(
 	        str,
 	        result=str,
@@ -54,14 +48,10 @@ class PyloidAPI(
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[
-	        CustomAPI()
-	    ],
+	    js_apis=[CustomAPI()],
 	)
 
-	window.load_file(
-	    'index.html'
-	)
+	window.load_file('index.html')
 
 	window.show()
 	window.focus()
@@ -111,14 +101,10 @@ def Bridge(
 	    Bridge,
 	)
 
-	app = Pyloid(
-	    'Pyloid-App'
-	)
+	app = Pyloid('Pyloid-App')
 
 
-	class CustomAPI(
-	    PyloidAPI
-	):
+	class CustomAPI(PyloidAPI):
 	    @Bridge(
 	        str,
 	        result=str,
@@ -133,14 +119,10 @@ def Bridge(
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[
-	        CustomAPI()
-	    ],
+	    js_apis=[CustomAPI()],
 	)
 
-	window.load_file(
-	    'index.html'
-	)
+	window.load_file('index.html')
 
 	window.show()
 	window.focus()

@@ -26,21 +26,13 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
 if is_production():
 	win.load_file(
@@ -50,9 +42,7 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index6.html'
-	)
+	win.load_file('file/index6.html')
 
 win.show_and_focus()
 
@@ -65,9 +55,7 @@ from pyloid.thread_pool import (
 import time
 
 
-class ProgressWorker(
-	PyloidRunnable
-):
+class ProgressWorker(PyloidRunnable):
 	def __init__(
 		self,
 	):
@@ -77,16 +65,10 @@ class ProgressWorker(
 	def run(
 		self,
 	) -> None:
-		for i in range(
-			1001
-		):
+		for i in range(1001):
 			# print(f"진행률: {i}%")
-			self.signals.progress.emit(
-				i
-			)
-			time.sleep(
-				0.1
-			)
+			self.signals.progress.emit(i)
+			time.sleep(0.1)
 
 
 # ThreadPool 사용
@@ -98,24 +80,10 @@ thread_pool.start(
 	5,
 )
 
-worker.signals.finished.connect(
-	lambda: print(
-		'작업이 완료되었습니다.'
-	)
-)
-worker.signals.error.connect(
-	lambda error: print(
-		f'에러 발생: {error}'
-	)
-)
-worker.signals.progress.connect(
-	lambda progress: print(
-		f'진행률: {progress}%'
-	)
-)
+worker.signals.finished.connect(lambda: print('작업이 완료되었습니다.'))
+worker.signals.error.connect(lambda error: print(f'에러 발생: {error}'))
+worker.signals.progress.connect(lambda progress: print(f'진행률: {progress}%'))
 
-print(
-	thread_pool.active_thread_count()
-)
+print(thread_pool.active_thread_count())
 
 app.run()

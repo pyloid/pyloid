@@ -29,21 +29,13 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
 if is_production():
 	win.load_file(
@@ -53,9 +45,7 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index6.html'
-	)
+	win.load_file('file/index6.html')
 
 win.show_and_focus()
 
@@ -63,10 +53,6 @@ from pprint import (
 	pprint,
 )
 
-pprint(
-	app.get_all_monitors()[
-		0
-	].info()
-)
+pprint(app.get_all_monitors()[0].info())
 
 app.run()

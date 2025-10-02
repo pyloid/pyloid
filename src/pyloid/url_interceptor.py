@@ -5,9 +5,7 @@ from PySide6.QtWebEngineCore import (
 
 
 # interceptor ( all url request )
-class ServerUrlInterceptor(
-	QWebEngineUrlRequestInterceptor
-):
+class ServerUrlInterceptor(QWebEngineUrlRequestInterceptor):
 	def __init__(
 		self,
 		server_url: str,
@@ -19,9 +17,7 @@ class ServerUrlInterceptor(
 			'X-Pyloid-Window-Id': window_id,
 		}
 
-		print(
-			'interceptor init'
-		)
+		print('interceptor init')
 
 	def interceptRequest(
 		self,
@@ -30,21 +26,15 @@ class ServerUrlInterceptor(
 		# host = info.requestUrl().host()
 		url = info.requestUrl().toString()
 
-		print(
-			url
-		)
+		print(url)
 
-		if url.startswith(
-			self.server_url
-		):
+		if url.startswith(self.server_url):
 			headers = info.httpHeaders()
 			print(
 				'before',
 				headers,
 			)
-			headers.update(
-				self.headers
-			)
+			headers.update(self.headers)
 			print(
 				'after',
 				headers,

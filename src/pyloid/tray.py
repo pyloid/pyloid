@@ -6,9 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 
-class TrayEvent(
-	Enum
-):
+class TrayEvent(Enum):
 	"""
 	TrayEvent is an enumeration class representing events related to the system tray icon.
 
@@ -28,28 +26,16 @@ class TrayEvent(
 	    TrayEvent,
 	)
 
-	app = Pyloid(
-	    app_name='Pyloid-App'
-	)
+	app = Pyloid(app_name='Pyloid-App')
 
-	app.set_tray_icon(
-	    'icons/icon.ico'
-	)
+	app.set_tray_icon('icons/icon.ico')
 
 	app.set_tray_actions(
 	    {
-	        TrayEvent.DoubleClick: lambda: print(
-	            'Tray icon was double-clicked.'
-	        ),
-	        TrayEvent.MiddleClick: lambda: print(
-	            'Tray icon was middle-clicked.'
-	        ),
-	        TrayEvent.RightClick: lambda: print(
-	            'Tray icon was right-clicked.'
-	        ),
-	        TrayEvent.LeftClick: lambda: print(
-	            'Tray icon was left-clicked.'
-	        ),
+	        TrayEvent.DoubleClick: lambda: print('Tray icon was double-clicked.'),
+	        TrayEvent.MiddleClick: lambda: print('Tray icon was middle-clicked.'),
+	        TrayEvent.RightClick: lambda: print('Tray icon was right-clicked.'),
+	        TrayEvent.LeftClick: lambda: print('Tray icon was left-clicked.'),
 	    }
 	)
 	```
@@ -69,17 +55,10 @@ class TrayEvent(
 			other,
 			QSystemTrayIcon.ActivationReason,
 		):
-			return (
-				self.value
-				== other
-			)
-		return super().__eq__(
-			other
-		)
+			return self.value == other
+		return super().__eq__(other)
 
 	def __hash__(
 		self,
 	):
-		return hash(
-			self.value
-		)
+		return hash(self.value)

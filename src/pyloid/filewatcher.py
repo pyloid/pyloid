@@ -5,9 +5,7 @@ from PySide6.QtCore import (
 )
 
 
-class FileWatcher(
-	QObject
-):
+class FileWatcher(QObject):
 	"""
 	FileWatcher class for monitoring file and directory changes.
 
@@ -36,12 +34,8 @@ class FileWatcher(
 	    Removes all paths from the watch list.
 	"""
 
-	file_changed = Signal(
-		str
-	)
-	directory_changed = Signal(
-		str
-	)
+	file_changed = Signal(str)
+	directory_changed = Signal(str)
 
 	def __init__(
 		self,
@@ -51,12 +45,8 @@ class FileWatcher(
 		"""
 		super().__init__()
 		self.watcher = QFileSystemWatcher()
-		self.watcher.fileChanged.connect(
-			self.file_changed
-		)
-		self.watcher.directoryChanged.connect(
-			self.directory_changed
-		)
+		self.watcher.fileChanged.connect(self.file_changed)
+		self.watcher.directoryChanged.connect(self.directory_changed)
 
 	def add_path(
 		self,
@@ -78,17 +68,13 @@ class FileWatcher(
 		Examples
 		--------
 		>>> watcher = FileWatcher()
-		>>> result = watcher.add_path(
-		...     '/path/to/file_or_directory'
-		... )
+		>>> result = watcher.add_path('/path/to/file_or_directory')
 		>>> if result:
 		>>>     print("Watch started")
 		>>> else:
 		>>>     print("Failed to start watching")
 		"""
-		return self.watcher.addPath(
-			path
-		)
+		return self.watcher.addPath(path)
 
 	def remove_path(
 		self,
@@ -110,17 +96,13 @@ class FileWatcher(
 		Examples
 		--------
 		>>> watcher = FileWatcher()
-		>>> result = watcher.remove_path(
-		...     '/path/to/file_or_directory'
-		... )
+		>>> result = watcher.remove_path('/path/to/file_or_directory')
 		>>> if result:
 		>>>     print("Successfully stopped watching")
 		>>> else:
 		>>>     print("Failed to stop watching")
 		"""
-		return self.watcher.removePath(
-			path
-		)
+		return self.watcher.removePath(path)
 
 	def get_watched_paths(
 		self,
@@ -142,10 +124,7 @@ class FileWatcher(
 		...     paths,
 		... )
 		"""
-		return (
-			self.watcher.files()
-			+ self.watcher.directories()
-		)
+		return self.watcher.files() + self.watcher.directories()
 
 	def get_watched_files(
 		self,
@@ -211,6 +190,4 @@ class FileWatcher(
 		>>> else:
 		>>>     print("Failed to remove all paths")
 		"""
-		return self.watcher.removePaths(
-			self.get_watched_paths()
-		)
+		return self.watcher.removePaths(self.get_watched_paths())

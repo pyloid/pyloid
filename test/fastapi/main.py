@@ -33,37 +33,21 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
 app.set_tray_actions(
 	{
-		TrayEvent.DoubleClick: lambda: print(
-			'Tray icon was double-clicked.'
-		),
-		TrayEvent.MiddleClick: lambda: print(
-			'Tray icon was middle-clicked.'
-		),
-		TrayEvent.RightClick: lambda: print(
-			'Tray icon was right-clicked.'
-		),
-		TrayEvent.LeftClick: lambda: print(
-			'Tray icon was left-clicked.'
-		),
+		TrayEvent.DoubleClick: lambda: print('Tray icon was double-clicked.'),
+		TrayEvent.MiddleClick: lambda: print('Tray icon was middle-clicked.'),
+		TrayEvent.RightClick: lambda: print('Tray icon was right-clicked.'),
+		TrayEvent.LeftClick: lambda: print('Tray icon was left-clicked.'),
 	}
 )
 
 
-class customAPI(
-	PyloidAPI
-):
-	@Bridge(
-		result=str
-	)
+class customAPI(PyloidAPI):
+	@Bridge(result=str)
 	def create_window(
 		self,
 	):
@@ -71,9 +55,7 @@ class customAPI(
 			title='Pyloid Browser2',
 			frame=True,
 			context_menu=False,
-			js_apis=[
-				customAPI()
-			],
+			js_apis=[customAPI()],
 			dev_tools=True,
 		)
 
@@ -85,9 +67,7 @@ class customAPI(
 			0,
 			0,
 		)
-		window.load_file(
-			'file/index2.html'
-		)
+		window.load_file('file/index2.html')
 		window.show()
 		window.focus()
 
@@ -97,12 +77,7 @@ class customAPI(
 	def customClose(
 		self,
 	):
-		if (
-			len(
-				self.app.get_windows()
-			)
-			> 1
-		):
+		if len(self.app.get_windows()) > 1:
 			self.window.close()
 		else:
 			self.window.hide()
@@ -110,18 +85,12 @@ class customAPI(
 
 win = app.create_window(
 	'Pyloid',
-	js_apis=[
-		customAPI()
-	],
+	js_apis=[customAPI()],
 )
 
 
-win.set_dev_tools(
-	True
-)
-win.set_frame(
-	True
-)
+win.set_dev_tools(True)
+win.set_frame(True)
 # win.set_context_menu(True)
 
 if is_production():
@@ -132,9 +101,7 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index5.html'
-	)
+	win.load_file('file/index5.html')
 
 
 win.show_and_focus()
@@ -142,10 +109,6 @@ from pprint import (
 	pprint,
 )
 
-pprint(
-	app.get_all_monitors()[
-		0
-	].info()
-)
+pprint(app.get_all_monitors()[0].info())
 
 app.run()

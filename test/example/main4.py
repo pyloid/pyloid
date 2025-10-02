@@ -30,17 +30,11 @@ app = Pyloid(
 	single_instance=True,
 )
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
-win.load_file(
-	'file/index7.html'
-)
+win.load_file('file/index7.html')
 
 win.show_and_focus()
 

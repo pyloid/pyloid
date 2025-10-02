@@ -8,12 +8,8 @@ import socket
 
 
 def get_production_path(
-	path: Optional[
-		str
-	] = None,
-) -> Optional[
-	str
-]:
+	path: Optional[str] = None,
+) -> Optional[str]:
 	"""
 	Constructs the absolute path to a resource file, adjusting based on the execution environment.
 
@@ -41,18 +37,14 @@ def get_production_path(
 	Examples
 	--------
 	>>> # Assume running NOT in production
-	>>> get_production_path(
-	...     'assets/icon.ico'
-	... )
+	>>> get_production_path('assets/icon.ico')
 	'assets/icon.ico'
 	>>> get_production_path()
 	None
 
 	>>> # Assume running IN production (e.g., PyInstaller bundle)
 	>>> # where sys._MEIPASS might be '/tmp/_MEIabcde'
-	>>> get_production_path(
-	...     'assets/icon.ico'
-	... )  # doctest: +SKIP
+	>>> get_production_path('assets/icon.ico')  # doctest: +SKIP
 	'/tmp/_MEIabcde/assets/icon.ico'
 	>>> get_production_path()  # doctest: +SKIP
 	'/tmp/_MEIabcde'
@@ -66,22 +58,11 @@ def get_production_path(
 			base_path = sys._MEIPASS
 		else:
 			# Nuitka
-			base_path = os.path.dirname(
-				sys.executable
-			)
+			base_path = os.path.dirname(sys.executable)
 
-			if (
-				base_path
-				is None
-			):
+			if base_path is None:
 				# 환경변수가 없는 경우 실행 파일 디렉토리 사용
-				base_path = os.path.dirname(
-					os.path.abspath(
-						sys.argv[
-							0
-						]
-					)
-				)
+				base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 		return (
 			os.path.join(
@@ -95,9 +76,7 @@ def get_production_path(
 		return path
 
 
-def is_production() -> (
-	bool
-):
+def is_production() -> bool:
 	"""
 	Checks if the current environment is a production environment.
 
@@ -117,10 +96,7 @@ def is_production() -> (
 	>>>     print("Not in production environment.")
 	"""
 	# Nuitka 환경 확인을 추가
-	if (
-		'__compiled__'
-		in globals()
-	):
+	if '__compiled__' in globals():
 		return True
 	# PyInstaller 환경 확인
 	return getattr(
@@ -130,9 +106,7 @@ def is_production() -> (
 	)
 
 
-def get_platform() -> (
-	str
-):
+def get_platform() -> str:
 	"""
 	Returns the name of the current system's platform.
 
@@ -151,9 +125,7 @@ def get_platform() -> (
 	...     get_platform,
 	... )
 	>>> platform_name = get_platform()
-	>>> print(
-	...     platform_name
-	... )
+	>>> print(platform_name)
 	windows
 	"""
 	os_name = platform.system().lower()
@@ -161,16 +133,9 @@ def get_platform() -> (
 		'darwin': 'macos',
 		'linux': 'linux',
 		'windows': 'windows',
-	}.get(
-		os_name
-	)
-	if (
-		os_type
-		is None
-	):
-		raise ValueError(
-			f'Unsupported platform: {os_name}'
-		)
+	}.get(os_name)
+	if os_type is None:
+		raise ValueError(f'Unsupported platform: {os_name}')
 
 	return os_type
 
@@ -196,24 +161,14 @@ def get_absolute_path(
 	>>> from pyloid.utils import (
 	...     get_absolute_path,
 	... )
-	>>> absolute_path = get_absolute_path(
-	...     'assets/icon.ico'
-	... )
-	>>> print(
-	...     absolute_path
-	... )
+	>>> absolute_path = get_absolute_path('assets/icon.ico')
+	>>> print(absolute_path)
 	C:/Users/aaaap/Documents/pyloid/pyloid/assets/icon.ico
 	"""
-	return os.path.normpath(
-		os.path.abspath(
-			path
-		)
-	)
+	return os.path.normpath(os.path.abspath(path))
 
 
-def get_free_port() -> (
-	int
-):
+def get_free_port() -> int:
 	"""
 	Finds and returns an available random network port number from the operating system.
 
@@ -240,9 +195,7 @@ def get_free_port() -> (
 	...     get_free_port,
 	... )
 	>>> port = get_free_port()
-	>>> print(
-	...     f'Found available port: {port}'
-	... )
+	>>> print(f'Found available port: {port}')
 	Found available port: 49152
 
 	>>> # Web server example
@@ -255,21 +208,17 @@ def get_free_port() -> (
 	...     http.server.SimpleHTTPRequestHandler,
 	... )
 	"""
-	with (
-		socket.socket(
-			socket.AF_INET,
-			socket.SOCK_STREAM,
-		) as s
-	):
+	with socket.socket(
+		socket.AF_INET,
+		socket.SOCK_STREAM,
+	) as s:
 		s.bind(
 			(
 				'',
 				0,
 			)
 		)
-		return s.getsockname()[
-			1
-		]
+		return s.getsockname()[1]
 
 
 def set_qt_backend(
@@ -303,13 +252,7 @@ def set_qt_backend(
 	...     set_qt_backend,
 	... )
 	>>> # Force software rendering
-	>>> set_qt_backend(
-	...     'software'
-	... )
+	>>> set_qt_backend('software')
 	"""
-	print(
-		f'Setting QT_QUICK_BACKEND to {backend}.'
-	)
-	os.environ[
-		'QT_QUICK_BACKEND'
-	] = backend
+	print(f'Setting QT_QUICK_BACKEND to {backend}.')
+	os.environ['QT_QUICK_BACKEND'] = backend

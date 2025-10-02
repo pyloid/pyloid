@@ -26,21 +26,13 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
 if is_production():
 	win.load_file(
@@ -50,9 +42,7 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index6.html'
-	)
+	win.load_file('file/index6.html')
 
 win.show_and_focus()
 
@@ -64,39 +54,21 @@ from PySide6.QtCore import (
 import time
 
 
-class ProgressWorkerThread(
-	QThread
-):
-	progress = Signal(
-		int
-	)
+class ProgressWorkerThread(QThread):
+	progress = Signal(int)
 
 	def run(
 		self,
 	):
-		for i in range(
-			101
-		):
-			self.progress.emit(
-				i
-			)
-			time.sleep(
-				0.1
-			)  # 작업 시뮬레이션
+		for i in range(101):
+			self.progress.emit(i)
+			time.sleep(0.1)  # 작업 시뮬레이션
 
 
 # 사용 예시
 progress_worker = ProgressWorkerThread()
-progress_worker.progress.connect(
-	lambda v: print(
-		f'진행률: {v}%'
-	)
-)
-progress_worker.finished.connect(
-	lambda: print(
-		'작업 완료!'
-	)
-)
+progress_worker.progress.connect(lambda v: print(f'진행률: {v}%'))
+progress_worker.finished.connect(lambda: print('작업 완료!'))
 progress_worker.start()
 
 app.run()

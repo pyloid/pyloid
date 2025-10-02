@@ -2,6 +2,4 @@ from .pyloid import (
 	Pyloid,
 )
 
-__all__ = [
-	'Pyloid'
-]
+__all__ = ['Pyloid']

@@ -34,16 +34,8 @@ app = Pyloid(
 audio_input = QAudioInput()
 audio_output = QAudioOutput()
 
-print(
-	audio_input.device()
-	.id()
-	.toBase64()
-)
-print(
-	audio_output.device()
-	.id()
-	.toBase64()
-)
+print(audio_input.device().id().toBase64())
+print(audio_output.device().id().toBase64())
 
 if is_production():
 	app.set_icon(
@@ -59,20 +51,12 @@ if is_production():
 		)
 	)
 else:
-	app.set_icon(
-		'assets/icon.ico'
-	)
-	app.set_tray_icon(
-		'assets/icon.ico'
-	)
+	app.set_icon('assets/icon.ico')
+	app.set_tray_icon('assets/icon.ico')
 
-win = app.create_window(
-	'main2'
-)
+win = app.create_window('main2')
 
-win.set_dev_tools(
-	True
-)
+win.set_dev_tools(True)
 
 if is_production():
 	win.load_file(
@@ -82,15 +66,11 @@ if is_production():
 		)
 	)
 else:
-	win.load_file(
-		'file/index5.html'
-	)
+	win.load_file('file/index5.html')
 
 win.add_shortcut(
 	'ctrl+a',
-	lambda: print(
-		'ctrl+a'
-	),
+	lambda: print('ctrl+a'),
 )
 
 # 녹음 관련 설정
@@ -98,45 +78,26 @@ capture_session = QMediaCaptureSession()
 audio_input = QAudioInput()
 recorder = QMediaRecorder()
 
-capture_session.setAudioInput(
-	audio_input
-)
-capture_session.setRecorder(
-	recorder
-)
+capture_session.setAudioInput(audio_input)
+capture_session.setRecorder(recorder)
 
 # 오디오 레벨 모니터링을 위한 설정
-recorder.durationChanged.connect(
-	lambda duration: check_duration(
-		duration
-	)
-)
+recorder.durationChanged.connect(lambda duration: check_duration(duration))
 
 
 def check_duration(
 	duration,
 ):
-	print(
-		f'현재 녹음 시간: {duration}ms'
-	)
+	print(f'현재 녹음 시간: {duration}ms')
 	# 녹음 시간이 1분을 초과하면 자동 중지
-	if (
-		duration
-		> 60000
-	):  # duration은 밀리초 단위
+	if duration > 60000:  # duration은 밀리초 단위
 		stop_recording()
-		print(
-			'최대 녹음 시간 초과로 녹음이 중지되었습니다.'
-		)
+		print('최대 녹음 시간 초과로 녹음이 중지되었습니다.')
 
 
 # 녹음 파일 포맷 설정
-recorder.setMediaFormat(
-	QMediaFormat.FileFormat.Wave
-)
-recorder.setQuality(
-	QMediaRecorder.Quality.HighQuality
-)
+recorder.setMediaFormat(QMediaFormat.FileFormat.Wave)
+recorder.setQuality(QMediaRecorder.Quality.HighQuality)
 
 # 녹음 시작 단축키
 win.add_shortcut(
@@ -151,38 +112,26 @@ win.add_shortcut(
 
 
 def start_recording():
-	global \
-		timer
+	global timer
 	# 타이머 생성
 	timer = QTimer()
-	timer.setInterval(
-		1000
-	)  # 1초 간격
-	timer.timeout.connect(
-		save_audio_chunk
-	)
+	timer.setInterval(1000)  # 1초 간격
+	timer.timeout.connect(save_audio_chunk)
 
 	# 녹음 파일 기본 경로 설정
-	global \
-		base_timestamp
-	base_timestamp = datetime.now().strftime(
-		'%Y%m%d_%H%M%S'
-	)
+	global base_timestamp
+	base_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 	# recordings 폴더 생성
 	os.makedirs(
-		get_absolute_path(
-			'recordings'
-		),
+		get_absolute_path('recordings'),
 		exist_ok=True,
 	)
 
 	# 녹음 시작
 	recorder.record()
 	timer.start()
-	print(
-		'Recording started...'
-	)
+	print('Recording started...')
 
 
 def save_audio_chunk():
@@ -190,34 +139,18 @@ def save_audio_chunk():
 	recorder.stop()
 
 	# 새로운 파일명 생성
-	timestamp = datetime.now().strftime(
-		'%H%M%S'
-	)
-	file_path = get_absolute_path(
-		f'recordings/recording_{base_timestamp}_{timestamp}.wav'
-	)
+	timestamp = datetime.now().strftime('%H%M%S')
+	file_path = get_absolute_path(f'recordings/recording_{base_timestamp}_{timestamp}.wav')
 
-	print(
-		QUrl.fromLocalFile(
-			file_path
-		).toLocalFile()
-	)
+	print(QUrl.fromLocalFile(file_path).toLocalFile())
 	# 새 녹음 시작
-	recorder.setOutputLocation(
-		QUrl.fromLocalFile(
-			file_path
-		)
-	)
+	recorder.setOutputLocation(QUrl.fromLocalFile(file_path))
 	recorder.record()
 
 	# 이전 파일의 평균 볼륨 계산 (지연 시간 증가)
 	QTimer.singleShot(
 		100,
-		lambda: calculate_volume(
-			QUrl.fromLocalFile(
-				file_path
-			).toLocalFile()
-		),
+		lambda: calculate_volume(QUrl.fromLocalFile(file_path).toLocalFile()),
 	)  # 100ms
 
 
@@ -229,48 +162,32 @@ def calculate_volume(
 ):
 	try:
 		# 파일이 존재하는지 확인
-		if not os.path.exists(
-			file_path
-		):
-			print(
-				f'파일이 아직 생성되지 않았습니다: {file_path}'
-			)
+		if not os.path.exists(file_path):
+			print(f'파일이 아직 생성되지 않았습니다: {file_path}')
 			return
 
-		with (
-			wave.open(
-				file_path,
-				'rb',
-			) as wav_file
-		):
+		with wave.open(
+			file_path,
+			'rb',
+		) as wav_file:
 			# 오디오 데이터 읽기
-			signal = wav_file.readframes(
-				-1
-			)
+			signal = wav_file.readframes(-1)
 			signal = np.frombuffer(
 				signal,
 				dtype=np.int16,
 			)
 
 			# 평균 볼륨 계산
-			average_volume = np.abs(
-				signal
-			).mean()
-			print(
-				f'Average volume for {os.path.basename(file_path)}: {average_volume:.2f}'
-			)
+			average_volume = np.abs(signal).mean()
+			print(f'Average volume for {os.path.basename(file_path)}: {average_volume:.2f}')
 	except Exception as e:
-		print(
-			f'볼륨 계산 중 오류 발생: {e}'
-		)
+		print(f'볼륨 계산 중 오류 발생: {e}')
 
 
 def stop_recording():
 	timer.stop()
 	recorder.stop()
-	print(
-		'Recording stopped and saved.'
-	)
+	print('Recording stopped and saved.')
 
 
 win.show_and_focus()

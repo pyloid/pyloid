@@ -5,9 +5,7 @@ from PySide6.QtCore import (
 )
 
 
-class PyloidTimer(
-	QObject
-):
+class PyloidTimer(QObject):
 	def __init__(
 		self,
 	):
@@ -52,9 +50,7 @@ class PyloidTimer(
 
 
 		def print_hello():
-		    print(
-		        'Hello!'
-		    )
+		    print('Hello!')
 
 
 		# Start a timer that prints "Hello!" every 2 seconds
@@ -104,9 +100,7 @@ class PyloidTimer(
 
 
 		def delayed_message():
-		    print(
-		        '5 seconds have passed!'
-		    )
+		    print('5 seconds have passed!')
 
 
 		# Start a single-shot timer that prints a message after 5 seconds
@@ -130,41 +124,24 @@ class PyloidTimer(
 		single_shot=False,
 		auto_remove=False,
 	):
-		timer = QTimer(
-			self
-		)
-		timer.setInterval(
-			interval
-		)
-		timer.setSingleShot(
-			single_shot
-		)
+		timer = QTimer(self)
+		timer.setInterval(interval)
+		timer.setSingleShot(single_shot)
 
-		if (
-			auto_remove
-			or single_shot
-		):
+		if auto_remove or single_shot:
 			timer.timeout.connect(
 				lambda: self._timer_finished(
 					callback,
-					id(
-						timer
-					),
+					id(timer),
 				)
 			)
 		else:
-			timer.timeout.connect(
-				callback
-			)
+			timer.timeout.connect(callback)
 
 		timer.start()
 
-		timer_id = id(
-			timer
-		)
-		self.timers[
-			timer_id
-		] = timer
+		timer_id = id(timer)
+		self.timers[timer_id] = timer
 		return timer_id
 
 	def _timer_finished(
@@ -173,9 +150,7 @@ class PyloidTimer(
 		timer_id,
 	):
 		callback()
-		self.stop_timer(
-			timer_id
-		)
+		self.stop_timer(timer_id)
 
 	def stop_timer(
 		self,
@@ -201,21 +176,12 @@ class PyloidTimer(
 		timer_manager = PyloidTimer()
 
 		# Stop the timer using its ID
-		timer_manager.stop_timer(
-		    timer_id
-		)
+		timer_manager.stop_timer(timer_id)
 		```
 		"""
-		if (
-			timer_id
-			in self.timers
-		):
-			self.timers[
-				timer_id
-			].stop()
-			del self.timers[
-				timer_id
-			]
+		if timer_id in self.timers:
+			self.timers[timer_id].stop()
+			del self.timers[timer_id]
 
 	def is_timer_active(
 		self,
@@ -245,25 +211,13 @@ class PyloidTimer(
 
 		timer_manager = PyloidTimer()
 
-		if timer_manager.is_timer_active(
-		    timer_id
-		):
-		    print(
-		        'The timer is still running.'
-		    )
+		if timer_manager.is_timer_active(timer_id):
+		    print('The timer is still running.')
 		else:
-		    print(
-		        'The timer has stopped.'
-		    )
+		    print('The timer has stopped.')
 		```
 		"""
-		return (
-			timer_id
-			in self.timers
-			and self.timers[
-				timer_id
-			].isActive()
-		)
+		return timer_id in self.timers and self.timers[timer_id].isActive()
 
 	def get_remaining_time(
 		self,
@@ -293,25 +247,13 @@ class PyloidTimer(
 
 		timer_manager = PyloidTimer()
 
-		remaining_time = timer_manager.get_remaining_time(
-		    timer_id
-		)
-		if (
-		    remaining_time
-		    is not None
-		):
-		    print(
-		        f'{remaining_time}ms remaining.'
-		    )
+		remaining_time = timer_manager.get_remaining_time(timer_id)
+		if remaining_time is not None:
+		    print(f'{remaining_time}ms remaining.')
 		```
 		"""
-		if (
-			timer_id
-			in self.timers
-		):
-			return self.timers[
-				timer_id
-			].remainingTime()
+		if timer_id in self.timers:
+			return self.timers[timer_id].remainingTime()
 		return None
 
 	def set_interval(
@@ -347,15 +289,8 @@ class PyloidTimer(
 		)
 		```
 		"""
-		if (
-			timer_id
-			in self.timers
-		):
-			self.timers[
-				timer_id
-			].setInterval(
-				interval
-			)
+		if timer_id in self.timers:
+			self.timers[timer_id].setInterval(interval)
 
 	def start_precise_periodic_timer(
 		self,
@@ -394,9 +329,7 @@ class PyloidTimer(
 
 
 		def precise_task():
-		    print(
-		        'Executing precise task'
-		    )
+		    print('Executing precise task')
 
 
 		# Start a precise periodic timer with a 100ms interval
@@ -449,9 +382,7 @@ class PyloidTimer(
 
 
 		def coarse_task():
-		    print(
-		        'Executing coarse task'
-		    )
+		    print('Executing coarse task')
 
 
 		# Start a coarse periodic timer with a 500ms interval
@@ -474,36 +405,22 @@ class PyloidTimer(
 		timer_type,
 		auto_remove=False,
 	):
-		timer = QTimer(
-			self
-		)
-		timer.setInterval(
-			interval
-		)
-		timer.setTimerType(
-			timer_type
-		)
+		timer = QTimer(self)
+		timer.setInterval(interval)
+		timer.setTimerType(timer_type)
 
 		if auto_remove:
 			timer.timeout.connect(
 				lambda: self._timer_finished(
 					callback,
-					id(
-						timer
-					),
+					id(timer),
 				)
 			)
 		else:
-			timer.timeout.connect(
-				callback
-			)
+			timer.timeout.connect(callback)
 
 		timer.start()
 
-		timer_id = id(
-			timer
-		)
-		self.timers[
-			timer_id
-		] = timer
+		timer_id = id(timer)
+		self.timers[timer_id] = timer
 		return timer_id
