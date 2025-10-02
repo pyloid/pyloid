@@ -9,7 +9,6 @@ from pathlib import Path
 from .utils import get_free_port, is_production
 import logging
 
-# 로깅 설정
 logging.getLogger('aiohttp').setLevel(logging.WARNING)
 
 
@@ -38,7 +37,7 @@ class ZeroCopyStaticHandler:
         """HTTP request processing"""
         try:
             # URL path parsing
-            path = request.path_qs.split('?')[0]  # 쿼리 파라미터 제거
+            path = request.path_qs.split('?')[0]  # remove query parameters
             if path.endswith('/'):
                 path += 'index.html'
             
@@ -213,7 +212,7 @@ def pyloid_serve(
                 start_zero_copy_server(directory, port)
             )
             
-            print(f"🚀 Zero-copy server started on http://127.0.0.1:{port}")
+            print(f"🚀 Zero-copy frontend server started on http://127.0.0.1:{port}")
             print(f"📁 Serving directory: {directory}")
             print(f"⚡ Features: sendfile, Range requests, ETag caching")
             

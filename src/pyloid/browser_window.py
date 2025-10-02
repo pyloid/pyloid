@@ -338,7 +338,7 @@ class _BrowserWindow:
         self.context_menu = context_menu
         self.dev_tools = dev_tools
 
-        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.app.server.url)]
+        self.js_apis = [BaseAPI(self.id, self.app.data, self.app, self.app.server.url if self.app.server else None)]
 
         # for js_api in js_apis:
         #     self.js_apis.append(js_api)
