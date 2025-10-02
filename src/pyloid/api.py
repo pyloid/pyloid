@@ -1,12 +1,23 @@
-from PySide6.QtCore import QObject, Slot
-from typing import TYPE_CHECKING
+from PySide6.QtCore import (
+	QObject,
+	Slot,
+)
+from typing import (
+	TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
-	from pyloid.pyloid import Pyloid
-	from pyloid.browser_window import BrowserWindow
+	from pyloid.pyloid import (
+		Pyloid,
+	)
+	from pyloid.browser_window import (
+		BrowserWindow,
+	)
 
 
-class PyloidAPI(QObject):
+class PyloidAPI(
+	QObject
+):
 	"""
 	PyloidAPI class is derived from PySide6's QObject.
 	It enables communication between JavaScript and Python.
@@ -15,24 +26,42 @@ class PyloidAPI(QObject):
 	-------------
 	(Python)
 	```python
-	from pyloid import Pyloid, PyloidAPI, Bridge
+	from pyloid import (
+	    Pyloid,
+	    PyloidAPI,
+	    Bridge,
+	)
 
-	app = Pyloid('Pyloid-App')
+	app = Pyloid(
+	    'Pyloid-App'
+	)
 
 
-	class CustomAPI(PyloidAPI):
-	    @Bridge(str, result=str)
-	    def echo(self, message):
+	class CustomAPI(
+	    PyloidAPI
+	):
+	    @Bridge(
+	        str,
+	        result=str,
+	    )
+	    def echo(
+	        self,
+	        message,
+	    ):
 	        return f'Message received in Python: {message}'
 
 
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[CustomAPI()],
+	    js_apis=[
+	        CustomAPI()
+	    ],
 	)
 
-	window.load_file('index.html')
+	window.load_file(
+	    'index.html'
+	)
 
 	window.show()
 	window.focus()
@@ -49,14 +78,19 @@ class PyloidAPI(QObject):
 	```
 	"""
 
-	def __init__(self):
+	def __init__(
+		self,
+	):
 		super().__init__()
 		self.window_id: str = None
 		self.window: 'BrowserWindow' = None
 		self.app: 'Pyloid' = None
 
 
-def Bridge(*args, **kwargs):
+def Bridge(
+	*args,
+	**kwargs,
+):
 	"""
 	Bridge function creates a slot that can be called from JavaScript.
 
@@ -71,24 +105,42 @@ def Bridge(*args, **kwargs):
 	-------------
 	(Python)
 	```python
-	from pyloid import Pyloid, PyloidAPI, Bridge
+	from pyloid import (
+	    Pyloid,
+	    PyloidAPI,
+	    Bridge,
+	)
 
-	app = Pyloid('Pyloid-App')
+	app = Pyloid(
+	    'Pyloid-App'
+	)
 
 
-	class CustomAPI(PyloidAPI):
-	    @Bridge(str, result=str)
-	    def echo(self, message):
+	class CustomAPI(
+	    PyloidAPI
+	):
+	    @Bridge(
+	        str,
+	        result=str,
+	    )
+	    def echo(
+	        self,
+	        message,
+	    ):
 	        return f'Message received in Python: {message}'
 
 
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[CustomAPI()],
+	    js_apis=[
+	        CustomAPI()
+	    ],
 	)
 
-	window.load_file('index.html')
+	window.load_file(
+	    'index.html'
+	)
 
 	window.show()
 	window.focus()
@@ -104,4 +156,7 @@ def Bridge(*args, **kwargs):
 	});
 	```
 	"""
-	return Slot(*args, **kwargs)
+	return Slot(
+		*args,
+		**kwargs,
+	)

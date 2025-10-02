@@ -1,227 +1,450 @@
-from typing import TYPE_CHECKING, Optional
+from typing import (
+	TYPE_CHECKING,
+	Optional,
+)
 
-from ..api import PyloidAPI, Bridge
-from PySide6.QtCore import QByteArray, QBuffer, QIODeviceBase
+from ..api import (
+	PyloidAPI,
+	Bridge,
+)
+from PySide6.QtCore import (
+	QByteArray,
+	QBuffer,
+	QIODeviceBase,
+)
 import base64
-from ..utils import get_platform, is_production, get_production_path
+from ..utils import (
+	get_platform,
+	is_production,
+	get_production_path,
+)
 
 if TYPE_CHECKING:
-	from ..pyloid import _Pyloid
+	from ..pyloid import (
+		_Pyloid,
+	)
 
 
-class BaseAPI(PyloidAPI):
+class BaseAPI(
+	PyloidAPI
+):
 	def __init__(
 		self,
 		window_id: str,
 		data: dict,
 		app: '_Pyloid',
-		server_url: Optional[str] = None,
+		server_url: Optional[
+			str
+		] = None,
 	):
 		super().__init__()
 		self.window_id: str = window_id
 		self.data: dict = data
 		self.app: '_Pyloid' = app
-		self.server_url: Optional[str] = server_url
+		self.server_url: Optional[
+			str
+		] = server_url
 
-	@Bridge(result=dict)
-	def getData(self):
+	@Bridge(
+		result=dict
+	)
+	def getData(
+		self,
+	):
 		"""Returns the shared data of the application."""
 		return self.data
 
 	@Bridge()
-	def startSystemDrag(self):
+	def startSystemDrag(
+		self,
+	):
 		"""Starts the system drag."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.web_view.start_system_drag()
 
-	@Bridge(result=str)
-	def getWindowId(self):
+	@Bridge(
+		result=str
+	)
+	def getWindowId(
+		self,
+	):
 		"""Returns the current window ID."""
 		return self.window_id
 
-	@Bridge(result=dict)
-	def getWindowProperties(self):
+	@Bridge(
+		result=dict
+	)
+	def getWindowProperties(
+		self,
+	):
 		"""Returns the properties of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		window_properties = window._window.get_window_properties()
 		return window_properties
 
 	@Bridge()
-	def close(self):
+	def close(
+		self,
+	):
 		"""Closes the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.close()
 
 	@Bridge()
-	def hide(self):
+	def hide(
+		self,
+	):
 		"""Hides the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.hide()
 
 	@Bridge()
-	def show(self):
+	def show(
+		self,
+	):
 		"""Shows and focuses the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.show()
 
 	@Bridge()
-	def focus(self):
+	def focus(
+		self,
+	):
 		"""Focuses the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.focus()
 
 	@Bridge()
-	def showAndFocus(self):
+	def showAndFocus(
+		self,
+	):
 		"""Shows and focuses the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.show_and_focus()
 
 	@Bridge()
-	def fullscreen(self):
+	def fullscreen(
+		self,
+	):
 		"""Enters fullscreen mode."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.fullscreen()
 
 	@Bridge()
-	def toggleFullscreen(self):
+	def toggleFullscreen(
+		self,
+	):
 		"""Toggles fullscreen mode for the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.toggle_fullscreen()
 
 	@Bridge()
-	def minimize(self):
+	def minimize(
+		self,
+	):
 		"""Minimizes the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.minimize()
 
 	@Bridge()
-	def maximize(self):
+	def maximize(
+		self,
+	):
 		"""Maximizes the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.maximize()
 
 	@Bridge()
-	def unmaximize(self):
+	def unmaximize(
+		self,
+	):
 		"""Restores the window to its normal state."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.unmaximize()
 
 	@Bridge()
-	def toggleMaximize(self):
+	def toggleMaximize(
+		self,
+	):
 		"""Toggles the maximized state of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
 			window._window.toggle_maximize()
 
-	@Bridge(result=bool)
-	def isFullscreen(self):
+	@Bridge(
+		result=bool
+	)
+	def isFullscreen(
+		self,
+	):
 		"""Returns True if the window is fullscreen."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		return window._window.is_fullscreen()
 
-	@Bridge(result=bool)
-	def isMaximized(self):
+	@Bridge(
+		result=bool
+	)
+	def isMaximized(
+		self,
+	):
 		"""Returns True if the window is maximized."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		return window._window.is_maximized()
 
-	@Bridge(str)
-	def setTitle(self, title: str):
+	@Bridge(
+		str
+	)
+	def setTitle(
+		self,
+		title: str,
+	):
 		"""Sets the title of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
-			window._window.set_title(title)
+			window._window.set_title(
+				title
+			)
 
-	@Bridge(int, int)
-	def setSize(self, width: int, height: int):
+	@Bridge(
+		int,
+		int,
+	)
+	def setSize(
+		self,
+		width: int,
+		height: int,
+	):
 		"""Sets the size of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
-			window._window.set_size(width, height)
+			window._window.set_size(
+				width,
+				height,
+			)
 
-	@Bridge(int, int)
-	def setPosition(self, x: int, y: int):
+	@Bridge(
+		int,
+		int,
+	)
+	def setPosition(
+		self,
+		x: int,
+		y: int,
+	):
 		"""Sets the position of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
-			window._window.set_position(x, y)
+			window._window.set_position(
+				x,
+				y,
+			)
 
-	@Bridge(bool)
-	def setFrame(self, frame: bool):
+	@Bridge(
+		bool
+	)
+	def setFrame(
+		self,
+		frame: bool,
+	):
 		"""Sets the frame of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		if window:
-			window._window.set_frame(frame)
+			window._window.set_frame(
+				frame
+			)
 
-	@Bridge(result=bool)
-	def getFrame(self):
+	@Bridge(
+		result=bool
+	)
+	def getFrame(
+		self,
+	):
 		"""Returns whether the window has a frame."""
-		window = self.app.get_window_by_id(self.window_id)
-		return window._window.frame if window else False
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
+		return (
+			window._window.frame
+			if window
+			else False
+		)
 
-	@Bridge(result=str)
-	def getTitle(self):
+	@Bridge(
+		result=str
+	)
+	def getTitle(
+		self,
+	):
 		"""Returns the title of the window."""
-		window = self.app.get_window_by_id(self.window_id)
-		return window._window.title if window else ''
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
+		return (
+			window._window.title
+			if window
+			else ''
+		)
 
-	@Bridge(result=dict)
-	def getSize(self):
+	@Bridge(
+		result=dict
+	)
+	def getSize(
+		self,
+	):
 		"""Returns the size of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		size = window.get_size()
-		return size if window else {'width': 0, 'height': 0}
+		return (
+			size
+			if window
+			else {
+				'width': 0,
+				'height': 0,
+			}
+		)
 
-	@Bridge(result=dict)
-	def getPosition(self):
+	@Bridge(
+		result=dict
+	)
+	def getPosition(
+		self,
+	):
 		"""Returns the position of the window."""
-		window = self.app.get_window_by_id(self.window_id)
+		window = self.app.get_window_by_id(
+			self.window_id
+		)
 		pos = window.get_position()
-		return pos if window else {'x': 0, 'y': 0}
+		return (
+			pos
+			if window
+			else {
+				'x': 0,
+				'y': 0,
+			}
+		)
 
 	###############################################################
 	# Clipboard
 	###############################################################
 
-	@Bridge(str)
-	def setClipboardText(self, text: str):
+	@Bridge(
+		str
+	)
+	def setClipboardText(
+		self,
+		text: str,
+	):
 		"""Sets the text to the clipboard."""
-		self.app.set_clipboard_text(text)
+		self.app.set_clipboard_text(
+			text
+		)
 
-	@Bridge(result=str)
-	def getClipboardText(self):
+	@Bridge(
+		result=str
+	)
+	def getClipboardText(
+		self,
+	):
 		"""Gets the text from the clipboard."""
 		return self.app.get_clipboard_text()
 
-	@Bridge(str, str)
-	def setClipboardImage(self, image_path: str, format: str):
+	@Bridge(
+		str,
+		str,
+	)
+	def setClipboardImage(
+		self,
+		image_path: str,
+		format: str,
+	):
 		"""Sets the image to the clipboard."""
-		self.app.set_clipboard_image(image_path, format)
+		self.app.set_clipboard_image(
+			image_path,
+			format,
+		)
 
-	@Bridge(result=str)
-	def getClipboardImage(self):
+	@Bridge(
+		result=str
+	)
+	def getClipboardImage(
+		self,
+	):
 		"""Returns the clipboard image as a Base64 encoded data URL."""
 		image = self.app.get_clipboard_image()  # Assuming it returns QImage
-		if image and not image.isNull():
+		if (
+			image
+			and not image.isNull()
+		):
 			# Convert QImage to byte array
 			byte_array = QByteArray()
-			buffer = QBuffer(byte_array)
-			buffer.open(QIODeviceBase.WriteOnly)
-			image.save(buffer, 'PNG')  # Save in PNG format
+			buffer = QBuffer(
+				byte_array
+			)
+			buffer.open(
+				QIODeviceBase.WriteOnly
+			)
+			image.save(
+				buffer,
+				'PNG',
+			)  # Save in PNG format
 
 			# Encode to Base64
-			base64_data = byte_array.toBase64().data().decode()
+			base64_data = (
+				byte_array.toBase64()
+				.data()
+				.decode()
+			)
 			return f'data:image/png;base64,{base64_data}'
 		return ''
 
@@ -229,15 +452,21 @@ class BaseAPI(PyloidAPI):
 	# Quit
 	###########################################################################################
 	@Bridge()
-	def quit(self):
+	def quit(
+		self,
+	):
 		"""Quits the application."""
 		self.app.quit()
 
 	###########################################################################################
 	# Utils
 	###########################################################################################
-	@Bridge(result=str)
-	def getPlatform(self):
+	@Bridge(
+		result=str
+	)
+	def getPlatform(
+		self,
+	):
 		"""Returns the platform of the application.
 
 		Returns
@@ -247,17 +476,33 @@ class BaseAPI(PyloidAPI):
 		"""
 		return get_platform()
 
-	@Bridge(result=bool)
-	def isProduction(self):
+	@Bridge(
+		result=bool
+	)
+	def isProduction(
+		self,
+	):
 		"""Returns True if the application is in production mode."""
 		return is_production()
 
-	@Bridge(str, result=str)
-	def getProductionPath(self, path: str):
+	@Bridge(
+		str,
+		result=str,
+	)
+	def getProductionPath(
+		self,
+		path: str,
+	):
 		"""Returns the production path of the application."""
-		return get_production_path(path)
+		return get_production_path(
+			path
+		)
 
-	@Bridge(result=str)
-	def getServerUrl(self):
+	@Bridge(
+		result=str
+	)
+	def getServerUrl(
+		self,
+	):
 		"""Returns the RPC URL of the application."""
 		return self.server_url

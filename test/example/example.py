@@ -1,49 +1,91 @@
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import (
+	QApplication,
+	QMainWindow,
+)
 from PySide6.QtWebEngineCore import (
 	QWebEnginePage,
 	QWebEngineSettings,
 	QWebEnginePermission,
 )
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtCore import QUrl
-from typing import Any
+from PySide6.QtWebEngineWidgets import (
+	QWebEngineView,
+)
+from PySide6.QtCore import (
+	QUrl,
+)
+from typing import (
+	Any,
+)
 
 
-class CustomWebPage(QWebEnginePage):
-	def __init__(self, profile=None):
-		super().__init__(profile)
-		self.permissionRequested.connect(self._handlePermissionRequest)
-		self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
+class CustomWebPage(
+	QWebEnginePage
+):
+	def __init__(
+		self,
+		profile=None,
+	):
+		super().__init__(
+			profile
+		)
+		self.permissionRequested.connect(
+			self._handlePermissionRequest
+		)
+		self.desktopMediaRequested.connect(
+			self._handleDesktopMediaRequest
+		)
 
-	def _handlePermissionRequest(self, permission: QWebEnginePermission):
+	def _handlePermissionRequest(
+		self,
+		permission: QWebEnginePermission,
+	):
 		permission.grant()  # Allow all permissions by default
 
 	# This is a desktop media request
 	# But TypeError: cannot be converted
-	def _handleDesktopMediaRequest(self, request: Any):
-		print('Desktop media request received:', request)
+	def _handleDesktopMediaRequest(
+		self,
+		request: Any,
+	):
+		print(
+			'Desktop media request received:',
+			request,
+		)
 
 
-class CustomWebEngineView(QWebEngineView):
-	def __init__(self):
+class CustomWebEngineView(
+	QWebEngineView
+):
+	def __init__(
+		self,
+	):
 		super().__init__()
 		self.custom_page = CustomWebPage()
-		self.setPage(self.custom_page)
+		self.setPage(
+			self.custom_page
+		)
 
 		self.settings().setAttribute(
 			QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls,
 			True,
 		)
 		self.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True
+			QWebEngineSettings.WebAttribute.ScreenCaptureEnabled,
+			True,
 		)
 
 
-class MainWindow(QMainWindow):
-	def __init__(self):
+class MainWindow(
+	QMainWindow
+):
+	def __init__(
+		self,
+	):
 		super().__init__()
 		self.web_view = CustomWebEngineView()
-		self.setCentralWidget(self.web_view)
+		self.setCentralWidget(
+			self.web_view
+		)
 
 		html_content = """
         <html>
@@ -80,13 +122,25 @@ class MainWindow(QMainWindow):
         </html>
         """
 
-		self.web_view.setHtml(html_content, QUrl('http://localhost'))
+		self.web_view.setHtml(
+			html_content,
+			QUrl(
+				'http://localhost'
+			),
+		)
 
 
-if __name__ == '__main__':
+if (
+	__name__
+	== '__main__'
+):
 	import sys
 
-	app = QApplication(sys.argv)
+	app = QApplication(
+		sys.argv
+	)
 	window = MainWindow()
 	window.show()
-	sys.exit(app.exec())
+	sys.exit(
+		app.exec()
+	)

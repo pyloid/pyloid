@@ -1,9 +1,16 @@
-from pyloid import Pyloid
+from pyloid import (
+	Pyloid,
+)
 
-app = Pyloid(app_name='pyloid-app')
+app = Pyloid(
+	app_name='pyloid-app'
+)
 
 window = app.create_window(
-	'border-radius and transparent', frame=False, width=500, height=500
+	'border-radius and transparent',
+	frame=False,
+	width=500,
+	height=500,
 )
 
 html = """
@@ -36,7 +43,9 @@ html = """
 </html>
 """
 
-window.load_html(html)
+window.load_html(
+	html
+)
 window.show_and_focus()
 
 app.run()

@@ -1,7 +1,13 @@
-from PySide6.QtCore import QFileSystemWatcher, QObject, Signal
+from PySide6.QtCore import (
+	QFileSystemWatcher,
+	QObject,
+	Signal,
+)
 
 
-class FileWatcher(QObject):
+class FileWatcher(
+	QObject
+):
 	"""
 	FileWatcher class for monitoring file and directory changes.
 
@@ -30,19 +36,32 @@ class FileWatcher(QObject):
 	    Removes all paths from the watch list.
 	"""
 
-	file_changed = Signal(str)
-	directory_changed = Signal(str)
+	file_changed = Signal(
+		str
+	)
+	directory_changed = Signal(
+		str
+	)
 
-	def __init__(self):
+	def __init__(
+		self,
+	):
 		"""
 		Initializes the FileWatcher object.
 		"""
 		super().__init__()
 		self.watcher = QFileSystemWatcher()
-		self.watcher.fileChanged.connect(self.file_changed)
-		self.watcher.directoryChanged.connect(self.directory_changed)
+		self.watcher.fileChanged.connect(
+			self.file_changed
+		)
+		self.watcher.directoryChanged.connect(
+			self.directory_changed
+		)
 
-	def add_path(self, path):
+	def add_path(
+		self,
+		path,
+	):
 		"""
 		Adds a file or directory to the watch list.
 
@@ -59,15 +78,22 @@ class FileWatcher(QObject):
 		Examples
 		--------
 		>>> watcher = FileWatcher()
-		>>> result = watcher.add_path('/path/to/file_or_directory')
+		>>> result = watcher.add_path(
+		...     '/path/to/file_or_directory'
+		... )
 		>>> if result:
 		>>>     print("Watch started")
 		>>> else:
 		>>>     print("Failed to start watching")
 		"""
-		return self.watcher.addPath(path)
+		return self.watcher.addPath(
+			path
+		)
 
-	def remove_path(self, path):
+	def remove_path(
+		self,
+		path,
+	):
 		"""
 		Removes a file or directory from the watch list.
 
@@ -84,15 +110,21 @@ class FileWatcher(QObject):
 		Examples
 		--------
 		>>> watcher = FileWatcher()
-		>>> result = watcher.remove_path('/path/to/file_or_directory')
+		>>> result = watcher.remove_path(
+		...     '/path/to/file_or_directory'
+		... )
 		>>> if result:
 		>>>     print("Successfully stopped watching")
 		>>> else:
 		>>>     print("Failed to stop watching")
 		"""
-		return self.watcher.removePath(path)
+		return self.watcher.removePath(
+			path
+		)
 
-	def get_watched_paths(self):
+	def get_watched_paths(
+		self,
+	):
 		"""
 		Returns all currently watched paths (files and directories).
 
@@ -105,11 +137,19 @@ class FileWatcher(QObject):
 		--------
 		>>> watcher = FileWatcher()
 		>>> paths = watcher.get_watched_paths()
-		>>> print('Watched paths:', paths)
+		>>> print(
+		...     'Watched paths:',
+		...     paths,
+		... )
 		"""
-		return self.watcher.files() + self.watcher.directories()
+		return (
+			self.watcher.files()
+			+ self.watcher.directories()
+		)
 
-	def get_watched_files(self):
+	def get_watched_files(
+		self,
+	):
 		"""
 		Returns all currently watched files.
 
@@ -122,11 +162,16 @@ class FileWatcher(QObject):
 		--------
 		>>> watcher = FileWatcher()
 		>>> files = watcher.get_watched_files()
-		>>> print('Watched files:', files)
+		>>> print(
+		...     'Watched files:',
+		...     files,
+		... )
 		"""
 		return self.watcher.files()
 
-	def get_watched_directories(self):
+	def get_watched_directories(
+		self,
+	):
 		"""
 		Returns all currently watched directories.
 
@@ -139,11 +184,16 @@ class FileWatcher(QObject):
 		--------
 		>>> watcher = FileWatcher()
 		>>> directories = watcher.get_watched_directories()
-		>>> print('Watched directories:', directories)
+		>>> print(
+		...     'Watched directories:',
+		...     directories,
+		... )
 		"""
 		return self.watcher.directories()
 
-	def remove_all_paths(self):
+	def remove_all_paths(
+		self,
+	):
 		"""
 		Removes all paths from the watch list.
 
@@ -161,4 +211,6 @@ class FileWatcher(QObject):
 		>>> else:
 		>>>     print("Failed to remove all paths")
 		"""
-		return self.watcher.removePaths(self.get_watched_paths())
+		return self.watcher.removePaths(
+			self.get_watched_paths()
+		)

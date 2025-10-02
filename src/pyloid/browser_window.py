@@ -3,8 +3,12 @@ import os
 from PySide6.QtWidgets import (
 	QMainWindow,
 )
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWebChannel import QWebChannel
+from PySide6.QtWebEngineWidgets import (
+	QWebEngineView,
+)
+from PySide6.QtWebChannel import (
+	QWebChannel,
+)
 from PySide6.QtGui import (
 	QKeySequence,
 	QShortcut,
@@ -27,17 +31,34 @@ from PySide6.QtWebEngineCore import (
 	# QWebEngineUrlRequestInterceptor,
 )
 import uuid
-from typing import Optional, Dict, Callable
+from typing import (
+	Optional,
+	Dict,
+	Callable,
+)
 import json
 from PySide6.QtWidgets import (
 	QWidget,
 	QVBoxLayout,
 )
-from .custom.titlebar import CustomTitleBar
-from .js_api.base import BaseAPI
-from PySide6.QtGui import QPixmap, QMovie
-from PySide6.QtWidgets import QSplashScreen, QLabel
-from typing import TYPE_CHECKING, Any
+from .custom.titlebar import (
+	CustomTitleBar,
+)
+from .js_api.base import (
+	BaseAPI,
+)
+from PySide6.QtGui import (
+	QPixmap,
+	QMovie,
+)
+from PySide6.QtWidgets import (
+	QSplashScreen,
+	QLabel,
+)
+from typing import (
+	TYPE_CHECKING,
+	Any,
+)
 from PySide6.QtWebEngineCore import (
 	QWebEngineSettings,
 	# QWebEngineDesktopMediaRequest, # 6.8.3 부터
@@ -46,28 +67,50 @@ from PySide6.QtWebEngineCore import (
 # from .url_interceptor import ServerUrlInterceptor
 
 if TYPE_CHECKING:
-	from .pyloid import _Pyloid, Pyloid
+	from .pyloid import (
+		_Pyloid,
+		Pyloid,
+	)
 
 
-class CustomWebPage(QWebEnginePage):
-	def __init__(self, profile=None):
-		super().__init__(profile)
-		self.featurePermissionRequested.connect(self._handlePermissionRequest)
+class CustomWebPage(
+	QWebEnginePage
+):
+	def __init__(
+		self,
+		profile=None,
+	):
+		super().__init__(
+			profile
+		)
+		self.featurePermissionRequested.connect(
+			self._handlePermissionRequest
+		)
 		# self.desktopMediaRequested.connect(self._handleDesktopMediaRequest)
 		self._permission_handlers = {}
 		self._desktop_media_handler = None
 		self._url_handlers = {}  # URL 핸들러 저장을 위한 딕셔너리 추가
 
 	def _handlePermissionRequest(
-		self, origin: QUrl, feature: QWebEnginePage.Feature
+		self,
+		origin: QUrl,
+		feature: QWebEnginePage.Feature,
 	):
 		# print(origin, feature)
 
 		"""Default permission request handler"""
-		if feature in self._permission_handlers:
+		if (
+			feature
+			in self._permission_handlers
+		):
 			# Execute if a handler is registered
-			handler = self._permission_handlers[feature]
-			handler(origin, feature)
+			handler = self._permission_handlers[
+				feature
+			]
+			handler(
+				origin,
+				feature,
+			)
 		else:
 			# Allow all permissions by default
 			self.setFeaturePermission(
@@ -76,9 +119,15 @@ class CustomWebPage(QWebEnginePage):
 				QWebEnginePage.PermissionPolicy.PermissionGrantedByUser,
 			)
 
-	def setPermissionHandler(self, feature: QWebEnginePage.Feature, handler):
+	def setPermissionHandler(
+		self,
+		feature: QWebEnginePage.Feature,
+		handler,
+	):
 		"""Register a handler for a specific permission"""
-		self._permission_handlers[feature] = handler
+		self._permission_handlers[
+			feature
+		] = handler
 
 	# def _handleDesktopMediaRequest(self, request: QWebEngineDesktopMediaRequest):
 	#     return
@@ -156,14 +205,23 @@ class CustomWebPage(QWebEnginePage):
 #         self.last_path = url.path()
 
 
-class CustomWebEngineView(QWebEngineView):
-	def __init__(self, parent: '_BrowserWindow' = None):
-		super().__init__(parent._window)
+class CustomWebEngineView(
+	QWebEngineView
+):
+	def __init__(
+		self,
+		parent: '_BrowserWindow' = None,
+	):
+		super().__init__(
+			parent._window
+		)
 		self.parent: '_BrowserWindow' = parent
 
 		# Custom Web Page
 		self.custom_page = CustomWebPage()
-		self.setPage(self.custom_page)
+		self.setPage(
+			self.custom_page
+		)
 
 		self.is_resizing = False
 		self.resize_start_pos = None
@@ -171,43 +229,79 @@ class CustomWebEngineView(QWebEngineView):
 		self.screen_geometry = self.screen().virtualGeometry()
 		self.is_resizing_enabled = True
 
-		self.setAttribute(Qt.WA_SetCursor, False)
+		self.setAttribute(
+			Qt.WA_SetCursor,
+			False,
+		)
 
 		self.is_in_resize_area = False
 
-	def mouse_press_event(self, event):
-		if self.parent.frame or not self.is_resizing_enabled:
+	def mouse_press_event(
+		self,
+		event,
+	):
+		if (
+			self.parent.frame
+			or not self.is_resizing_enabled
+		):
 			return
 
-		if event.button() == Qt.LeftButton:
-			self.resize_direction = self.get_resize_direction(event.pos())
+		if (
+			event.button()
+			== Qt.LeftButton
+		):
+			self.resize_direction = self.get_resize_direction(
+				event.pos()
+			)
 			if self.resize_direction:
 				self.is_resizing = True
 				self.resize_start_pos = event.globalPos()
 
-	def start_system_drag(self):
+	def start_system_drag(
+		self,
+	):
 		"""Start system window move"""
 		if self.parent._window.windowHandle():
 			self.parent._window.windowHandle().startSystemMove()
 
-	def mouse_move_event(self, event):
-		if self.parent.frame or not self.is_resizing_enabled:
+	def mouse_move_event(
+		self,
+		event,
+	):
+		if (
+			self.parent.frame
+			or not self.is_resizing_enabled
+		):
 			return
 
 		# Check resize direction
 		was_in_resize_area = self.is_in_resize_area
-		resize_direction = self.get_resize_direction(event.pos())
-		self.is_in_resize_area = bool(resize_direction)
+		resize_direction = self.get_resize_direction(
+			event.pos()
+		)
+		self.is_in_resize_area = bool(
+			resize_direction
+		)
 
-		if resize_direction and not self.is_resizing:
-			self.set_cursor_for_resize_direction(resize_direction)
+		if (
+			resize_direction
+			and not self.is_resizing
+		):
+			self.set_cursor_for_resize_direction(
+				resize_direction
+			)
 
 		if self.is_resizing:
-			self.resize_window(event.globalPos())
+			self.resize_window(
+				event.globalPos()
+			)
 			return
 
 		# Change cursor when entering/leaving resize area
-		if self.is_in_resize_area != was_in_resize_area:
+		if (
+			self.is_in_resize_area
+			!= was_in_resize_area
+		):
 			if self.is_in_resize_area:
 				# self.setAttribute(Qt.WA_SetCursor, True)
 				pass
@@ -215,97 +309,233 @@ class CustomWebEngineView(QWebEngineView):
 				self.unsetCursor()
 				# self.setAttribute(Qt.WA_SetCursor, False)
 
-	def mouse_release_event(self, event):
-		if self.parent.frame or not self.is_resizing_enabled:
+	def mouse_release_event(
+		self,
+		event,
+	):
+		if (
+			self.parent.frame
+			or not self.is_resizing_enabled
+		):
 			return
 
-		if event.button() == Qt.LeftButton:
+		if (
+			event.button()
+			== Qt.LeftButton
+		):
 			self.is_resizing = False
 
 			if self.resize_direction:
 				self.unsetCursor()
 				self.resize_direction = None
 
-			self.setAttribute(Qt.WA_SetCursor, False)
+			self.setAttribute(
+				Qt.WA_SetCursor,
+				False,
+			)
 
-	def eventFilter(self, source, event):
-		if self.focusProxy() is source:
+	def eventFilter(
+		self,
+		source,
+		event,
+	):
+		if (
+			self.focusProxy()
+			is source
+		):
 			# when in the resize area, all click events are intercepted
 			if (
 				self.is_in_resize_area
-				and event.type() == QEvent.MouseButtonPress
+				and event.type()
+				== QEvent.MouseButtonPress
 			):
-				self.mouse_press_event(event)
+				self.mouse_press_event(
+					event
+				)
 				return True  # consume the event so it is not passed to the web view
 
-			if event.type() == QEvent.MouseButtonPress:
-				self.mouse_press_event(event)
-			elif event.type() == QEvent.MouseMove:
-				self.mouse_move_event(event)
-			elif event.type() == QEvent.MouseButtonRelease:
-				self.mouse_release_event(event)
+			if (
+				event.type()
+				== QEvent.MouseButtonPress
+			):
+				self.mouse_press_event(
+					event
+				)
+			elif (
+				event.type()
+				== QEvent.MouseMove
+			):
+				self.mouse_move_event(
+					event
+				)
+			elif (
+				event.type()
+				== QEvent.MouseButtonRelease
+			):
+				self.mouse_release_event(
+					event
+				)
 
-		return super().eventFilter(source, event)
+		return super().eventFilter(
+			source,
+			event,
+		)
 
-	def get_resize_direction(self, pos):
+	def get_resize_direction(
+		self,
+		pos,
+	):
 		if (
-			not self.parent.frame and self.is_resizing_enabled
+			not self.parent.frame
+			and self.is_resizing_enabled
 		):  # Check if frame is not present and resizing is enabled
 			margin = 8  # Margin in pixels to detect edge
 			rect = self.rect()
 			direction = None
 
-			if pos.x() <= margin:
+			if (
+				pos.x()
+				<= margin
+			):
 				direction = 'left'
-			elif pos.x() >= rect.width() - margin:
+			elif (
+				pos.x()
+				>= rect.width()
+				- margin
+			):
 				direction = 'right'
 
-			if pos.y() <= margin:
-				direction = 'top' if direction is None else direction + '-top'
-			elif pos.y() >= rect.height() - margin:
+			if (
+				pos.y()
+				<= margin
+			):
 				direction = (
-					'bottom' if direction is None else direction + '-bottom'
+					'top'
+					if direction
+					is None
+					else direction
+					+ '-top'
+				)
+			elif (
+				pos.y()
+				>= rect.height()
+				- margin
+			):
+				direction = (
+					'bottom'
+					if direction
+					is None
+					else direction
+					+ '-bottom'
 				)
 
 			return direction
 		return None
 
-	def set_cursor_for_resize_direction(self, direction):
-		if not self.parent.frame and direction and self.is_resizing_enabled:
+	def set_cursor_for_resize_direction(
+		self,
+		direction,
+	):
+		if (
+			not self.parent.frame
+			and direction
+			and self.is_resizing_enabled
+		):
 			cursor = None
-			if direction in ['left', 'right']:
+			if (
+				direction
+				in [
+					'left',
+					'right',
+				]
+			):
 				cursor = Qt.SizeHorCursor
-			elif direction in ['top', 'bottom']:
+			elif (
+				direction
+				in [
+					'top',
+					'bottom',
+				]
+			):
 				cursor = Qt.SizeVerCursor
-			elif direction in ['left-top', 'right-bottom']:
+			elif (
+				direction
+				in [
+					'left-top',
+					'right-bottom',
+				]
+			):
 				cursor = Qt.SizeFDiagCursor
-			elif direction in ['right-top', 'left-bottom']:
+			elif (
+				direction
+				in [
+					'right-top',
+					'left-bottom',
+				]
+			):
 				cursor = Qt.SizeBDiagCursor
 
 			if cursor:
-				self.setCursor(cursor)
-				self.setAttribute(Qt.WA_SetCursor, True)
+				self.setCursor(
+					cursor
+				)
+				self.setAttribute(
+					Qt.WA_SetCursor,
+					True,
+				)
 
-	def resize_window(self, global_pos):
+	def resize_window(
+		self,
+		global_pos,
+	):
 		if (
 			not self.parent.frame
 			and self.resize_start_pos
 			and self.resize_direction
 			and self.is_resizing_enabled
 		):  # Check if frame is not present and resizing is enabled
-			delta = global_pos - self.resize_start_pos
+			delta = (
+				global_pos
+				- self.resize_start_pos
+			)
 			new_geometry = self.parent._window.geometry()
 
-			if 'left' in self.resize_direction:
-				new_geometry.setLeft(new_geometry.left() + delta.x())
-			if 'right' in self.resize_direction:
-				new_geometry.setRight(new_geometry.right() + delta.x())
-			if 'top' in self.resize_direction:
-				new_geometry.setTop(new_geometry.top() + delta.y())
-			if 'bottom' in self.resize_direction:
-				new_geometry.setBottom(new_geometry.bottom() + delta.y())
+			if (
+				'left'
+				in self.resize_direction
+			):
+				new_geometry.setLeft(
+					new_geometry.left()
+					+ delta.x()
+				)
+			if (
+				'right'
+				in self.resize_direction
+			):
+				new_geometry.setRight(
+					new_geometry.right()
+					+ delta.x()
+				)
+			if (
+				'top'
+				in self.resize_direction
+			):
+				new_geometry.setTop(
+					new_geometry.top()
+					+ delta.y()
+				)
+			if (
+				'bottom'
+				in self.resize_direction
+			):
+				new_geometry.setBottom(
+					new_geometry.bottom()
+					+ delta.y()
+				)
 
-			self.parent._window.setGeometry(new_geometry)
+			self.parent._window.setGeometry(
+				new_geometry
+			)
 			self.resize_start_pos = global_pos
 
 
@@ -326,9 +556,13 @@ class _BrowserWindow:
 		transparent: bool = False,
 	):
 		###########################################################################################
-		self.id = str(uuid.uuid4())  # Generate unique ID
+		self.id = str(
+			uuid.uuid4()
+		)  # Generate unique ID
 		self._window = QMainWindow()
-		self.web_view = CustomWebEngineView(self)
+		self.web_view = CustomWebEngineView(
+			self
+		)
 
 		# interceptor ( all url request )
 		# self.web_view.page().profile().setUrlRequestInterceptor(CustomInterceptor())
@@ -352,7 +586,9 @@ class _BrowserWindow:
 				self.id,
 				self.app.data,
 				self.app,
-				self.app.server.url if self.app.server else None,
+				self.app.server.url
+				if self.app.server
+				else None,
 			)
 		]
 
@@ -373,53 +609,111 @@ class _BrowserWindow:
 	):
 		"""Sets or removes the custom frame."""
 		if use_custom:
-			self._window.setWindowFlags(Qt.FramelessWindowHint)
-			self.custom_title_bar = CustomTitleBar(self._window)
-			self.custom_title_bar.set_style(bg_color, text_color)
-			self.custom_title_bar.set_title(title)
+			self._window.setWindowFlags(
+				Qt.FramelessWindowHint
+			)
+			self.custom_title_bar = CustomTitleBar(
+				self._window
+			)
+			self.custom_title_bar.set_style(
+				bg_color,
+				text_color,
+			)
+			self.custom_title_bar.set_title(
+				title
+			)
 
 			if icon_path:
-				self.custom_title_bar.set_icon(icon_path)
+				self.custom_title_bar.set_icon(
+					icon_path
+				)
 
 			layout = QVBoxLayout()
-			layout.setContentsMargins(0, 0, 0, 0)
-			layout.setSpacing(0)
-			layout.addWidget(self.custom_title_bar)
-			layout.addWidget(self.web_view)
+			layout.setContentsMargins(
+				0,
+				0,
+				0,
+				0,
+			)
+			layout.setSpacing(
+				0
+			)
+			layout.addWidget(
+				self.custom_title_bar
+			)
+			layout.addWidget(
+				self.web_view
+			)
 
 			central_widget = QWidget()
-			central_widget.setLayout(layout)
-			self._window.setCentralWidget(central_widget)
+			central_widget.setLayout(
+				layout
+			)
+			self._window.setCentralWidget(
+				central_widget
+			)
 
 			# add properties for window movement
 			self._window.moving = False
 			self._window.offset = QPoint()
 		else:
-			self._window.setWindowFlags(Qt.Window)
-			self._window.setCentralWidget(self.web_view)
+			self._window.setWindowFlags(
+				Qt.Window
+			)
+			self._window.setCentralWidget(
+				self.web_view
+			)
 			self.custom_title_bar = None
 
 		self._window.show()
 
-	def _apply_transparency(self):
+	def _apply_transparency(
+		self,
+	):
 		"""Applies transparency settings based on self.transparent and self.frame."""
 		if self.transparent:
 			# It's generally better if FramelessWindowHint is set for full transparency,
 			# but WA_TranslucentBackground can still have effects otherwise.
-			self._window.setAttribute(Qt.WA_TranslucentBackground, True)
-			self.web_view.setAttribute(Qt.WA_TranslucentBackground, True)
-			self.web_view.page().setBackgroundColor(Qt.transparent)
+			self._window.setAttribute(
+				Qt.WA_TranslucentBackground,
+				True,
+			)
+			self.web_view.setAttribute(
+				Qt.WA_TranslucentBackground,
+				True,
+			)
+			self.web_view.page().setBackgroundColor(
+				Qt.transparent
+			)
 		else:
-			self._window.setAttribute(Qt.WA_TranslucentBackground, False)
-			self.web_view.setAttribute(Qt.WA_TranslucentBackground, False)
+			self._window.setAttribute(
+				Qt.WA_TranslucentBackground,
+				False,
+			)
+			self.web_view.setAttribute(
+				Qt.WA_TranslucentBackground,
+				False,
+			)
 			# Reset background color for web_view page, QColor() or a specific color like Qt.white
-			self.web_view.page().setBackgroundColor(Qt.white)
+			self.web_view.page().setBackgroundColor(
+				Qt.white
+			)
 
-	def _load(self):
-		self.set_title(self.title)
+	def _load(
+		self,
+	):
+		self.set_title(
+			self.title
+		)
 
-		self.set_size(self.width, self.height)
-		self.set_position(self.x, self.y)
+		self.set_size(
+			self.width,
+			self.height,
+		)
+		self.set_position(
+			self.x,
+			self.y,
+		)
 
 		# allow local file access to remote urls and screen capture
 		self.web_view.settings().setAttribute(
@@ -427,43 +721,55 @@ class _BrowserWindow:
 			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True
+			QWebEngineSettings.WebAttribute.ScreenCaptureEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AutoLoadImages, True
+			QWebEngineSettings.WebAttribute.AutoLoadImages,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptEnabled, True
+			QWebEngineSettings.WebAttribute.JavascriptEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.LocalStorageEnabled, True
+			QWebEngineSettings.WebAttribute.LocalStorageEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ErrorPageEnabled, True
+			QWebEngineSettings.WebAttribute.ErrorPageEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AutoLoadIconsForPage, True
+			QWebEngineSettings.WebAttribute.AutoLoadIconsForPage,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ShowScrollBars, True
+			QWebEngineSettings.WebAttribute.ShowScrollBars,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.DnsPrefetchEnabled, True
+			QWebEngineSettings.WebAttribute.DnsPrefetchEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.PdfViewerEnabled, True
+			QWebEngineSettings.WebAttribute.PdfViewerEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True
+			QWebEngineSettings.WebAttribute.FullScreenSupportEnabled,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, True
+			QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard,
+			True,
 		)
 		self.web_view.settings().setUnknownUrlSchemePolicy(
 			QWebEngineSettings.UnknownUrlSchemePolicy.AllowAllUnknownUrlSchemes
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True
+			QWebEngineSettings.WebAttribute.AllowRunningInsecureContent,
+			True,
 		)
 		self.web_view.settings().setAttribute(
 			QWebEngineSettings.WebAttribute.AllowGeolocationOnInsecureOrigins,
@@ -474,23 +780,33 @@ class _BrowserWindow:
 			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptCanPaste, True
+			QWebEngineSettings.WebAttribute.JavascriptCanPaste,
+			True,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, False
+			QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly,
+			False,
 		)
 		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.WebGLEnabled, True
+			QWebEngineSettings.WebAttribute.WebGLEnabled,
+			True,
 		)
 
 		# Set icon
 		if self.app.icon:
-			self._window.setWindowIcon(self.app.icon)
+			self._window.setWindowIcon(
+				self.app.icon
+			)
 		else:
-			print('Icon is not set.')
+			print(
+				'Icon is not set.'
+			)
 
 		# Set Windows taskbar icon
-		if sys.platform == 'win32':
+		if (
+			sys.platform
+			== 'win32'
+		):
 			import ctypes
 
 			myappid = f'pyloid.{self.app.app_name}.com'
@@ -500,16 +816,22 @@ class _BrowserWindow:
 
 		# Remove title bar and borders (if needed)
 		if not self.frame:
-			self._window.setWindowFlags(Qt.FramelessWindowHint)
+			self._window.setWindowFlags(
+				Qt.FramelessWindowHint
+			)
 		else:
 			# Ensure standard window flags if frame is True, otherwise flags might be missing
-			self._window.setWindowFlags(Qt.Window)
+			self._window.setWindowFlags(
+				Qt.Window
+			)
 
 		self._apply_transparency()
 
 		# Disable default context menu
 		if not self.context_menu:
-			self.web_view.setContextMenuPolicy(Qt.NoContextMenu)
+			self.web_view.setContextMenuPolicy(
+				Qt.NoContextMenu
+			)
 
 		# Set up QWebChannel
 		self.channel = QWebChannel()
@@ -517,36 +839,67 @@ class _BrowserWindow:
 		# Register additional JS APIs
 		if self.js_apis:
 			for js_api in self.js_apis:
-				if js_api.__class__.__name__ == 'BaseAPI':
-					self.channel.registerObject('__PYLOID__', js_api)
+				if (
+					js_api.__class__.__name__
+					== 'BaseAPI'
+				):
+					self.channel.registerObject(
+						'__PYLOID__',
+						js_api,
+					)
 				else:
 					self.channel.registerObject(
-						js_api.__class__.__name__, js_api
+						js_api.__class__.__name__,
+						js_api,
 					)
 
-		self.web_view.page().setWebChannel(self.channel)
+		self.web_view.page().setWebChannel(
+			self.channel
+		)
 
 		# Connect pylonjs bridge
-		self.web_view.loadFinished.connect(self._on_load_finished)
+		self.web_view.loadFinished.connect(
+			self._on_load_finished
+		)
 
 		# Add QWebEngineView to main window
-		self._window.setCentralWidget(self.web_view)
+		self._window.setCentralWidget(
+			self.web_view
+		)
 
 		# Set F12 shortcut
-		self.set_dev_tools(self.dev_tools)
+		self.set_dev_tools(
+			self.dev_tools
+		)
 
 		# get the profile and set the interceptor
 		# profile = self.web_view.page().profile()
 		# profile.setUrlRequestInterceptor(ServerUrlInterceptor(self.app.server.url, self.id))
 
-	def _on_load_finished(self, ok):
+	def _on_load_finished(
+		self,
+		ok,
+	):
 		"""Handles the event when the web page finishes loading."""
-		if ok and self.js_apis:
+		if (
+			ok
+			and self.js_apis
+		):
 			# Load qwebchannel.js
-			qwebchannel_js = QFile('://qtwebchannel/qwebchannel.js')
-			if qwebchannel_js.open(QFile.ReadOnly):
-				source = bytes(qwebchannel_js.readAll()).decode('utf-8')
-				self.web_view.page().runJavaScript(source)
+			qwebchannel_js = QFile(
+				'://qtwebchannel/qwebchannel.js'
+			)
+			if qwebchannel_js.open(
+				QFile.ReadOnly
+			):
+				source = bytes(
+					qwebchannel_js.readAll()
+				).decode(
+					'utf-8'
+				)
+				self.web_view.page().runJavaScript(
+					source
+				)
 				qwebchannel_js.close()
 
 			js_code = """
@@ -614,14 +967,18 @@ class _BrowserWindow:
 			#     ]
 			# )
 
-			base_api_init = (
-				"window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
+			base_api_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
+
+			self.web_view.page().runJavaScript(
+				js_code
+				% base_api_init
 			)
 
-			self.web_view.page().runJavaScript(js_code % base_api_init)
-
 			# if splash screen is set, close it when the page is loaded
-			if self.close_on_load and self.splash_screen:
+			if (
+				self.close_on_load
+				and self.splash_screen
+			):
 				self.close_splash_screen()
 		else:
 			pass
@@ -629,7 +986,10 @@ class _BrowserWindow:
 	###########################################################################################
 	# Load
 	###########################################################################################
-	def load_file(self, file_path: str):
+	def load_file(
+		self,
+		file_path: str,
+	):
 		"""
 		Loads a local HTML file into the web view.
 
@@ -640,17 +1000,34 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.load_file('/path/to/local/file.html')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.load_file(
+		...     '/path/to/local/file.html'
+		... )
 		>>> window.show()
 		"""
 		self._load()
-		file_path = os.path.abspath(file_path)  # absolute path
-		self.web_view.setUrl(QUrl.fromLocalFile(file_path))
-		self.web_view.focusProxy().installEventFilter(self.web_view)
+		file_path = os.path.abspath(
+			file_path
+		)  # absolute path
+		self.web_view.setUrl(
+			QUrl.fromLocalFile(
+				file_path
+			)
+		)
+		self.web_view.focusProxy().installEventFilter(
+			self.web_view
+		)
 
-	def load_url(self, url: str):
+	def load_url(
+		self,
+		url: str,
+	):
 		"""
 		Sets the URL of the window.
 
@@ -661,16 +1038,32 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.load_url('https://www.example.com')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.load_url(
+		...     'https://www.example.com'
+		... )
 		>>> window.show()
 		"""
 		self._load()
-		self.web_view.setUrl(QUrl(url))
-		self.web_view.focusProxy().installEventFilter(self.web_view)
+		self.web_view.setUrl(
+			QUrl(
+				url
+			)
+		)
+		self.web_view.focusProxy().installEventFilter(
+			self.web_view
+		)
 
-	def load_html(self, html_content: str, base_url: str = ''):
+	def load_html(
+		self,
+		html_content: str,
+		base_url: str = '',
+	):
 		"""
 		Loads HTML content directly into the web view.
 
@@ -683,20 +1076,36 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> html_content = '<html><body><h1>Hello, Pyloid!</h1></body></html>'
-		>>> window.load_html(html_content)
+		>>> window.load_html(
+		...     html_content
+		... )
 		>>> window.show()
 		"""
 		self._load()
-		self.web_view.setHtml(html_content, QUrl(base_url))
-		self.web_view.focusProxy().installEventFilter(self.web_view)
+		self.web_view.setHtml(
+			html_content,
+			QUrl(
+				base_url
+			),
+		)
+		self.web_view.focusProxy().installEventFilter(
+			self.web_view
+		)
 
 	###########################################################################################
 	# Set Parameters
 	###########################################################################################
-	def set_title(self, title: str):
+	def set_title(
+		self,
+		title: str,
+	):
 		"""
 		Sets the title of the window.
 
@@ -707,14 +1116,26 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_title('My Window Title')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_title(
+		...     'My Window Title'
+		... )
 		"""
 		self.title = title
-		self._window.setWindowTitle(self.title)
+		self._window.setWindowTitle(
+			self.title
+		)
 
-	def set_size(self, width: int, height: int):
+	def set_size(
+		self,
+		width: int,
+		height: int,
+	):
 		"""
 		Sets the size of the window.
 
@@ -727,15 +1148,29 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_size(800, 600)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_size(
+		...     800,
+		...     600,
+		... )
 		"""
 		self.width = width
 		self.height = height
-		self._window.resize(self.width, self.height)
+		self._window.resize(
+			self.width,
+			self.height,
+		)
 
-	def set_position(self, x: int, y: int):
+	def set_position(
+		self,
+		x: int,
+		y: int,
+	):
 		"""
 		Sets the position of the window.
 
@@ -748,15 +1183,28 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_position(100, 100)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_position(
+		...     100,
+		...     100,
+		... )
 		"""
 		self.x = x
 		self.y = y
-		self._window.move(self.x, self.y)
+		self._window.move(
+			self.x,
+			self.y,
+		)
 
-	def set_position_by_anchor(self, anchor: str):
+	def set_position_by_anchor(
+		self,
+		anchor: str,
+	):
 		"""
 		Positions the window at a specific location on the screen.
 
@@ -769,45 +1217,162 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> window.set_position_by_anchor('center')
-		>>> window.set_position_by_anchor('top-right')
+		>>> window.set_position_by_anchor(
+		...     'center'
+		... )
+		>>> window.set_position_by_anchor(
+		...     'top-right'
+		... )
 		"""
 		screen = self.app.primaryScreen().availableGeometry()
 		window_size = self.get_size()
 
-		if anchor == 'center':
-			x = (screen.width() - window_size['width']) // 2
-			y = (screen.height() - window_size['height']) // 2
-		elif anchor == 'top':
-			x = (screen.width() - window_size['width']) // 2
+		if (
+			anchor
+			== 'center'
+		):
+			x = (
+				(
+					screen.width()
+					- window_size[
+						'width'
+					]
+				)
+				// 2
+			)
+			y = (
+				(
+					screen.height()
+					- window_size[
+						'height'
+					]
+				)
+				// 2
+			)
+		elif (
+			anchor
+			== 'top'
+		):
+			x = (
+				(
+					screen.width()
+					- window_size[
+						'width'
+					]
+				)
+				// 2
+			)
 			y = screen.top()
-		elif anchor == 'bottom':
-			x = (screen.width() - window_size['width']) // 2
-			y = screen.bottom() - window_size['height']
-		elif anchor == 'left':
+		elif (
+			anchor
+			== 'bottom'
+		):
+			x = (
+				(
+					screen.width()
+					- window_size[
+						'width'
+					]
+				)
+				// 2
+			)
+			y = (
+				screen.bottom()
+				- window_size[
+					'height'
+				]
+			)
+		elif (
+			anchor
+			== 'left'
+		):
 			x = screen.left()
-			y = (screen.height() - window_size['height']) // 2
-		elif anchor == 'right':
-			x = screen.right() - window_size['width']
-			y = (screen.height() - window_size['height']) // 2
-		elif anchor == 'top-left':
+			y = (
+				(
+					screen.height()
+					- window_size[
+						'height'
+					]
+				)
+				// 2
+			)
+		elif (
+			anchor
+			== 'right'
+		):
+			x = (
+				screen.right()
+				- window_size[
+					'width'
+				]
+			)
+			y = (
+				(
+					screen.height()
+					- window_size[
+						'height'
+					]
+				)
+				// 2
+			)
+		elif (
+			anchor
+			== 'top-left'
+		):
 			x = screen.left()
 			y = screen.top()
-		elif anchor == 'top-right':
-			x = screen.right() - window_size['width']
+		elif (
+			anchor
+			== 'top-right'
+		):
+			x = (
+				screen.right()
+				- window_size[
+					'width'
+				]
+			)
 			y = screen.top()
-		elif anchor == 'bottom-left':
+		elif (
+			anchor
+			== 'bottom-left'
+		):
 			x = screen.left()
-			y = screen.bottom() - window_size['height']
-		elif anchor == 'bottom-right':
-			x = screen.right() - window_size['width']
-			y = screen.bottom() - window_size['height']
+			y = (
+				screen.bottom()
+				- window_size[
+					'height'
+				]
+			)
+		elif (
+			anchor
+			== 'bottom-right'
+		):
+			x = (
+				screen.right()
+				- window_size[
+					'width'
+				]
+			)
+			y = (
+				screen.bottom()
+				- window_size[
+					'height'
+				]
+			)
 		else:
-			raise ValueError('Invalid anchor point.')
+			raise ValueError(
+				'Invalid anchor point.'
+			)
 
-		self.set_position(x, y)
+		self.set_position(
+			x,
+			y,
+		)
 
-	def set_frame(self, frame: bool):
+	def set_frame(
+		self,
+		frame: bool,
+	):
 		"""
 		Sets the frame of the window.
 
@@ -818,24 +1383,39 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_frame(True)
-		>>> window.set_frame(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_frame(
+		...     True
+		... )
+		>>> window.set_frame(
+		...     False
+		... )
 		"""
 		self.frame = frame
 		was_visible = self._window.isVisible()
 		if self.frame:
-			self._window.setWindowFlags(Qt.Window)
+			self._window.setWindowFlags(
+				Qt.Window
+			)
 		else:
-			self._window.setWindowFlags(Qt.FramelessWindowHint)
+			self._window.setWindowFlags(
+				Qt.FramelessWindowHint
+			)
 
 		self._apply_transparency()
 
 		if was_visible:
 			self._window.show()
 
-	def set_transparent(self, transparent: bool):
+	def set_transparent(
+		self,
+		transparent: bool,
+	):
 		"""
 		Sets the transparency of the window.
 
@@ -847,7 +1427,9 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> window.set_transparent(True)
+		>>> window.set_transparent(
+		...     True
+		... )
 		"""
 		self.transparent = transparent
 		self._apply_transparency()
@@ -855,7 +1437,9 @@ class _BrowserWindow:
 		if self._window.isVisible():
 			self._window.show()
 
-	def get_transparent(self) -> bool:
+	def get_transparent(
+		self,
+	) -> bool:
 		"""
 		Returns the transparency state of the window.
 
@@ -866,7 +1450,10 @@ class _BrowserWindow:
 		"""
 		return self.transparent
 
-	def set_context_menu(self, context_menu: bool):
+	def set_context_menu(
+		self,
+		context_menu: bool,
+	):
 		"""
 		Sets the context menu of the window.
 
@@ -877,18 +1464,33 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_context_menu(True)
-		>>> window.set_context_menu(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_context_menu(
+		...     True
+		... )
+		>>> window.set_context_menu(
+		...     False
+		... )
 		"""
 		self.context_menu = context_menu
 		if self.context_menu:
-			self.web_view.setContextMenuPolicy(Qt.NoContextMenu)
+			self.web_view.setContextMenuPolicy(
+				Qt.NoContextMenu
+			)
 		else:
-			self.web_view.setContextMenuPolicy(Qt.DefaultContextMenu)
+			self.web_view.setContextMenuPolicy(
+				Qt.DefaultContextMenu
+			)
 
-	def set_dev_tools(self, enable: bool):
+	def set_dev_tools(
+		self,
+		enable: bool,
+	):
 		"""
 		Sets the developer tools of the window.
 
@@ -901,45 +1503,90 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_dev_tools(True)
-		>>> window.set_dev_tools(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_dev_tools(
+		...     True
+		... )
+		>>> window.set_dev_tools(
+		...     False
+		... )
 		"""
 		self.dev_tools = enable
 		if self.dev_tools:
-			self.add_shortcut('F12', self.open_dev_tools)
+			self.add_shortcut(
+				'F12',
+				self.open_dev_tools,
+			)
 		else:
-			self.remove_shortcut('F12')
+			self.remove_shortcut(
+				'F12'
+			)
 
-	def open_dev_tools(self):
+	def open_dev_tools(
+		self,
+	):
 		"""
 		Opens the developer tools window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.open_dev_tools()
 		"""
 		self.web_view.page().setDevToolsPage(
-			QWebEnginePage(self.web_view.page())
+			QWebEnginePage(
+				self.web_view.page()
+			)
 		)
-		self.dev_tools_window = QMainWindow(self._window)
-		dev_tools_view = QWebEngineView(self.dev_tools_window)
-		dev_tools_view.setPage(self.web_view.page().devToolsPage())
+		self.dev_tools_window = QMainWindow(
+			self._window
+		)
+		dev_tools_view = QWebEngineView(
+			self.dev_tools_window
+		)
+		dev_tools_view.setPage(
+			self.web_view.page().devToolsPage()
+		)
 
-		self.dev_tools_window.setCentralWidget(dev_tools_view)
-		self.dev_tools_window.resize(800, 600)
+		self.dev_tools_window.setCentralWidget(
+			dev_tools_view
+		)
+		self.dev_tools_window.resize(
+			800,
+			600,
+		)
 		self.dev_tools_window.show()
-		self.dev_tools_window.closeEvent = lambda event: setattr(
-			self, 'dev_tools_window', None
+		self.dev_tools_window.closeEvent = (
+			lambda event: setattr(
+				self,
+				'dev_tools_window',
+				None,
+			)
 		)
 
-	def closeEvent(self, event):
+	def closeEvent(
+		self,
+		event,
+	):
 		"""Handles the event when the window is closed."""
 		# Close developer tools if open
-		if hasattr(self, 'dev_tools_window') and self.dev_tools_window:
+		if (
+			hasattr(
+				self,
+				'dev_tools_window',
+			)
+			and self.dev_tools_window
+		):
 			self.dev_tools_window.close()
 			self.dev_tools_window = None
 
@@ -949,9 +1596,13 @@ class _BrowserWindow:
 		self._remove_from_app_windows()
 		event.accept()  # Accept the event (allow the window to close)
 
-	def _remove_from_app_windows(self):
+	def _remove_from_app_windows(
+		self,
+	):
 		"""Removes the window from the app's window list."""
-		self.app.windows_dict.pop(self.id)
+		self.app.windows_dict.pop(
+			self.id
+		)
 
 		if not self.app.windows_dict:
 			self.app.quit()  # Quit the app if all windows are closed
@@ -959,26 +1610,38 @@ class _BrowserWindow:
 	###########################################################################################
 	# Window management (no ID required)
 	###########################################################################################
-	def hide(self):
+	def hide(
+		self,
+	):
 		"""
 		Hides the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.hide()
 		"""
 		self._window.hide()
 
-	def show(self):
+	def show(
+		self,
+	):
 		"""
 		Shows the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.show()
 		"""
 		# 최소화 상태라면 먼저 복원
@@ -986,27 +1649,39 @@ class _BrowserWindow:
 			self._window.showNormal()
 		self._window.show()
 
-	def focus(self):
+	def focus(
+		self,
+	):
 		"""
 		Focuses the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.focus()
 		"""
 		self._window.raise_()
 		self._window.activateWindow()
 
-	def show_and_focus(self):
+	def show_and_focus(
+		self,
+	):
 		"""
 		Shows and focuses the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.show_and_focus()
 		"""
 		# 최소화 상태라면 먼저 복원
@@ -1027,38 +1702,56 @@ class _BrowserWindow:
 		#     self._window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
 		#     self._window.show()
 
-	def close(self):
+	def close(
+		self,
+	):
 		"""
 		Closes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.close()
 		"""
 		self._window.close()
 
-	def fullscreen(self):
+	def fullscreen(
+		self,
+	):
 		"""
 		Enters fullscreen mode.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.fullscreen()
 		"""
 		self._window.showFullScreen()
 
-	def toggle_fullscreen(self):
+	def toggle_fullscreen(
+		self,
+	):
 		"""
 		Toggles the fullscreen mode of the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.toggle_fullscreen()
 		"""
 		if self._window.isFullScreen():
@@ -1066,50 +1759,74 @@ class _BrowserWindow:
 		else:
 			self._window.showFullScreen()
 
-	def minimize(self):
+	def minimize(
+		self,
+	):
 		"""
 		Minimizes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.minimize()
 		"""
 		self._window.showMinimized()
 
-	def maximize(self):
+	def maximize(
+		self,
+	):
 		"""
 		Maximizes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.maximize()
 		"""
 		self._window.showMaximized()
 
-	def unmaximize(self):
+	def unmaximize(
+		self,
+	):
 		"""
 		Restores the window from maximized state.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.unmaximize()
 		"""
 		self._window.showNormal()
 
-	def toggle_maximize(self):
+	def toggle_maximize(
+		self,
+	):
 		"""
 		Toggles the maximized state of the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.toggle_maximize()
 		"""
 		if self._window.isMaximized():
@@ -1117,31 +1834,48 @@ class _BrowserWindow:
 		else:
 			self._window.showMaximized()
 
-	def is_fullscreen(self) -> bool:
+	def is_fullscreen(
+		self,
+	) -> bool:
 		"""
 		Returns True if the window is fullscreen.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.is_fullscreen()
 		"""
 		return self._window.isFullScreen()
 
-	def is_maximized(self) -> bool:
+	def is_maximized(
+		self,
+	) -> bool:
 		"""
 		Returns True if the window is maximized.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.is_maximized()
 		"""
 		return self._window.isMaximized()
 
-	def capture(self, save_path: str) -> Optional[str]:
+	def capture(
+		self,
+		save_path: str,
+	) -> Optional[
+		str
+	]:
 		"""
 		Captures the current window.
 
@@ -1157,10 +1891,18 @@ class _BrowserWindow:
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> save_path = window.capture('screenshot.png')
-		>>> print(f'Image saved at: {save_path}')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> save_path = window.capture(
+		...     'screenshot.png'
+		... )
+		>>> print(
+		...     f'Image saved at: {save_path}'
+		... )
 		Image saved at: screenshot.png
 		"""
 		try:
@@ -1168,16 +1910,24 @@ class _BrowserWindow:
 			screenshot = self._window.grab()
 
 			# Save the image
-			screenshot.save(save_path)
+			screenshot.save(
+				save_path
+			)
 			return save_path
 		except Exception as e:
-			print(f'An error occurred while capturing the window: {e}')
+			print(
+				f'An error occurred while capturing the window: {e}'
+			)
 			return None
 
 	###########################################################################################
 	# Shortcut
 	###########################################################################################
-	def add_shortcut(self, key_sequence: str, callback: Callable):
+	def add_shortcut(
+		self,
+		key_sequence: str,
+		callback: Callable,
+	):
 		"""
 		Adds a keyboard shortcut to the window if it does not already exist.
 
@@ -1196,30 +1946,54 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 
 
 		def on_shortcut():
-		    print('Shortcut activated!')
+		    print(
+		        'Shortcut activated!'
+		    )
 
 
-		window.add_shortcut('Ctrl+C', on_shortcut)
+		window.add_shortcut(
+		    'Ctrl+C',
+		    on_shortcut,
+		)
 
 		app.run()
 		```
 		"""
-		if key_sequence in self.shortcuts:
+		if (
+			key_sequence
+			in self.shortcuts
+		):
 			# print(f"Shortcut {key_sequence} already exists.")
 			return None
 
-		shortcut = QShortcut(QKeySequence(key_sequence), self._window)
-		shortcut.activated.connect(callback)
-		self.shortcuts[key_sequence] = shortcut
+		shortcut = QShortcut(
+			QKeySequence(
+				key_sequence
+			),
+			self._window,
+		)
+		shortcut.activated.connect(
+			callback
+		)
+		self.shortcuts[
+			key_sequence
+		] = shortcut
 		return shortcut
 
-	def remove_shortcut(self, key_sequence: str):
+	def remove_shortcut(
+		self,
+		key_sequence: str,
+	):
 		"""
 		Removes a keyboard shortcut from the window.
 
@@ -1231,20 +2005,35 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
-		window.remove_shortcut('Ctrl+C')
+		window = app.create_window(
+		    'pyloid-window'
+		)
+		window.remove_shortcut(
+		    'Ctrl+C'
+		)
 
 		app.run()
 		```
 		"""
-		if key_sequence in self.shortcuts:
-			shortcut = self.shortcuts.pop(key_sequence)
-			shortcut.setEnabled(False)
+		if (
+			key_sequence
+			in self.shortcuts
+		):
+			shortcut = self.shortcuts.pop(
+				key_sequence
+			)
+			shortcut.setEnabled(
+				False
+			)
 			shortcut.deleteLater()
 
-	def get_all_shortcuts(self):
+	def get_all_shortcuts(
+		self,
+	):
 		"""
 		Returns all registered shortcuts in the window.
 
@@ -1256,11 +2045,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		shortcuts = window.get_all_shortcuts()
-		print(shortcuts)
+		print(
+		    shortcuts
+		)
 
 		app.run()
 		```
@@ -1270,7 +2065,13 @@ class _BrowserWindow:
 	###########################################################################################
 	# Event (Calling the JS from Python)
 	###########################################################################################
-	def invoke(self, event_name, data: Optional[Dict] = None):
+	def invoke(
+		self,
+		event_name,
+		data: Optional[
+			Dict
+		] = None,
+	):
 		"""
 		Invokes an event to the JavaScript side.
 
@@ -1285,10 +2086,19 @@ class _BrowserWindow:
 		--------
 		(Python)
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
-		window.invoke('customEvent', {'message': 'Hello, Pyloid!'})
+		window = app.create_window(
+		    'pyloid-window'
+		)
+		window.invoke(
+		    'customEvent',
+		    {
+		        'message': 'Hello, Pyloid!'
+		    },
+		)
 
 		app.run()
 		```
@@ -1310,12 +2120,16 @@ class _BrowserWindow:
             document.dispatchEvent(customEvent);
         }})();
         """
-		self.web_view.page().runJavaScript(script)
+		self.web_view.page().runJavaScript(
+			script
+		)
 
 	###########################################################################################
 	# Get Properties
 	###########################################################################################
-	def get_window_properties(self):
+	def get_window_properties(
+		self,
+	):
 		"""
 		Returns the properties of the window.
 
@@ -1327,11 +2141,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		properties = window.get_window_properties()
-		print(properties)
+		print(
+		    properties
+		)
 
 		app.run()
 		```
@@ -1349,7 +2169,9 @@ class _BrowserWindow:
 			'dev_tools': self.dev_tools,
 		}
 
-	def get_id(self):
+	def get_id(
+		self,
+	):
 		"""
 		Returns the ID of the window.
 
@@ -1361,18 +2183,29 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		window_id = window.get_id()
-		print(window_id)
+		print(
+		    window_id
+		)
 
 		app.run()
 		```
 		"""
 		return self.id
 
-	def get_size(self) -> Dict[str, int]:
+	def get_size(
+		self,
+	) -> Dict[
+		str,
+		int,
+	]:
 		"""
 		Returns the size of the window.
 
@@ -1384,19 +2217,33 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		size = window.get_size()
-		print(size)
+		print(
+		    size
+		)
 
 		app.run()
 		```
 		"""
 		size = self._window.size()
-		return {'width': size.width(), 'height': size.height()}
+		return {
+			'width': size.width(),
+			'height': size.height(),
+		}
 
-	def get_position(self) -> Dict[str, int]:
+	def get_position(
+		self,
+	) -> Dict[
+		str,
+		int,
+	]:
 		"""
 		Returns the position of the window.
 
@@ -1408,19 +2255,30 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		position = window.get_position()
-		print(position)
+		print(
+		    position
+		)
 
 		app.run()
 		```
 		"""
 		pos = self._window.pos()
-		return {'x': pos.x(), 'y': pos.y()}
+		return {
+			'x': pos.x(),
+			'y': pos.y(),
+		}
 
-	def get_title(self) -> str:
+	def get_title(
+		self,
+	) -> str:
 		"""
 		Returns the title of the window.
 
@@ -1432,18 +2290,26 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		title = window.get_title()
-		print(title)
+		print(
+		    title
+		)
 
 		app.run()
 		```
 		"""
 		return self.title
 
-	def get_url(self) -> str:
+	def get_url(
+		self,
+	) -> str:
 		"""
 		Returns the URL of the window.
 
@@ -1455,18 +2321,26 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		url = window.get_url()
-		print(url)
+		print(
+		    url
+		)
 
 		app.run()
 		```
 		"""
 		return self.web_view.url().toString()
 
-	def get_visible(self) -> bool:
+	def get_visible(
+		self,
+	) -> bool:
 		"""
 		Returns the visibility of the window.
 
@@ -1478,18 +2352,26 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		visible = window.get_visible()
-		print(visible)
+		print(
+		    visible
+		)
 
 		app.run()
 		```
 		"""
 		return self._window.isVisible()
 
-	def get_frame(self) -> bool:
+	def get_frame(
+		self,
+	) -> bool:
 		"""
 		Returns the frame enabled state of the window.
 
@@ -1501,11 +2383,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		frame = window.get_frame()
-		print(frame)
+		print(
+		    frame
+		)
 
 		app.run()
 		```
@@ -1515,7 +2403,10 @@ class _BrowserWindow:
 	###########################################################################################
 	# Resize
 	###########################################################################################
-	def set_resizable(self, resizable: bool):
+	def set_resizable(
+		self,
+		resizable: bool,
+	):
 		"""
 		Sets the resizability of the window.
 
@@ -1527,29 +2418,44 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
-		window.set_resizable(True)
+		window = app.create_window(
+		    'pyloid-window'
+		)
+		window.set_resizable(
+		    True
+		)
 
 		app.run()
 		```
 		"""
 		self.resizable = resizable
 		if self.frame:
-			flags = self._window.windowFlags() | Qt.WindowCloseButtonHint
+			flags = (
+				self._window.windowFlags()
+				| Qt.WindowCloseButtonHint
+			)
 			if resizable:
 				pass
 			else:
 				flags |= Qt.MSWindowsFixedSizeDialogHint
-			self._window.setWindowFlags(flags)
+			self._window.setWindowFlags(
+				flags
+			)
 		else:
 			# 프레임이 없는 경우 커스텀 리사이징 로직을 설정합니다.
 			self.web_view.is_resizing_enabled = resizable
 
 		self._window.show()  # 변경사항을 적용하기 위해 창을 다시 표시합니다.
 
-	def set_minimum_size(self, min_width: int, min_height: int):
+	def set_minimum_size(
+		self,
+		min_width: int,
+		min_height: int,
+	):
 		"""
 		Sets the minimum size of the window.
 
@@ -1563,17 +2469,31 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
-		window.set_minimum_size(400, 300)
+		window = app.create_window(
+		    'pyloid-window'
+		)
+		window.set_minimum_size(
+		    400,
+		    300,
+		)
 
 		app.run()
 		```
 		"""
-		self._window.setMinimumSize(min_width, min_height)
+		self._window.setMinimumSize(
+			min_width,
+			min_height,
+		)
 
-	def set_maximum_size(self, max_width: int, max_height: int):
+	def set_maximum_size(
+		self,
+		max_width: int,
+		max_height: int,
+	):
 		"""
 		Sets the maximum size of the window.
 
@@ -1587,17 +2507,32 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
-		window.set_maximum_size(1024, 768)
+		window = app.create_window(
+		    'pyloid-window'
+		)
+		window.set_maximum_size(
+		    1024,
+		    768,
+		)
 
 		app.run()
 		```
 		"""
-		self._window.setMaximumSize(max_width, max_height)
+		self._window.setMaximumSize(
+			max_width,
+			max_height,
+		)
 
-	def get_minimum_size(self) -> Dict[str, int]:
+	def get_minimum_size(
+		self,
+	) -> Dict[
+		str,
+		int,
+	]:
 		"""
 		Returns the minimum size of the window.
 
@@ -1609,11 +2544,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		min_size = window.get_minimum_size()
-		print(min_size)
+		print(
+		    min_size
+		)
 
 		app.run()
 		```
@@ -1623,7 +2564,12 @@ class _BrowserWindow:
 			'height': self._window.minimumHeight(),
 		}
 
-	def get_maximum_size(self) -> Dict[str, int]:
+	def get_maximum_size(
+		self,
+	) -> Dict[
+		str,
+		int,
+	]:
 		"""
 		Returns the maximum size of the window.
 
@@ -1635,11 +2581,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		max_size = window.get_maximum_size()
-		print(max_size)
+		print(
+		    max_size
+		)
 
 		app.run()
 		```
@@ -1649,7 +2601,9 @@ class _BrowserWindow:
 			'height': self._window.maximumHeight(),
 		}
 
-	def get_resizable(self) -> bool:
+	def get_resizable(
+		self,
+	) -> bool:
 		"""
 		Returns the resizability of the window.
 
@@ -1661,11 +2615,17 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window('pyloid-window')
+		window = app.create_window(
+		    'pyloid-window'
+		)
 		resizable = window.get_resizable()
-		print(resizable)
+		print(
+		    resizable
+		)
 
 		app.run()
 		```
@@ -1725,7 +2685,10 @@ class _BrowserWindow:
 	###########################################################################################
 	# QMainWindow flags
 	###########################################################################################
-	def set_window_stay_on_top(self, on_top: bool):
+	def set_window_stay_on_top(
+		self,
+		on_top: bool,
+	):
 		"""
 		Sets the window stay on top flag of the window.
 
@@ -1737,8 +2700,12 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		window.set_window_stay_on_top(True)
-		window.set_window_stay_on_top(False)
+		window.set_window_stay_on_top(
+		    True
+		)
+		window.set_window_stay_on_top(
+		    False
+		)
 		```
 		"""
 		flags = self._window.windowFlags()
@@ -1751,12 +2718,17 @@ class _BrowserWindow:
 		# Explicitly add the close button
 		flags |= Qt.WindowCloseButtonHint
 
-		self._window.setWindowFlags(flags)
+		self._window.setWindowFlags(
+			flags
+		)
 
 		# Show the window again to apply the changes
 		self._window.show()
 
-	def set_window_stay_on_bottom(self, on_bottom: bool):
+	def set_window_stay_on_bottom(
+		self,
+		on_bottom: bool,
+	):
 		"""
 		Sets the window stay on bottom flag of the window.
 
@@ -1768,8 +2740,12 @@ class _BrowserWindow:
 		Examples
 		--------
 		```python
-		window.set_window_stay_on_bottom(True)
-		window.set_window_stay_on_bottom(False)
+		window.set_window_stay_on_bottom(
+		    True
+		)
+		window.set_window_stay_on_bottom(
+		    False
+		)
 		```
 		"""
 		flags = self._window.windowFlags()
@@ -1782,7 +2758,9 @@ class _BrowserWindow:
 		# Explicitly add the close button
 		flags |= Qt.WindowCloseButtonHint
 
-		self._window.setWindowFlags(flags)
+		self._window.setWindowFlags(
+			flags
+		)
 
 		# Show the window again to apply the changes
 		self._window.show()
@@ -1819,31 +2797,50 @@ class _BrowserWindow:
 		--------
 		```python
 		window.set_static_image_splash_screen(
-		    './assets/loading.png', close_on_load=True, stay_on_top=True
+		    './assets/loading.png',
+		    close_on_load=True,
+		    stay_on_top=True,
 		)
 		```
 		"""
-		pixmap = QPixmap(image_path)
+		pixmap = QPixmap(
+			image_path
+		)
 
 		if not clickable:
 
-			class NonClickableSplashScreen(QSplashScreen):
-				def mousePressEvent(self, event):
+			class NonClickableSplashScreen(
+				QSplashScreen
+			):
+				def mousePressEvent(
+					self,
+					event,
+				):
 					pass  # Ignore click events
 
 			splash = NonClickableSplashScreen(
 				pixmap,
-				Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+				Qt.WindowStaysOnTopHint
+				if stay_on_top
+				else Qt.WindowType(
+					0
+				),
 			)
 		else:
 			splash = QSplashScreen(
 				pixmap,
-				Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+				Qt.WindowStaysOnTopHint
+				if stay_on_top
+				else Qt.WindowType(
+					0
+				),
 			)
 
 		self.close_on_load = close_on_load
 		self.splash_screen = splash
-		self._position_splash_screen(position)
+		self._position_splash_screen(
+			position
+		)
 		self.splash_screen.show()
 
 	def set_gif_splash_screen(
@@ -1875,76 +2872,159 @@ class _BrowserWindow:
 		--------
 		```python
 		window.set_gif_splash_screen(
-		    './assets/loading.gif', close_on_load=True, stay_on_top=True
+		    './assets/loading.gif',
+		    close_on_load=True,
+		    stay_on_top=True,
 		)
 		```
 		"""
 
 		if not clickable:
 
-			class NonClickableSplashScreen(QSplashScreen):
-				def mousePressEvent(self, event):
+			class NonClickableSplashScreen(
+				QSplashScreen
+			):
+				def mousePressEvent(
+					self,
+					event,
+				):
 					pass  # Ignore click events
 
 			# Create splash screen (using animated GIF)
 			splash = NonClickableSplashScreen(
-				QPixmap(1, 1),
-				Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+				QPixmap(
+					1,
+					1,
+				),
+				Qt.WindowStaysOnTopHint
+				if stay_on_top
+				else Qt.WindowType(
+					0
+				),
 			)  # Start with 1x1 transparent pixmap
 		else:
 			splash = QSplashScreen(
-				QPixmap(1, 1),
-				Qt.WindowStaysOnTopHint if stay_on_top else Qt.WindowType(0),
+				QPixmap(
+					1,
+					1,
+				),
+				Qt.WindowStaysOnTopHint
+				if stay_on_top
+				else Qt.WindowType(
+					0
+				),
 			)
 
-		splash.setAttribute(Qt.WA_TranslucentBackground)
+		splash.setAttribute(
+			Qt.WA_TranslucentBackground
+		)
 
 		# Create QLabel for GIF animation
-		label = QLabel(splash)
-		movie = QMovie(gif_path)
-		label.setMovie(movie)
+		label = QLabel(
+			splash
+		)
+		movie = QMovie(
+			gif_path
+		)
+		label.setMovie(
+			movie
+		)
 
 		# Adjust splash screen size to match GIF size
 		movie.frameChanged.connect(
-			lambda: splash.setFixedSize(movie.currentPixmap().size())
+			lambda: splash.setFixedSize(
+				movie.currentPixmap().size()
+			)
 		)
 
 		# Start animation and show splash screen
 		movie.start()
 		self.close_on_load = close_on_load
 		self.splash_screen = splash
-		self._position_splash_screen(position)
+		self._position_splash_screen(
+			position
+		)
 		splash.show()
 
-	def _position_splash_screen(self, position: str):
+	def _position_splash_screen(
+		self,
+		position: str,
+	):
 		if not self.splash_screen:
 			return
 
 		screen = self.app.primaryScreen().geometry()
 		splash_size = self.splash_screen.size()
 
-		if position == 'center':
-			new_position = screen.center() - QPoint(
-				splash_size.width() // 2, splash_size.height() // 2
+		if (
+			position
+			== 'center'
+		):
+			new_position = (
+				screen.center()
+				- QPoint(
+					splash_size.width()
+					// 2,
+					splash_size.height()
+					// 2,
+				)
 			)
-		elif position == 'top-left':
+		elif (
+			position
+			== 'top-left'
+		):
 			new_position = screen.topLeft()
-		elif position == 'top-right':
-			new_position = screen.topRight() - QPoint(splash_size.width(), 0)
-		elif position == 'bottom-left':
-			new_position = screen.bottomLeft() - QPoint(0, splash_size.height())
-		elif position == 'bottom-right':
-			new_position = screen.bottomRight() - QPoint(
-				splash_size.width(), splash_size.height()
+		elif (
+			position
+			== 'top-right'
+		):
+			new_position = (
+				screen.topRight()
+				- QPoint(
+					splash_size.width(),
+					0,
+				)
+			)
+		elif (
+			position
+			== 'bottom-left'
+		):
+			new_position = (
+				screen.bottomLeft()
+				- QPoint(
+					0,
+					splash_size.height(),
+				)
+			)
+		elif (
+			position
+			== 'bottom-right'
+		):
+			new_position = (
+				screen.bottomRight()
+				- QPoint(
+					splash_size.width(),
+					splash_size.height(),
+				)
 			)
 		else:
-			new_position = screen.center() - QPoint(
-				splash_size.width() // 2, splash_size.height() // 2
+			new_position = (
+				screen.center()
+				- QPoint(
+					splash_size.width()
+					// 2,
+					splash_size.height()
+					// 2,
+				)
 			)
 
-		self.splash_screen.move(new_position)
+		self.splash_screen.move(
+			new_position
+		)
 
-	def close_splash_screen(self):
+	def close_splash_screen(
+		self,
+	):
 		"""
 		Closes the splash screen if it exists.
 
@@ -1954,7 +3034,13 @@ class _BrowserWindow:
 		window.close_splash_screen()
 		```
 		"""
-		if hasattr(self, 'splash_screen') and self.splash_screen:
+		if (
+			hasattr(
+				self,
+				'splash_screen',
+			)
+			and self.splash_screen
+		):
 			self.splash_screen.close()
 			self.close_on_load = None
 			self.splash_screen = None
@@ -2112,9 +3198,18 @@ class _BrowserWindow:
 
 
 # This wrapper class work in other thread
-class BrowserWindow(QObject):
-	command_signal = Signal(str, str, object)
-	result_signal = Signal(str, object)
+class BrowserWindow(
+	QObject
+):
+	command_signal = Signal(
+		str,
+		str,
+		object,
+	)
+	result_signal = Signal(
+		str,
+		object,
+	)
 
 	def __init__(
 		self,
@@ -2143,11 +3238,20 @@ class BrowserWindow(QObject):
 			dev_tools,
 			transparent,
 		)
-		self.command_signal.connect(self._handle_command)
+		self.command_signal.connect(
+			self._handle_command
+		)
 
-	@Slot(str, str, object)
+	@Slot(
+		str,
+		str,
+		object,
+	)
 	def _handle_command(
-		self, command_id: str, command_type: str, params: object
+		self,
+		command_id: str,
+		command_type: str,
+		params: object,
 	) -> None:
 		"""
 		Handles commands sent from multiple threads.
@@ -2159,162 +3263,463 @@ class BrowserWindow(QObject):
 		"""
 		result = None
 
-		if command_type == 'load_file':
-			result = self._window.load_file(params['file_path'])
-		elif command_type == 'load_url':
-			result = self._window.load_url(params['url'])
-		elif command_type == 'load_html':
-			html_content = params.get('html_content', '')
-			base_url = params.get('base_url', '')
-			result = self._window.load_html(html_content, base_url)
-		elif command_type == 'set_title':
-			result = self._window.set_title(params['title'])
-		elif command_type == 'set_size':
-			result = self._window.set_size(params['width'], params['height'])
-		elif command_type == 'set_position':
-			result = self._window.set_position(params['x'], params['y'])
-		elif command_type == 'set_position_by_anchor':
-			result = self._window.set_position_by_anchor(params['anchor'])
-		elif command_type == 'set_frame':
-			result = self._window.set_frame(params['frame'])
-		elif command_type == 'set_transparent':
-			result = self._window.set_transparent(params['transparent'])
-		elif command_type == 'get_transparent':
+		if (
+			command_type
+			== 'load_file'
+		):
+			result = self._window.load_file(
+				params[
+					'file_path'
+				]
+			)
+		elif (
+			command_type
+			== 'load_url'
+		):
+			result = self._window.load_url(
+				params[
+					'url'
+				]
+			)
+		elif (
+			command_type
+			== 'load_html'
+		):
+			html_content = params.get(
+				'html_content',
+				'',
+			)
+			base_url = params.get(
+				'base_url',
+				'',
+			)
+			result = self._window.load_html(
+				html_content,
+				base_url,
+			)
+		elif (
+			command_type
+			== 'set_title'
+		):
+			result = self._window.set_title(
+				params[
+					'title'
+				]
+			)
+		elif (
+			command_type
+			== 'set_size'
+		):
+			result = self._window.set_size(
+				params[
+					'width'
+				],
+				params[
+					'height'
+				],
+			)
+		elif (
+			command_type
+			== 'set_position'
+		):
+			result = self._window.set_position(
+				params[
+					'x'
+				],
+				params[
+					'y'
+				],
+			)
+		elif (
+			command_type
+			== 'set_position_by_anchor'
+		):
+			result = self._window.set_position_by_anchor(
+				params[
+					'anchor'
+				]
+			)
+		elif (
+			command_type
+			== 'set_frame'
+		):
+			result = self._window.set_frame(
+				params[
+					'frame'
+				]
+			)
+		elif (
+			command_type
+			== 'set_transparent'
+		):
+			result = self._window.set_transparent(
+				params[
+					'transparent'
+				]
+			)
+		elif (
+			command_type
+			== 'get_transparent'
+		):
 			result = self._window.get_transparent()
-		elif command_type == 'set_context_menu':
-			result = self._window.set_context_menu(params['context_menu'])
-		elif command_type == 'set_dev_tools':
-			result = self._window.set_dev_tools(params['enable'])
-		elif command_type == 'open_dev_tools':
+		elif (
+			command_type
+			== 'set_context_menu'
+		):
+			result = self._window.set_context_menu(
+				params[
+					'context_menu'
+				]
+			)
+		elif (
+			command_type
+			== 'set_dev_tools'
+		):
+			result = self._window.set_dev_tools(
+				params[
+					'enable'
+				]
+			)
+		elif (
+			command_type
+			== 'open_dev_tools'
+		):
 			result = self._window.open_dev_tools()
-		elif command_type == 'hide':
+		elif (
+			command_type
+			== 'hide'
+		):
 			result = self._window.hide()
-		elif command_type == 'show':
+		elif (
+			command_type
+			== 'show'
+		):
 			result = self._window.show()
-		elif command_type == 'focus':
+		elif (
+			command_type
+			== 'focus'
+		):
 			result = self._window.focus()
-		elif command_type == 'show_and_focus':
+		elif (
+			command_type
+			== 'show_and_focus'
+		):
 			result = self._window.show_and_focus()
-		elif command_type == 'close':
+		elif (
+			command_type
+			== 'close'
+		):
 			result = self._window.close()
-		elif command_type == 'fullscreen':
+		elif (
+			command_type
+			== 'fullscreen'
+		):
 			result = self._window.fullscreen()
-		elif command_type == 'toggle_fullscreen':
+		elif (
+			command_type
+			== 'toggle_fullscreen'
+		):
 			result = self._window.toggle_fullscreen()
-		elif command_type == 'minimize':
+		elif (
+			command_type
+			== 'minimize'
+		):
 			result = self._window.minimize()
-		elif command_type == 'maximize':
+		elif (
+			command_type
+			== 'maximize'
+		):
 			result = self._window.maximize()
-		elif command_type == 'unmaximize':
+		elif (
+			command_type
+			== 'unmaximize'
+		):
 			result = self._window.unmaximize()
-		elif command_type == 'toggle_maximize':
+		elif (
+			command_type
+			== 'toggle_maximize'
+		):
 			result = self._window.toggle_maximize()
-		elif command_type == 'is_fullscreen':
+		elif (
+			command_type
+			== 'is_fullscreen'
+		):
 			result = self._window.is_fullscreen()
-		elif command_type == 'is_maximized':
+		elif (
+			command_type
+			== 'is_maximized'
+		):
 			result = self._window.is_maximized()
-		elif command_type == 'capture':
-			result = self._window.capture(params['save_path'])
-		elif command_type == 'add_shortcut':
+		elif (
+			command_type
+			== 'capture'
+		):
+			result = self._window.capture(
+				params[
+					'save_path'
+				]
+			)
+		elif (
+			command_type
+			== 'add_shortcut'
+		):
 			result = self._window.add_shortcut(
-				params['key_sequence'], params['callback']
+				params[
+					'key_sequence'
+				],
+				params[
+					'callback'
+				],
 			)
-		elif command_type == 'remove_shortcut':
-			result = self._window.remove_shortcut(params['key_sequence'])
-		elif command_type == 'get_all_shortcuts':
+		elif (
+			command_type
+			== 'remove_shortcut'
+		):
+			result = self._window.remove_shortcut(
+				params[
+					'key_sequence'
+				]
+			)
+		elif (
+			command_type
+			== 'get_all_shortcuts'
+		):
 			result = self._window.get_all_shortcuts()
-		elif command_type == 'invoke':
-			event_name = params['event_name']
-			data = params.get('data')
-			result = self._window.invoke(event_name, data)
-		elif command_type == 'get_window_properties':
+		elif (
+			command_type
+			== 'invoke'
+		):
+			event_name = params[
+				'event_name'
+			]
+			data = params.get(
+				'data'
+			)
+			result = self._window.invoke(
+				event_name,
+				data,
+			)
+		elif (
+			command_type
+			== 'get_window_properties'
+		):
 			result = self._window.get_window_properties()
-		elif command_type == 'get_id':
+		elif (
+			command_type
+			== 'get_id'
+		):
 			result = self._window.get_id()
-		elif command_type == 'get_size':
+		elif (
+			command_type
+			== 'get_size'
+		):
 			result = self._window.get_size()
-		elif command_type == 'get_position':
+		elif (
+			command_type
+			== 'get_position'
+		):
 			result = self._window.get_position()
-		elif command_type == 'get_title':
+		elif (
+			command_type
+			== 'get_title'
+		):
 			result = self._window.get_title()
-		elif command_type == 'get_url':
+		elif (
+			command_type
+			== 'get_url'
+		):
 			result = self._window.get_url()
-		elif command_type == 'get_visible':
+		elif (
+			command_type
+			== 'get_visible'
+		):
 			result = self._window.get_visible()
-		elif command_type == 'get_frame':
+		elif (
+			command_type
+			== 'get_frame'
+		):
 			result = self._window.get_frame()
-		elif command_type == 'set_resizable':
-			result = self._window.set_resizable(params['resizable'])
-		elif command_type == 'set_minimum_size':
+		elif (
+			command_type
+			== 'set_resizable'
+		):
+			result = self._window.set_resizable(
+				params[
+					'resizable'
+				]
+			)
+		elif (
+			command_type
+			== 'set_minimum_size'
+		):
 			result = self._window.set_minimum_size(
-				params['min_width'], params['min_height']
+				params[
+					'min_width'
+				],
+				params[
+					'min_height'
+				],
 			)
-		elif command_type == 'set_maximum_size':
+		elif (
+			command_type
+			== 'set_maximum_size'
+		):
 			result = self._window.set_maximum_size(
-				params['max_width'], params['max_height']
+				params[
+					'max_width'
+				],
+				params[
+					'max_height'
+				],
 			)
-		elif command_type == 'get_minimum_size':
+		elif (
+			command_type
+			== 'get_minimum_size'
+		):
 			result = self._window.get_minimum_size()
-		elif command_type == 'get_maximum_size':
+		elif (
+			command_type
+			== 'get_maximum_size'
+		):
 			result = self._window.get_maximum_size()
-		elif command_type == 'get_resizable':
+		elif (
+			command_type
+			== 'get_resizable'
+		):
 			result = self._window.get_resizable()
-		elif command_type == 'set_static_image_splash_screen':
+		elif (
+			command_type
+			== 'set_static_image_splash_screen'
+		):
 			result = self._window.set_static_image_splash_screen(
-				params['image_path'],
-				params.get('close_on_load', True),
-				params.get('stay_on_top', True),
-				params.get('clickable', True),
-				params.get('position', 'center'),
+				params[
+					'image_path'
+				],
+				params.get(
+					'close_on_load',
+					True,
+				),
+				params.get(
+					'stay_on_top',
+					True,
+				),
+				params.get(
+					'clickable',
+					True,
+				),
+				params.get(
+					'position',
+					'center',
+				),
 			)
-		elif command_type == 'set_gif_splash_screen':
+		elif (
+			command_type
+			== 'set_gif_splash_screen'
+		):
 			result = self._window.set_gif_splash_screen(
-				params['gif_path'],
-				params.get('close_on_load', True),
-				params.get('stay_on_top', True),
-				params.get('clickable', True),
-				params.get('position', 'center'),
+				params[
+					'gif_path'
+				],
+				params.get(
+					'close_on_load',
+					True,
+				),
+				params.get(
+					'stay_on_top',
+					True,
+				),
+				params.get(
+					'clickable',
+					True,
+				),
+				params.get(
+					'position',
+					'center',
+				),
 			)
-		elif command_type == 'close_splash_screen':
+		elif (
+			command_type
+			== 'close_splash_screen'
+		):
 			result = self._window.close_splash_screen()
 		else:
 			return None
 
-		self.result_signal.emit(command_id, result)
+		self.result_signal.emit(
+			command_id,
+			result,
+		)
 
 	def execute_command(
-		self, command_type: str, params: object, timeout: Optional[int] = None
+		self,
+		command_type: str,
+		params: object,
+		timeout: Optional[
+			int
+		] = None,
 	):
-		command_id = str(uuid.uuid4())
+		command_id = str(
+			uuid.uuid4()
+		)
 
-		result_data = [None]
+		result_data = [
+			None
+		]
 		loop = QEventLoop()
 
 		if timeout:
 			timer = QTimer()
-			timer.setSingleShot(True)
-			timer.timeout.connect(loop.quit)
-			timer.start(timeout)
+			timer.setSingleShot(
+				True
+			)
+			timer.timeout.connect(
+				loop.quit
+			)
+			timer.start(
+				timeout
+			)
 
-		def on_result(received_id, result):
-			if received_id == command_id:
-				result_data[0] = result
+		def on_result(
+			received_id,
+			result,
+		):
+			if (
+				received_id
+				== command_id
+			):
+				result_data[
+					0
+				] = result
 				loop.quit()
 
-		self.result_signal.connect(on_result, Qt.QueuedConnection)
+		self.result_signal.connect(
+			on_result,
+			Qt.QueuedConnection,
+		)
 
-		self.command_signal.emit(command_id, command_type, params)
+		self.command_signal.emit(
+			command_id,
+			command_type,
+			params,
+		)
 
 		loop.exec()
 
-		self.result_signal.disconnect(on_result)
+		self.result_signal.disconnect(
+			on_result
+		)
 
-		return result_data[0]
+		return result_data[
+			0
+		]
 
 	# -------------------------------------------------------------------
 	# Execute_command wrapper functions
 	# -------------------------------------------------------------------
-	def load_file(self, file_path: str) -> None:
+	def load_file(
+		self,
+		file_path: str,
+	) -> None:
 		"""
 		Loads a local HTML file into the web view.
 
@@ -2325,14 +3730,28 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.load_file('/path/to/local/file.html')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.load_file(
+		...     '/path/to/local/file.html'
+		... )
 		>>> window.show()
 		"""
-		return self.execute_command('load_file', {'file_path': file_path})
+		return self.execute_command(
+			'load_file',
+			{
+				'file_path': file_path
+			},
+		)
 
-	def load_url(self, url: str) -> None:
+	def load_url(
+		self,
+		url: str,
+	) -> None:
 		"""
 		Sets the URL of the window.
 
@@ -2343,14 +3762,29 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.load_url('https://www.example.com')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.load_url(
+		...     'https://www.example.com'
+		... )
 		>>> window.show()
 		"""
-		return self.execute_command('load_url', {'url': url})
+		return self.execute_command(
+			'load_url',
+			{
+				'url': url
+			},
+		)
 
-	def load_html(self, html_content: str, base_url: str = '') -> None:
+	def load_html(
+		self,
+		html_content: str,
+		base_url: str = '',
+	) -> None:
 		"""
 		Loads HTML content directly into the web view.
 
@@ -2363,17 +3797,30 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> html_content = '<html><body><h1>Hello, Pyloid!</h1></body></html>'
-		>>> window.load_html(html_content)
+		>>> window.load_html(
+		...     html_content
+		... )
 		>>> window.show()
 		"""
 		return self.execute_command(
-			'load_html', {'html_content': html_content, 'base_url': base_url}
+			'load_html',
+			{
+				'html_content': html_content,
+				'base_url': base_url,
+			},
 		)
 
-	def set_title(self, title: str) -> None:
+	def set_title(
+		self,
+		title: str,
+	) -> None:
 		"""
 		Sets the title of the window.
 
@@ -2384,13 +3831,28 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_title('My Window Title')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_title(
+		...     'My Window Title'
+		... )
 		"""
-		return self.execute_command('set_title', {'title': title})
+		return self.execute_command(
+			'set_title',
+			{
+				'title': title
+			},
+		)
 
-	def set_size(self, width: int, height: int) -> None:
+	def set_size(
+		self,
+		width: int,
+		height: int,
+	) -> None:
 		"""
 		Sets the size of the window.
 
@@ -2403,15 +3865,30 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_size(800, 600)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_size(
+		...     800,
+		...     600,
+		... )
 		"""
 		return self.execute_command(
-			'set_size', {'width': width, 'height': height}
+			'set_size',
+			{
+				'width': width,
+				'height': height,
+			},
 		)
 
-	def set_position(self, x: int, y: int) -> None:
+	def set_position(
+		self,
+		x: int,
+		y: int,
+	) -> None:
 		"""
 		Sets the position of the window.
 
@@ -2424,13 +3901,29 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_position(100, 100)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_position(
+		...     100,
+		...     100,
+		... )
 		"""
-		return self.execute_command('set_position', {'x': x, 'y': y})
+		return self.execute_command(
+			'set_position',
+			{
+				'x': x,
+				'y': y,
+			},
+		)
 
-	def set_position_by_anchor(self, anchor: str) -> None:
+	def set_position_by_anchor(
+		self,
+		anchor: str,
+	) -> None:
 		"""
 		Positions the window at a specific location on the screen.
 
@@ -2443,14 +3936,24 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> window.set_position_by_anchor('center')
-		>>> window.set_position_by_anchor('top-right')
+		>>> window.set_position_by_anchor(
+		...     'center'
+		... )
+		>>> window.set_position_by_anchor(
+		...     'top-right'
+		... )
 		"""
 		return self.execute_command(
-			'set_position_by_anchor', {'anchor': anchor}
+			'set_position_by_anchor',
+			{
+				'anchor': anchor
+			},
 		)
 
-	def set_frame(self, frame: bool) -> None:
+	def set_frame(
+		self,
+		frame: bool,
+	) -> None:
 		"""
 		Sets the frame of the window.
 
@@ -2461,12 +3964,25 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_frame(True)
-		>>> window.set_frame(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_frame(
+		...     True
+		... )
+		>>> window.set_frame(
+		...     False
+		... )
 		"""
-		return self.execute_command('set_frame', {'frame': frame})
+		return self.execute_command(
+			'set_frame',
+			{
+				'frame': frame
+			},
+		)
 
 	# TODO: Can't use this function in runtime
 	# def set_transparent(self, transparent: bool) -> None:
@@ -2485,7 +4001,9 @@ class BrowserWindow(QObject):
 	#     """
 	#     return self.execute_command("set_transparent", {"transparent": transparent})
 
-	def get_transparent(self) -> bool:
+	def get_transparent(
+		self,
+	) -> bool:
 		"""
 		Returns the transparency state of the window.
 
@@ -2494,9 +4012,15 @@ class BrowserWindow(QObject):
 		bool
 		    True if the window is set to be transparent, False otherwise.
 		"""
-		return self.execute_command('get_transparent', {})
+		return self.execute_command(
+			'get_transparent',
+			{},
+		)
 
-	def set_context_menu(self, context_menu: bool) -> None:
+	def set_context_menu(
+		self,
+		context_menu: bool,
+	) -> None:
 		"""
 		Sets the context menu of the window.
 
@@ -2507,16 +4031,30 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_context_menu(True)
-		>>> window.set_context_menu(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_context_menu(
+		...     True
+		... )
+		>>> window.set_context_menu(
+		...     False
+		... )
 		"""
 		return self.execute_command(
-			'set_context_menu', {'context_menu': context_menu}
+			'set_context_menu',
+			{
+				'context_menu': context_menu
+			},
 		)
 
-	def set_dev_tools(self, enable: bool) -> None:
+	def set_dev_tools(
+		self,
+		enable: bool,
+	) -> None:
 		"""
 		Sets the developer tools of the window.
 
@@ -2529,182 +4067,324 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_dev_tools(True)
-		>>> window.set_dev_tools(False)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_dev_tools(
+		...     True
+		... )
+		>>> window.set_dev_tools(
+		...     False
+		... )
 		"""
-		return self.execute_command('set_dev_tools', {'enable': enable})
+		return self.execute_command(
+			'set_dev_tools',
+			{
+				'enable': enable
+			},
+		)
 
-	def open_dev_tools(self) -> None:
+	def open_dev_tools(
+		self,
+	) -> None:
 		"""
 		Opens the developer tools window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.open_dev_tools()
 		"""
-		return self.execute_command('open_dev_tools', {})
+		return self.execute_command(
+			'open_dev_tools',
+			{},
+		)
 
-	def hide(self) -> None:
+	def hide(
+		self,
+	) -> None:
 		"""
 		Hides the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.hide()
 		"""
-		return self.execute_command('hide', {})
+		return self.execute_command(
+			'hide',
+			{},
+		)
 
-	def show(self) -> None:
+	def show(
+		self,
+	) -> None:
 		"""
 		Shows the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.show()
 		"""
-		return self.execute_command('show', {})
+		return self.execute_command(
+			'show',
+			{},
+		)
 
-	def focus(self) -> None:
+	def focus(
+		self,
+	) -> None:
 		"""
 		Focuses the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.focus()
 		"""
-		return self.execute_command('focus', {})
+		return self.execute_command(
+			'focus',
+			{},
+		)
 
-	def show_and_focus(self) -> None:
+	def show_and_focus(
+		self,
+	) -> None:
 		"""
 		Shows and focuses the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.show_and_focus()
 		"""
-		return self.execute_command('show_and_focus', {})
+		return self.execute_command(
+			'show_and_focus',
+			{},
+		)
 
-	def close(self) -> None:
+	def close(
+		self,
+	) -> None:
 		"""
 		Closes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.close()
 		"""
-		return self.execute_command('close', {})
+		return self.execute_command(
+			'close',
+			{},
+		)
 
-	def fullscreen(self) -> None:
+	def fullscreen(
+		self,
+	) -> None:
 		"""
 		Enters fullscreen mode.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.fullscreen()
 		"""
-		return self.execute_command('fullscreen', {})
+		return self.execute_command(
+			'fullscreen',
+			{},
+		)
 
-	def toggle_fullscreen(self) -> None:
+	def toggle_fullscreen(
+		self,
+	) -> None:
 		"""
 		Toggles the fullscreen mode of the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.toggle_fullscreen()
 		"""
-		return self.execute_command('toggle_fullscreen', {})
+		return self.execute_command(
+			'toggle_fullscreen',
+			{},
+		)
 
-	def minimize(self) -> None:
+	def minimize(
+		self,
+	) -> None:
 		"""
 		Minimizes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.minimize()
 		"""
-		return self.execute_command('minimize', {})
+		return self.execute_command(
+			'minimize',
+			{},
+		)
 
-	def maximize(self) -> None:
+	def maximize(
+		self,
+	) -> None:
 		"""
 		Maximizes the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.maximize()
 		"""
-		return self.execute_command('maximize', {})
+		return self.execute_command(
+			'maximize',
+			{},
+		)
 
-	def unmaximize(self) -> None:
+	def unmaximize(
+		self,
+	) -> None:
 		"""
 		Restores the window from maximized state.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.unmaximize()
 		"""
-		return self.execute_command('unmaximize', {})
+		return self.execute_command(
+			'unmaximize',
+			{},
+		)
 
-	def toggle_maximize(self) -> None:
+	def toggle_maximize(
+		self,
+	) -> None:
 		"""
 		Toggles the maximized state of the window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.toggle_maximize()
 		"""
-		return self.execute_command('toggle_maximize', {})
+		return self.execute_command(
+			'toggle_maximize',
+			{},
+		)
 
-	def is_fullscreen(self) -> bool:
+	def is_fullscreen(
+		self,
+	) -> bool:
 		"""
 		Returns True if the window is fullscreen.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.is_fullscreen()
 		"""
-		return self.execute_command('is_fullscreen', {})
+		return self.execute_command(
+			'is_fullscreen',
+			{},
+		)
 
-	def is_maximized(self) -> bool:
+	def is_maximized(
+		self,
+	) -> bool:
 		"""
 		Returns True if the window is maximized.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window.is_maximized()
 		"""
-		return self.execute_command('is_maximized', {})
+		return self.execute_command(
+			'is_maximized',
+			{},
+		)
 
-	def capture(self, save_path: str) -> 'Optional[str]':
+	def capture(
+		self,
+		save_path: str,
+	) -> 'Optional[str]':
 		"""
 		Captures the current window.
 
@@ -2720,14 +4400,31 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> save_path = window.capture('screenshot.png')
-		>>> print(f'Image saved at: {save_path}')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> save_path = window.capture(
+		...     'screenshot.png'
+		... )
+		>>> print(
+		...     f'Image saved at: {save_path}'
+		... )
 		"""
-		return self.execute_command('capture', {'save_path': save_path})
+		return self.execute_command(
+			'capture',
+			{
+				'save_path': save_path
+			},
+		)
 
-	def add_shortcut(self, key_sequence: str, callback: Callable) -> Any:
+	def add_shortcut(
+		self,
+		key_sequence: str,
+		callback: Callable,
+	) -> Any:
 		"""
 		Adds a keyboard shortcut to the window if it does not already exist.
 
@@ -2745,18 +4442,34 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> def on_shortcut():
-		...     print('Shortcut activated!')
-		>>> window.add_shortcut('Ctrl+C', on_shortcut)
+		...     print(
+		...         'Shortcut activated!'
+		...     )
+		>>> window.add_shortcut(
+		...     'Ctrl+C',
+		...     on_shortcut,
+		... )
 		>>> app.run()
 		"""
 		return self.execute_command(
-			'add_shortcut', {'key_sequence': key_sequence, 'callback': callback}
+			'add_shortcut',
+			{
+				'key_sequence': key_sequence,
+				'callback': callback,
+			},
 		)
 
-	def remove_shortcut(self, key_sequence: str) -> None:
+	def remove_shortcut(
+		self,
+		key_sequence: str,
+	) -> None:
 		"""
 		Removes a keyboard shortcut from the window.
 
@@ -2767,16 +4480,27 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.remove_shortcut('Ctrl+C')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.remove_shortcut(
+		...     'Ctrl+C'
+		... )
 		>>> app.run()
 		"""
 		return self.execute_command(
-			'remove_shortcut', {'key_sequence': key_sequence}
+			'remove_shortcut',
+			{
+				'key_sequence': key_sequence
+			},
 		)
 
-	def get_all_shortcuts(self) -> dict:
+	def get_all_shortcuts(
+		self,
+	) -> dict:
 		"""
 		Returns all registered shortcuts in the window.
 
@@ -2787,15 +4511,28 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> shortcuts = window.get_all_shortcuts()
-		>>> print(shortcuts)
+		>>> print(
+		...     shortcuts
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_all_shortcuts', {})
+		return self.execute_command(
+			'get_all_shortcuts',
+			{},
+		)
 
-	def invoke(self, event_name: str, data: 'Optional[Dict]' = None) -> None:
+	def invoke(
+		self,
+		event_name: str,
+		data: 'Optional[Dict]' = None,
+	) -> None:
 		"""
 		Invokes an event to the JavaScript side.
 
@@ -2809,9 +4546,18 @@ class BrowserWindow(QObject):
 		Examples
 		--------
 		(Python)
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.invoke('customEvent', {'message': 'Hello, Pyloid!'})
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.invoke(
+		...     'customEvent',
+		...     {
+		...         'message': 'Hello, Pyloid!'
+		...     },
+		... )
 
 		(JavaScript)
 		```javascript
@@ -2823,10 +4569,16 @@ class BrowserWindow(QObject):
 		```
 		"""
 		return self.execute_command(
-			'invoke', {'event_name': event_name, 'data': data}
+			'invoke',
+			{
+				'event_name': event_name,
+				'data': data,
+			},
 		)
 
-	def get_window_properties(self) -> dict:
+	def get_window_properties(
+		self,
+	) -> dict:
 		"""
 		Returns the properties of the window.
 
@@ -2837,15 +4589,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> properties = window.get_window_properties()
-		>>> print(properties)
+		>>> print(
+		...     properties
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_window_properties', {})
+		return self.execute_command(
+			'get_window_properties',
+			{},
+		)
 
-	def get_id(self) -> str:
+	def get_id(
+		self,
+	) -> str:
 		"""
 		Returns the ID of the window.
 
@@ -2856,15 +4619,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> window_id = window.get_id()
-		>>> print(window_id)
+		>>> print(
+		...     window_id
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_id', {})
+		return self.execute_command(
+			'get_id',
+			{},
+		)
 
-	def get_size(self) -> 'Dict[str, int]':
+	def get_size(
+		self,
+	) -> 'Dict[str, int]':
 		"""
 		Returns the size of the window.
 
@@ -2875,15 +4649,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> size = window.get_size()
-		>>> print(size)
+		>>> print(
+		...     size
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_size', {})
+		return self.execute_command(
+			'get_size',
+			{},
+		)
 
-	def get_position(self) -> 'Dict[str, int]':
+	def get_position(
+		self,
+	) -> 'Dict[str, int]':
 		"""
 		Returns the position of the window.
 
@@ -2894,15 +4679,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> position = window.get_position()
-		>>> print(position)
+		>>> print(
+		...     position
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_position', {})
+		return self.execute_command(
+			'get_position',
+			{},
+		)
 
-	def get_title(self) -> str:
+	def get_title(
+		self,
+	) -> str:
 		"""
 		Returns the title of the window.
 
@@ -2913,15 +4709,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> title = window.get_title()
-		>>> print(title)
+		>>> print(
+		...     title
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_title', {})
+		return self.execute_command(
+			'get_title',
+			{},
+		)
 
-	def get_url(self) -> str:
+	def get_url(
+		self,
+	) -> str:
 		"""
 		Returns the URL of the window.
 
@@ -2932,15 +4739,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> url = window.get_url()
-		>>> print(url)
+		>>> print(
+		...     url
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_url', {})
+		return self.execute_command(
+			'get_url',
+			{},
+		)
 
-	def get_visible(self) -> bool:
+	def get_visible(
+		self,
+	) -> bool:
 		"""
 		Returns the visibility of the window.
 
@@ -2951,15 +4769,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> visible = window.get_visible()
-		>>> print(visible)
+		>>> print(
+		...     visible
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_visible', {})
+		return self.execute_command(
+			'get_visible',
+			{},
+		)
 
-	def get_frame(self) -> bool:
+	def get_frame(
+		self,
+	) -> bool:
 		"""
 		Returns the frame enabled state of the window.
 
@@ -2970,15 +4799,27 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> frame = window.get_frame()
-		>>> print(frame)
+		>>> print(
+		...     frame
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_frame', {})
+		return self.execute_command(
+			'get_frame',
+			{},
+		)
 
-	def set_resizable(self, resizable: bool) -> None:
+	def set_resizable(
+		self,
+		resizable: bool,
+	) -> None:
 		"""
 		Sets the resizability of the window.
 
@@ -2989,14 +4830,29 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_resizable(True)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_resizable(
+		...     True
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('set_resizable', {'resizable': resizable})
+		return self.execute_command(
+			'set_resizable',
+			{
+				'resizable': resizable
+			},
+		)
 
-	def set_minimum_size(self, min_width: int, min_height: int) -> None:
+	def set_minimum_size(
+		self,
+		min_width: int,
+		min_height: int,
+	) -> None:
 		"""
 		Sets the minimum size of the window.
 
@@ -3009,17 +4865,31 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_minimum_size(400, 300)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_minimum_size(
+		...     400,
+		...     300,
+		... )
 		>>> app.run()
 		"""
 		return self.execute_command(
 			'set_minimum_size',
-			{'min_width': min_width, 'min_height': min_height},
+			{
+				'min_width': min_width,
+				'min_height': min_height,
+			},
 		)
 
-	def set_maximum_size(self, max_width: int, max_height: int) -> None:
+	def set_maximum_size(
+		self,
+		max_width: int,
+		max_height: int,
+	) -> None:
 		"""
 		Sets the maximum size of the window.
 
@@ -3032,17 +4902,29 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
-		>>> window.set_maximum_size(1024, 768)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
+		>>> window.set_maximum_size(
+		...     1024,
+		...     768,
+		... )
 		>>> app.run()
 		"""
 		return self.execute_command(
 			'set_maximum_size',
-			{'max_width': max_width, 'max_height': max_height},
+			{
+				'max_width': max_width,
+				'max_height': max_height,
+			},
 		)
 
-	def get_minimum_size(self) -> 'Dict[str, int]':
+	def get_minimum_size(
+		self,
+	) -> 'Dict[str, int]':
 		"""
 		Returns the minimum size of the window.
 
@@ -3053,15 +4935,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> min_size = window.get_minimum_size()
-		>>> print(min_size)
+		>>> print(
+		...     min_size
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_minimum_size', {})
+		return self.execute_command(
+			'get_minimum_size',
+			{},
+		)
 
-	def get_maximum_size(self) -> 'Dict[str, int]':
+	def get_maximum_size(
+		self,
+	) -> 'Dict[str, int]':
 		"""
 		Returns the maximum size of the window.
 
@@ -3072,15 +4965,26 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> max_size = window.get_maximum_size()
-		>>> print(max_size)
+		>>> print(
+		...     max_size
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_maximum_size', {})
+		return self.execute_command(
+			'get_maximum_size',
+			{},
+		)
 
-	def get_resizable(self) -> bool:
+	def get_resizable(
+		self,
+	) -> bool:
 		"""
 		Returns the resizability of the window.
 
@@ -3091,13 +4995,22 @@ class BrowserWindow(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.create_window('pyloid-window')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.create_window(
+		...     'pyloid-window'
+		... )
 		>>> resizable = window.get_resizable()
-		>>> print(resizable)
+		>>> print(
+		...     resizable
+		... )
 		>>> app.run()
 		"""
-		return self.execute_command('get_resizable', {})
+		return self.execute_command(
+			'get_resizable',
+			{},
+		)
 
 	def set_static_image_splash_screen(
 		self,
@@ -3127,7 +5040,9 @@ class BrowserWindow(QObject):
 		Examples
 		--------
 		>>> window.set_static_image_splash_screen(
-		...     './assets/loading.png', close_on_load=True, stay_on_top=True
+		...     './assets/loading.png',
+		...     close_on_load=True,
+		...     stay_on_top=True,
 		... )
 		"""
 		return self.execute_command(
@@ -3169,7 +5084,9 @@ class BrowserWindow(QObject):
 		Examples
 		--------
 		>>> window.set_gif_splash_screen(
-		...     './assets/loading.gif', close_on_load=True, stay_on_top=True
+		...     './assets/loading.gif',
+		...     close_on_load=True,
+		...     stay_on_top=True,
 		... )
 		"""
 		return self.execute_command(
@@ -3183,7 +5100,9 @@ class BrowserWindow(QObject):
 			},
 		)
 
-	def close_splash_screen(self) -> None:
+	def close_splash_screen(
+		self,
+	) -> None:
 		"""
 		Closes the splash screen if it exists.
 
@@ -3191,4 +5110,7 @@ class BrowserWindow(QObject):
 		--------
 		>>> window.close_splash_screen()
 		"""
-		return self.execute_command('close_splash_screen', {})
+		return self.execute_command(
+			'close_splash_screen',
+			{},
+		)

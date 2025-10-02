@@ -1,8 +1,14 @@
-from enum import Enum
-from PySide6.QtWidgets import QSystemTrayIcon
+from enum import (
+	Enum,
+)
+from PySide6.QtWidgets import (
+	QSystemTrayIcon,
+)
 
 
-class TrayEvent(Enum):
+class TrayEvent(
+	Enum
+):
 	"""
 	TrayEvent is an enumeration class representing events related to the system tray icon.
 
@@ -17,11 +23,18 @@ class TrayEvent(Enum):
 	Usage Example
 	-------------
 	```python
-	from pyloid import Pyloid, TrayEvent
+	from pyloid import (
+	    Pyloid,
+	    TrayEvent,
+	)
 
-	app = Pyloid(app_name='Pyloid-App')
+	app = Pyloid(
+	    app_name='Pyloid-App'
+	)
 
-	app.set_tray_icon('icons/icon.ico')
+	app.set_tray_icon(
+	    'icons/icon.ico'
+	)
 
 	app.set_tray_actions(
 	    {
@@ -31,8 +44,12 @@ class TrayEvent(Enum):
 	        TrayEvent.MiddleClick: lambda: print(
 	            'Tray icon was middle-clicked.'
 	        ),
-	        TrayEvent.RightClick: lambda: print('Tray icon was right-clicked.'),
-	        TrayEvent.LeftClick: lambda: print('Tray icon was left-clicked.'),
+	        TrayEvent.RightClick: lambda: print(
+	            'Tray icon was right-clicked.'
+	        ),
+	        TrayEvent.LeftClick: lambda: print(
+	            'Tray icon was left-clicked.'
+	        ),
 	    }
 	)
 	```
@@ -44,10 +61,25 @@ class TrayEvent(Enum):
 	LeftClick = QSystemTrayIcon.ActivationReason.Trigger
 	Unknown = QSystemTrayIcon.ActivationReason.Unknown
 
-	def __eq__(self, other):
-		if isinstance(other, QSystemTrayIcon.ActivationReason):
-			return self.value == other
-		return super().__eq__(other)
+	def __eq__(
+		self,
+		other,
+	):
+		if isinstance(
+			other,
+			QSystemTrayIcon.ActivationReason,
+		):
+			return (
+				self.value
+				== other
+			)
+		return super().__eq__(
+			other
+		)
 
-	def __hash__(self):
-		return hash(self.value)
+	def __hash__(
+		self,
+	):
+		return hash(
+			self.value
+		)

@@ -1,6 +1,10 @@
 import sys
-from PySide6.QtWidgets import QApplication
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import (
+	QApplication,
+)
+from PySide6.QtWebEngineWidgets import (
+	QWebEngineView,
+)
 
 html = """
 <!DOCTYPE html>
@@ -12,9 +16,18 @@ html = """
 </html>
 """
 
-app = QApplication(sys.argv)
+app = QApplication(
+	sys.argv
+)
 view = QWebEngineView()
-view.setHtml(html)
-view.resize(800, 600)
+view.setHtml(
+	html
+)
+view.resize(
+	800,
+	600,
+)
 view.show()
-sys.exit(app.exec())
+sys.exit(
+	app.exec()
+)

@@ -12,26 +12,73 @@ from PySide6.QtGui import (
 	QImage,
 	QAction,
 )
-from PySide6.QtCore import Qt, Signal, QObject, QTimer, QEvent
-from PySide6.QtNetwork import QLocalServer, QLocalSocket
-from .api import PyloidAPI
-from typing import List, Optional, Dict, Callable, Union, Literal
-from PySide6.QtCore import qInstallMessageHandler
+from PySide6.QtCore import (
+	Qt,
+	Signal,
+	QObject,
+	QTimer,
+	QEvent,
+)
+from PySide6.QtNetwork import (
+	QLocalServer,
+	QLocalSocket,
+)
+from .api import (
+	PyloidAPI,
+)
+from typing import (
+	List,
+	Optional,
+	Dict,
+	Callable,
+	Union,
+	Literal,
+)
+from PySide6.QtCore import (
+	qInstallMessageHandler,
+)
 import signal
-from .utils import is_production
-from .monitor import Monitor
-from .autostart import AutoStart
-from .filewatcher import FileWatcher
+from .utils import (
+	is_production,
+)
+from .monitor import (
+	Monitor,
+)
+from .autostart import (
+	AutoStart,
+)
+from .filewatcher import (
+	FileWatcher,
+)
 import logging
-from .browser_window import BrowserWindow
-from .tray import TrayEvent
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtCore import Signal, QObject, Slot
+from .browser_window import (
+	BrowserWindow,
+)
+from .tray import (
+	TrayEvent,
+)
+from PySide6.QtCore import (
+	QCoreApplication,
+)
+from PySide6.QtCore import (
+	Signal,
+	QObject,
+	Slot,
+)
 import uuid
-from PySide6.QtCore import QEventLoop
-from typing import Any, Set
-from platformdirs import PlatformDirs
-from .store import Store
+from PySide6.QtCore import (
+	QEventLoop,
+)
+from typing import (
+	Any,
+	Set,
+)
+from platformdirs import (
+	PlatformDirs,
+)
+from .store import (
+	Store,
+)
 import threading
 import signal
 
@@ -40,21 +87,43 @@ import signal
 
 #########################################################################
 # for linux debug
-os.environ['QTWEBENGINE_DICTIONARIES_PATH'] = '/'
+os.environ[
+	'QTWEBENGINE_DICTIONARIES_PATH'
+] = '/'
 
 original_set_wakeup_fd = signal.set_wakeup_fd
 original_signal = signal.signal
 
 
-def safe_set_wakeup_fd(fd, *args, **kwargs):
-	if threading.current_thread() is threading.main_thread():
-		return original_set_wakeup_fd(fd, *args, **kwargs)
+def safe_set_wakeup_fd(
+	fd,
+	*args,
+	**kwargs,
+):
+	if (
+		threading.current_thread()
+		is threading.main_thread()
+	):
+		return original_set_wakeup_fd(
+			fd,
+			*args,
+			**kwargs,
+		)
 	return -1  # If not in main thread, do nothing and return -1
 
 
-def safe_signal(signalnum, handler):
-	if threading.current_thread() is threading.main_thread():
-		return original_signal(signalnum, handler)
+def safe_signal(
+	signalnum,
+	handler,
+):
+	if (
+		threading.current_thread()
+		is threading.main_thread()
+	):
+		return original_signal(
+			signalnum,
+			handler,
+		)
 	return None  # If not in main thread, do nothing
 
 
@@ -63,44 +132,85 @@ signal.signal = safe_signal
 #########################################################################
 
 # for macos debug
-logging.getLogger('Qt').setLevel(logging.ERROR)
-
-QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
-os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = (
-	'--enable-features=WebRTCPipeWireCapturer --ignore-certificate-errors --allow-insecure-localhost'
+logging.getLogger(
+	'Qt'
+).setLevel(
+	logging.ERROR
 )
 
+QCoreApplication.setAttribute(
+	Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+)
+os.environ[
+	'QTWEBENGINE_CHROMIUM_FLAGS'
+] = '--enable-features=WebRTCPipeWireCapturer --ignore-certificate-errors --allow-insecure-localhost'
 
-def custom_message_handler(mode, context, message):
-	if not hasattr(custom_message_handler, 'vulkan_warning_shown') and (
-		('Failed to load vulkan' in message)
-		or ('No Vulkan library available' in message)
-		or ('Failed to create platform Vulkan instance' in message)
+
+def custom_message_handler(
+	mode,
+	context,
+	message,
+):
+	if (
+		not hasattr(
+			custom_message_handler,
+			'vulkan_warning_shown',
+		)
+		and (
+			(
+				'Failed to load vulkan'
+				in message
+			)
+			or (
+				'No Vulkan library available'
+				in message
+			)
+			or (
+				'Failed to create platform Vulkan instance'
+				in message
+			)
+		)
 	):
 		print(
 			'\033[93mPyloid Warning: Vulkan GPU API issue detected. Switching to software backend.\033[0m'
 		)
-		if 'linux' in sys.platform:
-			os.environ['QT_QUICK_BACKEND'] = 'software'
+		if (
+			'linux'
+			in sys.platform
+		):
+			os.environ[
+				'QT_QUICK_BACKEND'
+			] = 'software'
 			custom_message_handler.vulkan_warning_shown = True
 
-	if 'Autofill.enable failed' in message:
+	if (
+		'Autofill.enable failed'
+		in message
+	):
 		print(
 			'\033[93mPyloid Warning: Autofill is not enabled in developer tools.\033[0m'
 		)
 
 	if (
-		'vulkan' not in message.lower()
-		and 'Autofill.enable failed' not in message
+		'vulkan'
+		not in message.lower()
+		and 'Autofill.enable failed'
+		not in message
 	):
-		print(message)
+		print(
+			message
+		)
 
 
-qInstallMessageHandler(custom_message_handler)
+qInstallMessageHandler(
+	custom_message_handler
+)
 
 
 # Only Work in Main Thread
-class _Pyloid(QApplication):
+class _Pyloid(
+	QApplication
+):
 	def __init__(
 		self,
 		pyloid_wrapper: 'Pyloid',
@@ -124,22 +234,31 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='New Window', width=1024, height=768)
+		window = app.create_window(
+		    title='New Window',
+		    width=1024,
+		    height=768,
+		)
 		window.show()
 
 		app.run()
 		```
 		"""
-		super().__init__(sys.argv)
+		super().__init__(
+			sys.argv
+		)
 
 		self.pyloid_wrapper = pyloid_wrapper
 
 		self.data = data
 
 		self.windows_dict: Dict[
-			str, BrowserWindow
+			str,
+			BrowserWindow,
 		] = {}  # 윈도우 ID를 키로 사용하는 딕셔너리
 
 		self.app_name = app_name
@@ -160,7 +279,10 @@ class _Pyloid(QApplication):
 		self.app_name: str = app_name
 		self.app_path = sys.executable
 
-		self.auto_start = AutoStart(self.app_name, self.app_path)
+		self.auto_start = AutoStart(
+			self.app_name,
+			self.app_path,
+		)
 
 		self.animation_timer = None
 		self.icon_frames = []
@@ -168,7 +290,8 @@ class _Pyloid(QApplication):
 
 		self.theme = (
 			'dark'
-			if self.styleHints().colorScheme() == Qt.ColorScheme.Dark
+			if self.styleHints().colorScheme()
+			== Qt.ColorScheme.Dark
 			else 'light'
 		)
 
@@ -177,7 +300,10 @@ class _Pyloid(QApplication):
 			self._handle_color_scheme_change
 		)
 
-		self.dirs = PlatformDirs(self.app_name, appauthor=False)
+		self.dirs = PlatformDirs(
+			self.app_name,
+			appauthor=False,
+		)
 
 		###################################################
 		# Pyloid Server Integration
@@ -223,7 +349,10 @@ class _Pyloid(QApplication):
 	#         )
 	#         self._handle_color_scheme_change(self.theme)
 
-	def set_icon(self, icon_path: str):
+	def set_icon(
+		self,
+		icon_path: str,
+	):
 		"""
 		Dynamically sets the application's icon.
 
@@ -237,14 +366,22 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_icon('icons/icon.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_icon(
+		...     'icons/icon.png'
+		... )
 		"""
-		self.icon = QIcon(icon_path)
+		self.icon = QIcon(
+			icon_path
+		)
 
 		# Immediately update the icon for all open windows.
 		for window in self.windows_dict.values():
-			window.set_icon(self.icon)
+			window.set_icon(
+				self.icon
+			)
 
 	def create_window(
 		self,
@@ -289,9 +426,13 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> window = app.create_window(
-		...     title='New Window', width=1024, height=768
+		...     title='New Window',
+		...     width=1024,
+		...     height=768,
 		... )
 		>>> window.show()
 		"""
@@ -307,11 +448,15 @@ class _Pyloid(QApplication):
 			dev_tools,
 			transparent,
 		)
-		self.windows_dict[window._window.id] = window
+		self.windows_dict[
+			window._window.id
+		] = window
 		# latest_window_id = list(self.windows_dict.keys())[-1]
 		return window
 
-	def run(self):
+	def run(
+		self,
+	):
 		"""
 		Runs the application event loop.
 
@@ -322,7 +467,9 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.run()
 		```
 		"""
@@ -332,34 +479,58 @@ class _Pyloid(QApplication):
 			self.server.run()
 
 		if is_production():
-			sys.exit(self.exec())
+			sys.exit(
+				self.exec()
+			)
 		else:
-			signal.signal(signal.SIGINT, signal.SIG_DFL)
-			sys.exit(self.exec())
+			signal.signal(
+				signal.SIGINT,
+				signal.SIG_DFL,
+			)
+			sys.exit(
+				self.exec()
+			)
 
-	def _init_single_instance(self):
+	def _init_single_instance(
+		self,
+	):
 		"""Initializes the application as a single instance."""
 		socket = QLocalSocket()
-		socket.connectToServer(self.app_name)
-		if socket.waitForConnected(500):
+		socket.connectToServer(
+			self.app_name
+		)
+		if socket.waitForConnected(
+			500
+		):
 			# Another instance is already running
-			sys.exit(1)
+			sys.exit(
+				1
+			)
 
 		# Create a new Single Instance server
 		self.single_instance_server = QLocalServer()
-		self.single_instance_server.listen(self.app_name)
+		self.single_instance_server.listen(
+			self.app_name
+		)
 		self.single_instance_server.newConnection.connect(
 			self._handle_new_connection
 		)
 
-	def _handle_new_connection(self):
+	def _handle_new_connection(
+		self,
+	):
 		"""Handles new connections for the single instance server."""
 		pass
 
 	###########################################################################################
 	# App window
 	###########################################################################################
-	def get_windows(self) -> Dict[str, BrowserWindow]:
+	def get_windows(
+		self,
+	) -> Dict[
+		str,
+		BrowserWindow,
+	]:
 		"""
 		Returns a dictionary of all browser windows.
 
@@ -371,82 +542,121 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		windows = app.get_windows()
-		for window_id, window in windows.items():
-		    print(f'Window ID: {window_id}')
+		for (
+		    window_id,
+		    window,
+		) in windows.items():
+		    print(
+		        f'Window ID: {window_id}'
+		    )
 		```
 		"""
 		return self.windows_dict
 
-	def show_main_window(self):
+	def show_main_window(
+		self,
+	):
 		"""
 		Shows and focuses the first window.
 
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.show_main_window()
 		```
 		"""
 		if self.windows_dict:
 			# 첫 번째 윈도우 가져오기
-			main_window = next(iter(self.windows_dict.values()))
+			main_window = next(
+				iter(
+					self.windows_dict.values()
+				)
+			)
 			main_window._window.show()
 
-	def focus_main_window(self):
+	def focus_main_window(
+		self,
+	):
 		"""
 		Focuses the first window.
 
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.focus_main_window()
 		```
 		"""
 		if self.windows_dict:
-			main_window = next(iter(self.windows_dict.values()))
+			main_window = next(
+				iter(
+					self.windows_dict.values()
+				)
+			)
 			main_window.focus()
 
-	def show_and_focus_main_window(self):
+	def show_and_focus_main_window(
+		self,
+	):
 		"""
 		Shows and focuses the first window.
 
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.show_and_focus_main_window()
 		```
 		"""
 		if self.windows_dict:
-			main_window = next(iter(self.windows_dict.values()))
+			main_window = next(
+				iter(
+					self.windows_dict.values()
+				)
+			)
 			main_window.show_and_focus()
 
-	def close_all_windows(self):
+	def close_all_windows(
+		self,
+	):
 		"""
 		Closes all windows.
 
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.close_all_windows()
 		```
 		"""
 		for window in self.windows_dict.values():
 			window._window.close()
 
-	def quit(self):
+	def quit(
+		self,
+	):
 		"""
 		Quits the application.
 
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 		app.quit()
 		```
 		"""
@@ -462,7 +672,12 @@ class _Pyloid(QApplication):
 	###########################################################################################
 	# Window management in the app (ID required)
 	###########################################################################################
-	def get_window_by_id(self, window_id: str) -> Optional[BrowserWindow]:
+	def get_window_by_id(
+		self,
+		window_id: str,
+	) -> Optional[
+		BrowserWindow
+	]:
 		"""
 		Returns the window with the given ID.
 
@@ -479,17 +694,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.get_window_by_id('123e4567-e89b-12d3-a456-426614174000')
+		window = app.get_window_by_id(
+		    '123e4567-e89b-12d3-a456-426614174000'
+		)
 
 		if window:
-		    print('Window found:', window)
+		    print(
+		        'Window found:',
+		        window,
+		    )
 		```
 		"""
-		return self.windows_dict.get(window_id)
+		return self.windows_dict.get(
+			window_id
+		)
 
-	def hide_window_by_id(self, window_id: str):
+	def hide_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Hides the window with the given ID.
 
@@ -501,18 +728,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.hide_window_by_id(window.id)
+		app.hide_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window.hide()
 
-	def show_window_by_id(self, window_id: str):
+	def show_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Shows and focuses the window with the given ID.
 
@@ -524,18 +762,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.show_window_by_id(window.id)
+		app.show_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window.show()
 
-	def close_window_by_id(self, window_id: str):
+	def close_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Closes the window with the given ID.
 
@@ -547,18 +796,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.close_window_by_id(window.id)
+		app.close_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window._window.close()
 
-	def toggle_fullscreen_by_id(self, window_id: str):
+	def toggle_fullscreen_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Toggles fullscreen mode for the window with the given ID.
 
@@ -570,17 +830,28 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.toggle_fullscreen_by_id(window.id)
+		app.toggle_fullscreen_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		window.toggle_fullscreen()
 
-	def minimize_window_by_id(self, window_id: str):
+	def minimize_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Minimizes the window with the given ID.
 
@@ -592,18 +863,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.minimize_window_by_id(window.id)
+		app.minimize_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window.minimize()
 
-	def maximize_window_by_id(self, window_id: str):
+	def maximize_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Maximizes the window with the given ID.
 
@@ -615,18 +897,29 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.maximize_window_by_id(window.id)
+		app.maximize_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window.maximize()
 
-	def unmaximize_window_by_id(self, window_id: str):
+	def unmaximize_window_by_id(
+		self,
+		window_id: str,
+	):
 		"""
 		Unmaximizes the window with the given ID.
 
@@ -638,20 +931,32 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		app.unmaximize_window_by_id(window.id)
+		app.unmaximize_window_by_id(
+		    window.id
+		)
 		```
 		"""
-		window = self.get_window_by_id(window_id)
+		window = self.get_window_by_id(
+			window_id
+		)
 		if window:
 			window.unmaximize()
 
 	def capture_window_by_id(
-		self, window_id: str, save_path: str
-	) -> Optional[str]:
+		self,
+		window_id: str,
+		save_path: str,
+	) -> Optional[
+		str
+	]:
 		"""
 		Captures the specified window.
 
@@ -670,36 +975,57 @@ class _Pyloid(QApplication):
 		Examples
 		--------
 		```python
-		app = Pyloid(app_name='Pyloid-App')
+		app = Pyloid(
+		    app_name='Pyloid-App'
+		)
 
-		window = app.create_window(title='pyloid-window')
+		window = app.create_window(
+		    title='pyloid-window'
+		)
 
-		image_path = app.capture_window_by_id(window.id, 'save/image.png')
+		image_path = app.capture_window_by_id(
+		    window.id,
+		    'save/image.png',
+		)
 
 		if image_path:
-		    print('Image saved at:', image_path)
+		    print(
+		        'Image saved at:',
+		        image_path,
+		    )
 		```
 		"""
 		try:
-			window = self.get_window_by_id(window_id)
+			window = self.get_window_by_id(
+				window_id
+			)
 			if not window:
-				print(f'Cannot find window with the specified ID: {window_id}')
+				print(
+					f'Cannot find window with the specified ID: {window_id}'
+				)
 				return None
 
 			# Capture window
 			screenshot = window._window.grab()
 
 			# Save image
-			screenshot.save(save_path)
+			screenshot.save(
+				save_path
+			)
 			return save_path
 		except Exception as e:
-			print(f'Error occurred while capturing the window: {e}')
+			print(
+				f'Error occurred while capturing the window: {e}'
+			)
 			return None
 
 	###########################################################################################
 	# Tray
 	###########################################################################################
-	def set_tray_icon(self, tray_icon_path: str):
+	def set_tray_icon(
+		self,
+		tray_icon_path: str,
+	):
 		"""
 		Dynamically sets the tray icon.
 		Can be called while the application is running, and changes are applied immediately.
@@ -711,32 +1037,59 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_tray_icon('icons/icon.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_tray_icon(
+		...     'icons/icon.png'
+		... )
 		"""
 		# Stop and remove existing animation timer if present
 		if (
-			hasattr(self, 'animation_timer')
-			and self.animation_timer is not None
+			hasattr(
+				self,
+				'animation_timer',
+			)
+			and self.animation_timer
+			is not None
 		):
 			self.animation_timer.stop()
 			self.animation_timer.deleteLater()
 			self.animation_timer = None
 
 		# Remove existing icon frames
-		if hasattr(self, 'icon_frames'):
+		if hasattr(
+			self,
+			'icon_frames',
+		):
 			self.icon_frames = []
 
 		# Set new icon
-		self.tray_icon = QIcon(tray_icon_path)
+		self.tray_icon = QIcon(
+			tray_icon_path
+		)
 
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
 		else:
-			self.tray.setIcon(self.tray_icon)
+			self.tray.setIcon(
+				self.tray_icon
+			)
 
 	def set_tray_menu_items(
-		self, tray_menu_items: List[Dict[str, Union[str, Callable]]]
+		self,
+		tray_menu_items: List[
+			Dict[
+				str,
+				Union[
+					str,
+					Callable,
+				],
+			]
+		],
 	):
 		"""
 		Dynamically sets the tray menu items.
@@ -749,48 +1102,94 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> menu_items = [
 		>>>     {"label": "Open", "callback": lambda: print("Open clicked")},
 		>>>     {"label": "Exit", "callback": app.quit}
 		>>> ]
-		>>> app.set_tray_menu_items(menu_items)
+		>>> app.set_tray_menu_items(
+		...     menu_items
+		... )
 		"""
 		self.tray_menu_items = tray_menu_items
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
 		self._update_tray_menu()
 
-	def _init_tray(self):
+	def _init_tray(
+		self,
+	):
 		"""Initializes the tray icon."""
-		self.tray = QSystemTrayIcon(self)
+		self.tray = QSystemTrayIcon(
+			self
+		)
 		if self.tray_icon:
-			self.tray.setIcon(self.tray_icon)
+			self.tray.setIcon(
+				self.tray_icon
+			)
 		else:
-			print('Icon and tray icon have not been set.')
+			print(
+				'Icon and tray icon have not been set.'
+			)
 		if self.tray_menu_items:
 			pass
 		else:
-			self.tray.setContextMenu(QMenu())
+			self.tray.setContextMenu(
+				QMenu()
+			)
 		self.tray.show()
 
-	def _update_tray_menu(self):
+	def _update_tray_menu(
+		self,
+	):
 		"""Updates the tray menu."""
 		tray_menu = self.tray.contextMenu()
 		tray_menu.clear()
 		for item in self.tray_menu_items:
-			action = QAction(item['label'], self)
-			action.triggered.connect(item['callback'])
-			tray_menu.addAction(action)
+			action = QAction(
+				item[
+					'label'
+				],
+				self,
+			)
+			action.triggered.connect(
+				item[
+					'callback'
+				]
+			)
+			tray_menu.addAction(
+				action
+			)
 
-	def _tray_activated(self, reason):
+	def _tray_activated(
+		self,
+		reason,
+	):
 		"""Handles events when the tray icon is activated."""
-		reason_enum = QSystemTrayIcon.ActivationReason(reason)
+		reason_enum = QSystemTrayIcon.ActivationReason(
+			reason
+		)
 
-		if reason_enum in self.tray_actions:
-			self.tray_actions[reason_enum]()
+		if (
+			reason_enum
+			in self.tray_actions
+		):
+			self.tray_actions[
+				reason_enum
+			]()
 
-	def set_tray_actions(self, actions: Dict[TrayEvent, Callable]):
+	def set_tray_actions(
+		self,
+		actions: Dict[
+			TrayEvent,
+			Callable,
+		],
+	):
 		"""
 		Dynamically sets the actions for tray icon activation.
 		Can be called while the application is running, and changes are applied immediately.
@@ -802,7 +1201,9 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.set_tray_actions(
 		>>>    {
 		>>>        TrayEvent.DoubleClick: lambda: print("Tray icon was double-clicked."),
@@ -816,12 +1217,23 @@ class _Pyloid(QApplication):
 			self.tray.activated.disconnect()  # Disconnect existing connections
 
 		self.tray_actions = actions
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
 
-		self.tray.activated.connect(lambda reason: self._tray_activated(reason))
+		self.tray.activated.connect(
+			lambda reason: self._tray_activated(
+				reason
+			)
+		)
 
-	def show_notification(self, title: str, message: str):
+	def show_notification(
+		self,
+		title: str,
+		message: str,
+	):
 		"""
 		Displays a notification in the system tray.
 		Can be called while the application is running, and the notification is displayed immediately.
@@ -835,28 +1247,63 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.show_notification(
-		...     'Update Available', 'A new update is available for download.'
+		...     'Update Available',
+		...     'A new update is available for download.',
 		... )
 		"""
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()  # Ensure the tray is initialized
 
-		self.tray.showMessage(title, message, QIcon(self.icon), 5000)
+		self.tray.showMessage(
+			title,
+			message,
+			QIcon(
+				self.icon
+			),
+			5000,
+		)
 
-	def _update_tray_icon(self):
+	def _update_tray_icon(
+		self,
+	):
 		"""
 		Updates the animation frame.
 		"""
-		if hasattr(self, 'tray') and self.icon_frames:
-			self.tray.setIcon(self.icon_frames[self.current_frame])
-			self.current_frame = (self.current_frame + 1) % len(
-				self.icon_frames
+		if (
+			hasattr(
+				self,
+				'tray',
+			)
+			and self.icon_frames
+		):
+			self.tray.setIcon(
+				self.icon_frames[
+					self.current_frame
+				]
+			)
+			self.current_frame = (
+				(
+					self.current_frame
+					+ 1
+				)
+				% len(
+					self.icon_frames
+				)
 			)
 
 	def set_tray_icon_animation(
-		self, icon_frames: List[str], interval: int = 200
+		self,
+		icon_frames: List[
+			str
+		],
+		interval: int = 200,
 	):
 		"""
 		Dynamically sets and starts the animation for the tray icon.
@@ -871,44 +1318,80 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> icon_frames = ['frame1.png', 'frame2.png', 'frame3.png']
-		>>> app.set_tray_icon_animation(icon_frames, 100)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> icon_frames = [
+		...     'frame1.png',
+		...     'frame2.png',
+		...     'frame3.png',
+		... ]
+		>>> app.set_tray_icon_animation(
+		...     icon_frames,
+		...     100,
+		... )
 		"""
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
 
 		# Remove existing icon
-		if hasattr(self, 'tray_icon'):
+		if hasattr(
+			self,
+			'tray_icon',
+		):
 			del self.tray_icon
 
 		# Stop and remove existing animation timer
 		if (
-			hasattr(self, 'animation_timer')
-			and self.animation_timer is not None
+			hasattr(
+				self,
+				'animation_timer',
+			)
+			and self.animation_timer
+			is not None
 		):
 			self.animation_timer.stop()
 			self.animation_timer.deleteLater()
 			self.animation_timer = None
 
-		self.icon_frames = [QIcon(frame) for frame in icon_frames]
+		self.icon_frames = [
+			QIcon(
+				frame
+			)
+			for frame in icon_frames
+		]
 		self.animation_interval = interval
 		self._start_tray_icon_animation()
 
-	def _start_tray_icon_animation(self):
+	def _start_tray_icon_animation(
+		self,
+	):
 		"""
 		Starts the tray icon animation.
 		"""
 		if self.icon_frames:
-			if self.animation_timer is None:
-				self.animation_timer = QTimer(self)
+			if (
+				self.animation_timer
+				is None
+			):
+				self.animation_timer = QTimer(
+					self
+				)
 				self.animation_timer.timeout.connect(
 					lambda: self._update_tray_icon()
 				)
-			self.animation_timer.start(self.animation_interval)
+			self.animation_timer.start(
+				self.animation_interval
+			)
 			self.current_frame = 0
 
-	def set_tray_tooltip(self, message: str):
+	def set_tray_tooltip(
+		self,
+		message: str,
+	):
 		"""
 		Dynamically sets the tooltip for the tray icon.
 		Can be called while the application is running, and changes are applied immediately.
@@ -920,14 +1403,31 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_tray_tooltip('Pyloid is running')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_tray_tooltip(
+		...     'Pyloid is running'
+		... )
 		"""
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
-		self.tray.setToolTip(message)
+		self.tray.setToolTip(
+			message
+		)
 
-	def set_notification_callback(self, callback: Callable[[str], None]):
+	def set_notification_callback(
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
+	):
 		"""
 		Sets the callback function to be called when a notification is clicked.
 
@@ -938,19 +1438,32 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> def on_notification_click():
 		>>>     print("Notification clicked")
-		>>> app.set_notification_callback(on_notification_click)
+		>>> app.set_notification_callback(
+		...     on_notification_click
+		... )
 		"""
-		if not hasattr(self, 'tray'):
+		if not hasattr(
+			self,
+			'tray',
+		):
 			self._init_tray()
-		self.tray.messageClicked.connect(callback)
+		self.tray.messageClicked.connect(
+			callback
+		)
 
 	###########################################################################################
 	# Monitor
 	###########################################################################################
-	def get_all_monitors(self) -> List[Monitor]:
+	def get_all_monitors(
+		self,
+	) -> List[
+		Monitor
+	]:
 		"""
 		Returns information about all connected monitors.
 
@@ -961,18 +1474,27 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> monitors = app.get_all_monitors()
 		>>> for monitor in monitors:
 		>>>     print(monitor.info())
 		"""
 		monitors = [
-			Monitor(index, screen)
-			for index, screen in enumerate(self.screens())
+			Monitor(
+				index,
+				screen,
+			)
+			for index, screen in enumerate(
+				self.screens()
+			)
 		]
 		return monitors
 
-	def get_primary_monitor(self) -> Monitor:
+	def get_primary_monitor(
+		self,
+	) -> Monitor:
 		"""
 		Returns information about the primary monitor.
 
@@ -983,17 +1505,29 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> primary_monitor = app.get_primary_monitor()
-		>>> print(primary_monitor.info())
+		>>> print(
+		...     primary_monitor.info()
+		... )
 		"""
-		primary_monitor = self.screens()[0]
-		return Monitor(0, primary_monitor)
+		primary_monitor = self.screens()[
+			0
+		]
+		return Monitor(
+			0,
+			primary_monitor,
+		)
 
 	###########################################################################################
 	# Clipboard
 	###########################################################################################
-	def set_clipboard_text(self, text):
+	def set_clipboard_text(
+		self,
+		text,
+	):
 		"""
 		Copies text to the clipboard.
 
@@ -1006,12 +1540,21 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_clipboard_text('Hello, World!')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_clipboard_text(
+		...     'Hello, World!'
+		... )
 		"""
-		self.clipboard_class.setText(text, QClipboard.Clipboard)
+		self.clipboard_class.setText(
+			text,
+			QClipboard.Clipboard,
+		)
 
-	def get_clipboard_text(self):
+	def get_clipboard_text(
+		self,
+	):
 		"""
 		Retrieves text from the clipboard.
 
@@ -1024,14 +1567,25 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> text = app.get_clipboard_text()
-		>>> print(text)
+		>>> print(
+		...     text
+		... )
 		Hello, World!
 		"""
 		return self.clipboard_class.text()
 
-	def set_clipboard_image(self, image: Union[str, bytes, os.PathLike]):
+	def set_clipboard_image(
+		self,
+		image: Union[
+			str,
+			bytes,
+			os.PathLike,
+		],
+	):
 		"""
 		Copies an image to the clipboard.
 
@@ -1044,12 +1598,23 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_clipboard_image('/path/to/image.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_clipboard_image(
+		...     '/path/to/image.png'
+		... )
 		"""
-		self.clipboard_class.setImage(QImage(image), QClipboard.Clipboard)
+		self.clipboard_class.setImage(
+			QImage(
+				image
+			),
+			QClipboard.Clipboard,
+		)
 
-	def get_clipboard_image(self):
+	def get_clipboard_image(
+		self,
+	):
 		"""
 		Retrieves an image from the clipboard.
 
@@ -1062,7 +1627,9 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> image = app.get_clipboard_image()
 		>>> if image is not None:
 		>>>     image.save("/path/to/save/image.png")
@@ -1072,7 +1639,10 @@ class _Pyloid(QApplication):
 	###########################################################################################
 	# Autostart
 	###########################################################################################
-	def set_auto_start(self, enable: bool):
+	def set_auto_start(
+		self,
+		enable: bool,
+	):
 		"""
 		Sets the application to start automatically at system startup. (set_auto_start(True) only works in production environment)
 		True only works in production environment.
@@ -1090,17 +1660,25 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_auto_start(True)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_auto_start(
+		...     True
+		... )
 		True
 		"""
 		if not enable:
-			self.auto_start.set_auto_start(False)
+			self.auto_start.set_auto_start(
+				False
+			)
 			return False
 
 		if is_production():
 			if enable:
-				self.auto_start.set_auto_start(True)
+				self.auto_start.set_auto_start(
+					True
+				)
 				return True
 		else:
 			print(
@@ -1108,7 +1686,9 @@ class _Pyloid(QApplication):
 			)
 			return None
 
-	def is_auto_start(self):
+	def is_auto_start(
+		self,
+	):
 		"""
 		Checks if the application is set to start automatically at system startup.
 
@@ -1119,9 +1699,13 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> auto_start_enabled = app.is_auto_start()
-		>>> print(auto_start_enabled)
+		>>> print(
+		...     auto_start_enabled
+		... )
 		True
 		"""
 		return self.auto_start.is_auto_start()
@@ -1129,7 +1713,10 @@ class _Pyloid(QApplication):
 	###########################################################################################
 	# File watcher
 	###########################################################################################
-	def watch_file(self, file_path: str) -> bool:
+	def watch_file(
+		self,
+		file_path: str,
+	) -> bool:
 		"""
 		Adds a file to the watch list.
 
@@ -1147,13 +1734,22 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.watch_file('/path/to/file.txt')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.watch_file(
+		...     '/path/to/file.txt'
+		... )
 		True
 		"""
-		return self.file_watcher.add_path(file_path)
+		return self.file_watcher.add_path(
+			file_path
+		)
 
-	def watch_directory(self, dir_path: str) -> bool:
+	def watch_directory(
+		self,
+		dir_path: str,
+	) -> bool:
 		"""
 		Adds a directory to the watch list.
 
@@ -1171,13 +1767,22 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.watch_directory('/path/to/directory')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.watch_directory(
+		...     '/path/to/directory'
+		... )
 		True
 		"""
-		return self.file_watcher.add_path(dir_path)
+		return self.file_watcher.add_path(
+			dir_path
+		)
 
-	def stop_watching(self, path: str) -> bool:
+	def stop_watching(
+		self,
+		path: str,
+	) -> bool:
 		"""
 		Removes a file or directory from the watch list.
 
@@ -1195,13 +1800,23 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.stop_watching('/path/to/file_or_directory')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.stop_watching(
+		...     '/path/to/file_or_directory'
+		... )
 		True
 		"""
-		return self.file_watcher.remove_path(path)
+		return self.file_watcher.remove_path(
+			path
+		)
 
-	def get_watched_paths(self) -> List[str]:
+	def get_watched_paths(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched paths.
 
@@ -1214,13 +1829,19 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_paths()
 		['/path/to/file1.txt', '/path/to/directory']
 		"""
 		return self.file_watcher.get_watched_paths()
 
-	def get_watched_files(self) -> List[str]:
+	def get_watched_files(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched files.
 
@@ -1233,13 +1854,19 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_files()
 		['/path/to/file1.txt', '/path/to/file2.txt']
 		"""
 		return self.file_watcher.get_watched_files()
 
-	def get_watched_directories(self) -> List[str]:
+	def get_watched_directories(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched directories.
 
@@ -1252,13 +1879,17 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_directories()
 		['/path/to/directory1', '/path/to/directory2']
 		"""
 		return self.file_watcher.get_watched_directories()
 
-	def remove_all_watched_paths(self) -> None:
+	def remove_all_watched_paths(
+		self,
+	) -> None:
 		"""
 		Removes all paths from the watch list.
 
@@ -1270,12 +1901,22 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.remove_all_watched_paths()
 		"""
 		self.file_watcher.remove_all_paths()
 
-	def set_file_change_callback(self, callback: Callable[[str], None]) -> None:
+	def set_file_change_callback(
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
+	) -> None:
 		"""
 		Sets the callback function to be called when a file is changed.
 
@@ -1295,13 +1936,25 @@ class _Pyloid(QApplication):
 		>>> def on_file_change(file_path):
 		>>>     print(f"File changed: {file_path}")
 		>>>
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_file_change_callback(on_file_change)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_file_change_callback(
+		...     on_file_change
+		... )
 		"""
-		self.file_watcher.file_changed.connect(callback)
+		self.file_watcher.file_changed.connect(
+			callback
+		)
 
 	def set_directory_change_callback(
-		self, callback: Callable[[str], None]
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
 	) -> None:
 		"""
 		Sets the callback function to be called when a directory is changed.
@@ -1322,17 +1975,31 @@ class _Pyloid(QApplication):
 		>>> def on_directory_change(dir_path):
 		>>>     print(f"Directory changed: {dir_path}")
 		>>>
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_directory_change_callback(on_directory_change)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_directory_change_callback(
+		...     on_directory_change
+		... )
 		"""
-		self.file_watcher.directory_changed.connect(callback)
+		self.file_watcher.directory_changed.connect(
+			callback
+		)
 
 	###########################################################################################
 	# File dialog
 	###########################################################################################
 	def open_file_dialog(
-		self, dir: Optional[str] = None, filter: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+		filter: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a file dialog to select a file to open.
 
@@ -1350,19 +2017,41 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> file_path = app.open_file_dialog(
-		...     dir='/home/user', filter='Text Files (*.txt)'
+		...     dir='/home/user',
+		...     filter='Text Files (*.txt)',
 		... )
 		>>> if file_path:
 		>>>     print("Selected file:", file_path)
 		"""
-		file_path, _ = QFileDialog.getOpenFileName(None, dir=dir, filter=filter)
-		return file_path if file_path else None
+		(
+			file_path,
+			_,
+		) = QFileDialog.getOpenFileName(
+			None,
+			dir=dir,
+			filter=filter,
+		)
+		return (
+			file_path
+			if file_path
+			else None
+		)
 
 	def save_file_dialog(
-		self, dir: Optional[str] = None, filter: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+		filter: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a file dialog to select a file to save.
 
@@ -1380,19 +2069,38 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> file_path = app.save_file_dialog(
-		...     dir='/home/user', filter='Text Files (*.txt)'
+		...     dir='/home/user',
+		...     filter='Text Files (*.txt)',
 		... )
 		>>> if file_path:
 		>>>     print("File will be saved to:", file_path)
 		"""
-		file_path, _ = QFileDialog.getSaveFileName(None, dir=dir, filter=filter)
-		return file_path if file_path else None
+		(
+			file_path,
+			_,
+		) = QFileDialog.getSaveFileName(
+			None,
+			dir=dir,
+			filter=filter,
+		)
+		return (
+			file_path
+			if file_path
+			else None
+		)
 
 	def select_directory_dialog(
-		self, dir: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a dialog to select a directory.
 
@@ -1408,18 +2116,32 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> directory_path = app.select_directory_dialog(dir='/home/user')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> directory_path = app.select_directory_dialog(
+		...     dir='/home/user'
+		... )
 		>>> if directory_path:
 		>>>     print("Selected directory:", directory_path)
 		"""
-		directory_path = QFileDialog.getExistingDirectory(None, dir=dir)
-		return directory_path if directory_path else None
+		directory_path = QFileDialog.getExistingDirectory(
+			None,
+			dir=dir,
+		)
+		return (
+			directory_path
+			if directory_path
+			else None
+		)
 
-	def _handle_color_scheme_change(self):
+	def _handle_color_scheme_change(
+		self,
+	):
 		self.theme = (
 			'dark'
-			if self.styleHints().colorScheme() == Qt.ColorScheme.Dark
+			if self.styleHints().colorScheme()
+			== Qt.ColorScheme.Dark
 			else 'light'
 		)
 
@@ -1431,10 +2153,13 @@ class _Pyloid(QApplication):
 
 		# 모든 윈도우에 변경사항 적용
 		for window in self.windows_dict.values():
-			window.web_view.page().runJavaScript(js_code)
+			window.web_view.page().runJavaScript(
+				js_code
+			)
 			window.web_view.page().setBackgroundColor(
 				Qt.GlobalColor.black
-				if self.theme == 'dark'
+				if self.theme
+				== 'dark'
 				else Qt.GlobalColor.white
 			)
 
@@ -1442,7 +2167,9 @@ class _Pyloid(QApplication):
 	# platformdirs
 	###########################################################################################
 
-	def user_data_dir(self) -> str:
+	def user_data_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user data directory path.
 
@@ -1453,14 +2180,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> data_dir = app.user_data_dir()
-		>>> print(data_dir)
+		>>> print(
+		...     data_dir
+		... )
 		'/Users/user/Library/Application Support/Pyloid-App' # Example for macOS
 		"""
 		return self.dirs.user_data_dir
 
-	def site_data_dir(self) -> str:
+	def site_data_dir(
+		self,
+	) -> str:
 		"""
 		Returns the site data directory path.
 
@@ -1471,14 +2204,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> site_data_dir = app.site_data_dir()
-		>>> print(site_data_dir)
+		>>> print(
+		...     site_data_dir
+		... )
 		'/Library/Application Support/Pyloid-App' # Example for macOS
 		"""
 		return self.dirs.site_data_dir
 
-	def user_cache_dir(self) -> str:
+	def user_cache_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user cache directory path.
 
@@ -1489,14 +2228,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> cache_dir = app.user_cache_dir()
-		>>> print(cache_dir)
+		>>> print(
+		...     cache_dir
+		... )
 		'/Users/user/Library/Caches/Pyloid-App' # Example for macOS
 		"""
 		return self.dirs.user_cache_dir
 
-	def user_log_dir(self) -> str:
+	def user_log_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user log directory path.
 
@@ -1507,14 +2252,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> log_dir = app.user_log_dir()
-		>>> print(log_dir)
+		>>> print(
+		...     log_dir
+		... )
 		'/Users/user/Library/Logs/Pyloid-App' # Example for macOS
 		"""
 		return self.dirs.user_log_dir
 
-	def user_documents_dir(self) -> str:
+	def user_documents_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user documents directory path.
 
@@ -1525,14 +2276,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> documents_dir = app.user_documents_dir()
-		>>> print(documents_dir)
+		>>> print(
+		...     documents_dir
+		... )
 		'/Users/user/Documents' # Example for macOS
 		"""
 		return self.dirs.user_documents_dir
 
-	def user_downloads_dir(self) -> str:
+	def user_downloads_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user downloads directory path.
 
@@ -1543,14 +2300,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> downloads_dir = app.user_downloads_dir()
-		>>> print(downloads_dir)
+		>>> print(
+		...     downloads_dir
+		... )
 		'/Users/user/Downloads' # Example for macOS
 		"""
 		return self.dirs.user_downloads_dir
 
-	def user_pictures_dir(self) -> str:
+	def user_pictures_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user pictures directory path.
 
@@ -1561,14 +2324,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> pictures_dir = app.user_pictures_dir()
-		>>> print(pictures_dir)
+		>>> print(
+		...     pictures_dir
+		... )
 		'/Users/user/Pictures' # Example for macOS
 		"""
 		return self.dirs.user_pictures_dir
 
-	def user_videos_dir(self) -> str:
+	def user_videos_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user videos directory path.
 
@@ -1579,14 +2348,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> videos_dir = app.user_videos_dir()
-		>>> print(videos_dir)
+		>>> print(
+		...     videos_dir
+		... )
 		'/Users/user/Movies' # Example for macOS
 		"""
 		return self.dirs.user_videos_dir
 
-	def user_music_dir(self) -> str:
+	def user_music_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user music directory path.
 
@@ -1597,14 +2372,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> music_dir = app.user_music_dir()
-		>>> print(music_dir)
+		>>> print(
+		...     music_dir
+		... )
 		'/Users/user/Music' # Example for macOS
 		"""
 		return self.dirs.user_music_dir
 
-	def user_desktop_dir(self) -> str:
+	def user_desktop_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user desktop directory path.
 
@@ -1615,14 +2396,20 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> desktop_dir = app.user_desktop_dir()
-		>>> print(desktop_dir)
+		>>> print(
+		...     desktop_dir
+		... )
 		'/Users/user/Desktop' # Example for macOS
 		"""
 		return self.dirs.user_desktop_dir
 
-	def user_runtime_dir(self) -> str:
+	def user_runtime_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user runtime directory path.
 
@@ -1633,17 +2420,30 @@ class _Pyloid(QApplication):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> runtime_dir = app.user_runtime_dir()
-		>>> print(runtime_dir)
+		>>> print(
+		...     runtime_dir
+		... )
 		'/Users/user/Library/Caches/TemporaryItems/Pyloid-App' # Example for macOS
 		"""
 		return self.dirs.user_runtime_dir
 
 
-class Pyloid(QObject):
-	command_signal = Signal(str, str, object)
-	result_signal = Signal(str, object)
+class Pyloid(
+	QObject
+):
+	command_signal = Signal(
+		str,
+		str,
+		object,
+	)
+	result_signal = Signal(
+		str,
+		object,
+	)
 
 	def __init__(
 		self,
@@ -1676,183 +2476,463 @@ class Pyloid(QObject):
 		if server:
 			server.pyloid = self
 
-		self.app = _Pyloid(self, app_name, single_instance, server, self.data)
+		self.app = _Pyloid(
+			self,
+			app_name,
+			single_instance,
+			server,
+			self.data,
+		)
 
-		self.command_signal.connect(self._handle_command)
+		self.command_signal.connect(
+			self._handle_command
+		)
 
-	@Slot(str, str, object)
-	def _handle_command(self, command_id, command_type, params):
+	@Slot(
+		str,
+		str,
+		object,
+	)
+	def _handle_command(
+		self,
+		command_id,
+		command_type,
+		params,
+	):
 		result = None
 
-		if command_type == 'set_icon':
-			result = self.app.set_icon(params['icon_path'])
+		if (
+			command_type
+			== 'set_icon'
+		):
+			result = self.app.set_icon(
+				params[
+					'icon_path'
+				]
+			)
 
-		elif command_type == 'create_window':
+		elif (
+			command_type
+			== 'create_window'
+		):
 			window = self.app.create_window(
-				title=params.get('title', ''),
-				width=params.get('width', 800),
-				height=params.get('height', 600),
-				x=params.get('x', 200),
-				y=params.get('y', 200),
-				frame=params.get('frame', True),
-				context_menu=params.get('context_menu', False),
-				dev_tools=params.get('dev_tools', False),
-				transparent=params.get('transparent', False),
+				title=params.get(
+					'title',
+					'',
+				),
+				width=params.get(
+					'width',
+					800,
+				),
+				height=params.get(
+					'height',
+					600,
+				),
+				x=params.get(
+					'x',
+					200,
+				),
+				y=params.get(
+					'y',
+					200,
+				),
+				frame=params.get(
+					'frame',
+					True,
+				),
+				context_menu=params.get(
+					'context_menu',
+					False,
+				),
+				dev_tools=params.get(
+					'dev_tools',
+					False,
+				),
+				transparent=params.get(
+					'transparent',
+					False,
+				),
 			)
 			result = window
 
-		elif command_type == 'run':
+		elif (
+			command_type
+			== 'run'
+		):
 			result = self.app.run()
 
-		elif command_type == 'get_windows':
+		elif (
+			command_type
+			== 'get_windows'
+		):
 			result = self.app.get_windows()
 
-		elif command_type == 'show_main_window':
+		elif (
+			command_type
+			== 'show_main_window'
+		):
 			result = self.app.show_main_window()
 
-		elif command_type == 'focus_main_window':
+		elif (
+			command_type
+			== 'focus_main_window'
+		):
 			result = self.app.focus_main_window()
 
-		elif command_type == 'show_and_focus_main_window':
+		elif (
+			command_type
+			== 'show_and_focus_main_window'
+		):
 			result = self.app.show_and_focus_main_window()
 
-		elif command_type == 'close_all_windows':
+		elif (
+			command_type
+			== 'close_all_windows'
+		):
 			result = self.app.close_all_windows()
 
-		elif command_type == 'quit':
+		elif (
+			command_type
+			== 'quit'
+		):
 			result = self.app.quit()
 
-		elif command_type == 'get_window_by_id':
-			result = self.app.get_window_by_id(params['window_id'])
+		elif (
+			command_type
+			== 'get_window_by_id'
+		):
+			result = self.app.get_window_by_id(
+				params[
+					'window_id'
+				]
+			)
 
-		elif command_type == 'set_tray_icon':
-			result = self.app.set_tray_icon(params['tray_icon_path'])
+		elif (
+			command_type
+			== 'set_tray_icon'
+		):
+			result = self.app.set_tray_icon(
+				params[
+					'tray_icon_path'
+				]
+			)
 
-		elif command_type == 'set_tray_menu_items':
-			result = self.app.set_tray_menu_items(params['tray_menu_items'])
+		elif (
+			command_type
+			== 'set_tray_menu_items'
+		):
+			result = self.app.set_tray_menu_items(
+				params[
+					'tray_menu_items'
+				]
+			)
 
-		elif command_type == 'set_tray_actions':
-			result = self.app.set_tray_actions(params['actions'])
+		elif (
+			command_type
+			== 'set_tray_actions'
+		):
+			result = self.app.set_tray_actions(
+				params[
+					'actions'
+				]
+			)
 
-		elif command_type == 'show_notification':
+		elif (
+			command_type
+			== 'show_notification'
+		):
 			result = self.app.show_notification(
-				params['title'], params['message']
+				params[
+					'title'
+				],
+				params[
+					'message'
+				],
 			)
 
-		elif command_type == 'set_tray_icon_animation':
+		elif (
+			command_type
+			== 'set_tray_icon_animation'
+		):
 			result = self.app.set_tray_icon_animation(
-				params['icon_frames'], params.get('interval', 200)
+				params[
+					'icon_frames'
+				],
+				params.get(
+					'interval',
+					200,
+				),
 			)
 
-		elif command_type == 'set_tray_tooltip':
-			result = self.app.set_tray_tooltip(params['message'])
+		elif (
+			command_type
+			== 'set_tray_tooltip'
+		):
+			result = self.app.set_tray_tooltip(
+				params[
+					'message'
+				]
+			)
 
-		elif command_type == 'set_notification_callback':
-			result = self.app.set_notification_callback(params['callback'])
+		elif (
+			command_type
+			== 'set_notification_callback'
+		):
+			result = self.app.set_notification_callback(
+				params[
+					'callback'
+				]
+			)
 
-		elif command_type == 'get_all_monitors':
+		elif (
+			command_type
+			== 'get_all_monitors'
+		):
 			result = self.app.get_all_monitors()
 
-		elif command_type == 'get_primary_monitor':
+		elif (
+			command_type
+			== 'get_primary_monitor'
+		):
 			result = self.app.get_primary_monitor()
 
-		elif command_type == 'set_clipboard_text':
-			result = self.app.set_clipboard_text(params['text'])
+		elif (
+			command_type
+			== 'set_clipboard_text'
+		):
+			result = self.app.set_clipboard_text(
+				params[
+					'text'
+				]
+			)
 
-		elif command_type == 'get_clipboard_text':
+		elif (
+			command_type
+			== 'get_clipboard_text'
+		):
 			result = self.app.get_clipboard_text()
 
-		elif command_type == 'set_clipboard_image':
-			result = self.app.set_clipboard_image(params['image'])
+		elif (
+			command_type
+			== 'set_clipboard_image'
+		):
+			result = self.app.set_clipboard_image(
+				params[
+					'image'
+				]
+			)
 
-		elif command_type == 'get_clipboard_image':
+		elif (
+			command_type
+			== 'get_clipboard_image'
+		):
 			result = self.app.get_clipboard_image()
 
-		elif command_type == 'set_auto_start':
-			result = self.app.set_auto_start(params['enable'])
+		elif (
+			command_type
+			== 'set_auto_start'
+		):
+			result = self.app.set_auto_start(
+				params[
+					'enable'
+				]
+			)
 
-		elif command_type == 'is_auto_start':
+		elif (
+			command_type
+			== 'is_auto_start'
+		):
 			result = self.app.is_auto_start()
 
-		elif command_type == 'watch_file':
-			result = self.app.watch_file(params['file_path'])
+		elif (
+			command_type
+			== 'watch_file'
+		):
+			result = self.app.watch_file(
+				params[
+					'file_path'
+				]
+			)
 
-		elif command_type == 'watch_directory':
-			result = self.app.watch_directory(params['dir_path'])
+		elif (
+			command_type
+			== 'watch_directory'
+		):
+			result = self.app.watch_directory(
+				params[
+					'dir_path'
+				]
+			)
 
-		elif command_type == 'stop_watching':
-			result = self.app.stop_watching(params['path'])
+		elif (
+			command_type
+			== 'stop_watching'
+		):
+			result = self.app.stop_watching(
+				params[
+					'path'
+				]
+			)
 
-		elif command_type == 'get_watched_paths':
+		elif (
+			command_type
+			== 'get_watched_paths'
+		):
 			result = self.app.get_watched_paths()
 
-		elif command_type == 'get_watched_files':
+		elif (
+			command_type
+			== 'get_watched_files'
+		):
 			result = self.app.get_watched_files()
 
-		elif command_type == 'get_watched_directories':
+		elif (
+			command_type
+			== 'get_watched_directories'
+		):
 			result = self.app.get_watched_directories()
 
-		elif command_type == 'remove_all_watched_paths':
+		elif (
+			command_type
+			== 'remove_all_watched_paths'
+		):
 			result = self.app.remove_all_watched_paths()
 
-		elif command_type == 'set_file_change_callback':
-			result = self.app.set_file_change_callback(params['callback'])
+		elif (
+			command_type
+			== 'set_file_change_callback'
+		):
+			result = self.app.set_file_change_callback(
+				params[
+					'callback'
+				]
+			)
 
-		elif command_type == 'set_directory_change_callback':
-			result = self.app.set_directory_change_callback(params['callback'])
+		elif (
+			command_type
+			== 'set_directory_change_callback'
+		):
+			result = self.app.set_directory_change_callback(
+				params[
+					'callback'
+				]
+			)
 
-		elif command_type == 'open_file_dialog':
+		elif (
+			command_type
+			== 'open_file_dialog'
+		):
 			result = self.app.open_file_dialog(
-				params.get('dir'), params.get('filter')
+				params.get(
+					'dir'
+				),
+				params.get(
+					'filter'
+				),
 			)
 
-		elif command_type == 'save_file_dialog':
+		elif (
+			command_type
+			== 'save_file_dialog'
+		):
 			result = self.app.save_file_dialog(
-				params.get('dir'), params.get('filter')
+				params.get(
+					'dir'
+				),
+				params.get(
+					'filter'
+				),
 			)
 
-		elif command_type == 'select_directory_dialog':
-			result = self.app.select_directory_dialog(params.get('dir'))
+		elif (
+			command_type
+			== 'select_directory_dialog'
+		):
+			result = self.app.select_directory_dialog(
+				params.get(
+					'dir'
+				)
+			)
 
 		else:
 			return None
 
-		self.result_signal.emit(command_id, result)
+		self.result_signal.emit(
+			command_id,
+			result,
+		)
 
 	def execute_command(
-		self, command_type: str, params: object, timeout: Optional[int] = None
+		self,
+		command_type: str,
+		params: object,
+		timeout: Optional[
+			int
+		] = None,
 	):
-		command_id = str(uuid.uuid4())
+		command_id = str(
+			uuid.uuid4()
+		)
 
-		result_data = [None]
+		result_data = [
+			None
+		]
 		loop = QEventLoop()
 
 		if timeout:
 			timer = QTimer()
-			timer.setSingleShot(True)
-			timer.timeout.connect(loop.quit)
-			timer.start(timeout)
+			timer.setSingleShot(
+				True
+			)
+			timer.timeout.connect(
+				loop.quit
+			)
+			timer.start(
+				timeout
+			)
 
-		def on_result(received_id, result):
-			if received_id == command_id:
-				result_data[0] = result
+		def on_result(
+			received_id,
+			result,
+		):
+			if (
+				received_id
+				== command_id
+			):
+				result_data[
+					0
+				] = result
 				loop.quit()
 
-		self.result_signal.connect(on_result, Qt.QueuedConnection)
+		self.result_signal.connect(
+			on_result,
+			Qt.QueuedConnection,
+		)
 
-		self.command_signal.emit(command_id, command_type, params)
+		self.command_signal.emit(
+			command_id,
+			command_type,
+			params,
+		)
 
 		loop.exec()
 
-		self.result_signal.disconnect(on_result)
+		self.result_signal.disconnect(
+			on_result
+		)
 
-		return result_data[0]
+		return result_data[
+			0
+		]
 
 	# -------------------------------------------------------------------
 	# Execute_command 래퍼 (wrapper) 함수들
 	# -------------------------------------------------------------------
 
-	def set_icon(self, icon_path: str) -> bool:
+	def set_icon(
+		self,
+		icon_path: str,
+	) -> bool:
 		"""
 		Dynamically sets the application's icon.
 
@@ -1863,10 +2943,19 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_icon('icons/icon.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_icon(
+		...     'icons/icon.png'
+		... )
 		"""
-		return self.execute_command('set_icon', {'icon_path': icon_path})
+		return self.execute_command(
+			'set_icon',
+			{
+				'icon_path': icon_path
+			},
+		)
 
 	def create_window(
 		self,
@@ -1911,9 +3000,13 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> window_id = app.create_window(
-		...     title='New Window', width=1024, height=768
+		...     title='New Window',
+		...     width=1024,
+		...     height=768,
 		... )
 		"""
 		params = {
@@ -1927,20 +3020,32 @@ class Pyloid(QObject):
 			'dev_tools': dev_tools,
 			'transparent': transparent,
 		}
-		return self.execute_command('create_window', params)
+		return self.execute_command(
+			'create_window',
+			params,
+		)
 
-	def run(self) -> None:
+	def run(
+		self,
+	) -> None:
 		"""
 		Runs the application event loop.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.run()
 		"""
 		return self.app.run()
 
-	def get_windows(self) -> Dict[str, BrowserWindow]:
+	def get_windows(
+		self,
+	) -> Dict[
+		str,
+		BrowserWindow,
+	]:
 		"""
 		Returns a list of all browser windows.
 
@@ -1951,67 +3056,112 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> windows = app.get_windows()
 		"""
-		return self.execute_command('get_windows', {})
+		return self.execute_command(
+			'get_windows',
+			{},
+		)
 
-	def show_main_window(self) -> None:
+	def show_main_window(
+		self,
+	) -> None:
 		"""
 		Shows and focuses the first window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.show_main_window()
 		"""
-		return self.execute_command('show_main_window', {})
+		return self.execute_command(
+			'show_main_window',
+			{},
+		)
 
-	def focus_main_window(self) -> None:
+	def focus_main_window(
+		self,
+	) -> None:
 		"""
 		Focuses the first window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.focus_main_window()
 		"""
-		return self.execute_command('focus_main_window', {})
+		return self.execute_command(
+			'focus_main_window',
+			{},
+		)
 
-	def show_and_focus_main_window(self) -> None:
+	def show_and_focus_main_window(
+		self,
+	) -> None:
 		"""
 		Shows and focuses the first window.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.show_and_focus_main_window()
 		"""
-		return self.execute_command('show_and_focus_main_window', {})
+		return self.execute_command(
+			'show_and_focus_main_window',
+			{},
+		)
 
-	def close_all_windows(self) -> None:
+	def close_all_windows(
+		self,
+	) -> None:
 		"""
 		Closes all windows.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.close_all_windows()
 		"""
-		return self.execute_command('close_all_windows', {})
+		return self.execute_command(
+			'close_all_windows',
+			{},
+		)
 
-	def quit(self) -> None:
+	def quit(
+		self,
+	) -> None:
 		"""
 		Quits the application.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.quit()
 		"""
-		return self.execute_command('quit', {})
+		return self.execute_command(
+			'quit',
+			{},
+		)
 
-	def get_window_by_id(self, window_id: str) -> Optional[BrowserWindow]:
+	def get_window_by_id(
+		self,
+		window_id: str,
+	) -> Optional[
+		BrowserWindow
+	]:
 		"""
 		Returns the window with the given ID.
 
@@ -2027,14 +3177,24 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> window = app.get_window_by_id('some-window-id')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> window = app.get_window_by_id(
+		...     'some-window-id'
+		... )
 		"""
 		return self.execute_command(
-			'get_window_by_id', {'window_id': window_id}
+			'get_window_by_id',
+			{
+				'window_id': window_id
+			},
 		)
 
-	def set_tray_icon(self, tray_icon_path: str) -> bool:
+	def set_tray_icon(
+		self,
+		tray_icon_path: str,
+	) -> bool:
 		"""
 		Dynamically sets the tray icon.
 
@@ -2045,15 +3205,31 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_tray_icon('icons/icon.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_tray_icon(
+		...     'icons/icon.png'
+		... )
 		"""
 		return self.execute_command(
-			'set_tray_icon', {'tray_icon_path': tray_icon_path}
+			'set_tray_icon',
+			{
+				'tray_icon_path': tray_icon_path
+			},
 		)
 
 	def set_tray_menu_items(
-		self, tray_menu_items: List[Dict[str, Union[str, Callable]]]
+		self,
+		tray_menu_items: List[
+			Dict[
+				str,
+				Union[
+					str,
+					Callable,
+				],
+			]
+		],
 	) -> bool:
 		"""
 		Dynamically sets the tray menu items.
@@ -2065,16 +3241,29 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> menu_items = [{"label": "Open", "callback": lambda: print("Open clicked")},
 		>>>               {"label": "Exit", "callback": app.quit}]
-		>>> app.set_tray_menu_items(menu_items)
+		>>> app.set_tray_menu_items(
+		...     menu_items
+		... )
 		"""
 		return self.execute_command(
-			'set_tray_menu_items', {'tray_menu_items': tray_menu_items}
+			'set_tray_menu_items',
+			{
+				'tray_menu_items': tray_menu_items
+			},
 		)
 
-	def set_tray_actions(self, actions: Dict[TrayEvent, Callable]) -> bool:
+	def set_tray_actions(
+		self,
+		actions: Dict[
+			TrayEvent,
+			Callable,
+		],
+	) -> bool:
 		"""
 		Dynamically sets the actions for tray icon activation.
 
@@ -2085,14 +3274,29 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.set_tray_actions(
-		...     {TrayEvent.DoubleClick: lambda: print('Double-clicked')}
+		...     {
+		...         TrayEvent.DoubleClick: lambda: print(
+		...             'Double-clicked'
+		...         )
+		...     }
 		... )
 		"""
-		return self.execute_command('set_tray_actions', {'actions': actions})
+		return self.execute_command(
+			'set_tray_actions',
+			{
+				'actions': actions
+			},
+		)
 
-	def show_notification(self, title: str, message: str) -> bool:
+	def show_notification(
+		self,
+		title: str,
+		message: str,
+	) -> bool:
 		"""
 		Displays a notification in the system tray.
 
@@ -2105,17 +3309,28 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.show_notification(
-		...     'Update Available', 'A new update is available for download.'
+		...     'Update Available',
+		...     'A new update is available for download.',
 		... )
 		"""
 		return self.execute_command(
-			'show_notification', {'title': title, 'message': message}
+			'show_notification',
+			{
+				'title': title,
+				'message': message,
+			},
 		)
 
 	def set_tray_icon_animation(
-		self, icon_frames: List[str], interval: int = 200
+		self,
+		icon_frames: List[
+			str
+		],
+		interval: int = 200,
 	) -> bool:
 		"""
 		Dynamically sets and starts the animation for the tray icon.
@@ -2129,17 +3344,30 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.set_tray_icon_animation(
-		...     ['frame1.png', 'frame2.png', 'frame3.png'], 100
+		...     [
+		...         'frame1.png',
+		...         'frame2.png',
+		...         'frame3.png',
+		...     ],
+		...     100,
 		... )
 		"""
 		return self.execute_command(
 			'set_tray_icon_animation',
-			{'icon_frames': icon_frames, 'interval': interval},
+			{
+				'icon_frames': icon_frames,
+				'interval': interval,
+			},
 		)
 
-	def set_tray_tooltip(self, message: str) -> bool:
+	def set_tray_tooltip(
+		self,
+		message: str,
+	) -> bool:
 		"""
 		Dynamically sets the tooltip for the tray icon.
 
@@ -2150,13 +3378,28 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_tray_tooltip('Pyloid is running')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_tray_tooltip(
+		...     'Pyloid is running'
+		... )
 		"""
-		return self.execute_command('set_tray_tooltip', {'message': message})
+		return self.execute_command(
+			'set_tray_tooltip',
+			{
+				'message': message
+			},
+		)
 
 	def set_notification_callback(
-		self, callback: Callable[[str], None]
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
 	) -> bool:
 		"""
 		Sets the callback function to be called when a notification is clicked.
@@ -2168,16 +3411,27 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> def on_notification_click():
 		>>>     print("Notification clicked")
-		>>> app.set_notification_callback(on_notification_click)
+		>>> app.set_notification_callback(
+		...     on_notification_click
+		... )
 		"""
 		return self.execute_command(
-			'set_notification_callback', {'callback': callback}
+			'set_notification_callback',
+			{
+				'callback': callback
+			},
 		)
 
-	def get_all_monitors(self) -> List[Monitor]:
+	def get_all_monitors(
+		self,
+	) -> List[
+		Monitor
+	]:
 		"""
 		Returns information about all connected monitors.
 
@@ -2188,14 +3442,21 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> monitors = app.get_all_monitors()
 		>>> for monitor in monitors:
 		>>>     print(monitor.info())
 		"""
-		return self.execute_command('get_all_monitors', {})
+		return self.execute_command(
+			'get_all_monitors',
+			{},
+		)
 
-	def get_primary_monitor(self) -> Monitor:
+	def get_primary_monitor(
+		self,
+	) -> Monitor:
 		"""
 		Returns information about the primary monitor.
 
@@ -2206,13 +3467,23 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> primary_monitor = app.get_primary_monitor()
-		>>> print(primary_monitor.info())
+		>>> print(
+		...     primary_monitor.info()
+		... )
 		"""
-		return self.execute_command('get_primary_monitor', {})
+		return self.execute_command(
+			'get_primary_monitor',
+			{},
+		)
 
-	def set_clipboard_text(self, text: str) -> None:
+	def set_clipboard_text(
+		self,
+		text: str,
+	) -> None:
 		"""
 		Copies text to the clipboard.
 
@@ -2223,12 +3494,23 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_clipboard_text('Hello, World!')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_clipboard_text(
+		...     'Hello, World!'
+		... )
 		"""
-		return self.execute_command('set_clipboard_text', {'text': text})
+		return self.execute_command(
+			'set_clipboard_text',
+			{
+				'text': text
+			},
+		)
 
-	def get_clipboard_text(self) -> str:
+	def get_clipboard_text(
+		self,
+	) -> str:
 		"""
 		Retrieves text from the clipboard.
 
@@ -2239,14 +3521,26 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> text = app.get_clipboard_text()
-		>>> print(text)
+		>>> print(
+		...     text
+		... )
 		"""
-		return self.execute_command('get_clipboard_text', {})
+		return self.execute_command(
+			'get_clipboard_text',
+			{},
+		)
 
 	def set_clipboard_image(
-		self, image: Union[str, bytes, os.PathLike]
+		self,
+		image: Union[
+			str,
+			bytes,
+			os.PathLike,
+		],
 	) -> None:
 		"""
 		Copies an image to the clipboard.
@@ -2258,12 +3552,23 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_clipboard_image('/path/to/image.png')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_clipboard_image(
+		...     '/path/to/image.png'
+		... )
 		"""
-		return self.execute_command('set_clipboard_image', {'image': image})
+		return self.execute_command(
+			'set_clipboard_image',
+			{
+				'image': image
+			},
+		)
 
-	def get_clipboard_image(self) -> QImage:
+	def get_clipboard_image(
+		self,
+	) -> QImage:
 		"""
 		Retrieves an image from the clipboard.
 
@@ -2274,14 +3579,25 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> image = app.get_clipboard_image()
 		>>> if image is not None:
 		>>>     image.save("/path/to/save/image.png")
 		"""
-		return self.execute_command('get_clipboard_image', {})
+		return self.execute_command(
+			'get_clipboard_image',
+			{},
+		)
 
-	def set_auto_start(self, enable: bool) -> Union[bool, None]:
+	def set_auto_start(
+		self,
+		enable: bool,
+	) -> Union[
+		bool,
+		None,
+	]:
 		"""
 		Sets the application to start automatically at system startup.
 
@@ -2297,12 +3613,23 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_auto_start(True)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_auto_start(
+		...     True
+		... )
 		"""
-		return self.execute_command('set_auto_start', {'enable': enable})
+		return self.execute_command(
+			'set_auto_start',
+			{
+				'enable': enable
+			},
+		)
 
-	def is_auto_start(self) -> bool:
+	def is_auto_start(
+		self,
+	) -> bool:
 		"""
 		Checks if the application is set to start automatically at system startup.
 
@@ -2313,13 +3640,23 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> auto_start_enabled = app.is_auto_start()
-		>>> print(auto_start_enabled)
+		>>> print(
+		...     auto_start_enabled
+		... )
 		"""
-		return self.execute_command('is_auto_start', {})
+		return self.execute_command(
+			'is_auto_start',
+			{},
+		)
 
-	def watch_file(self, file_path: str) -> bool:
+	def watch_file(
+		self,
+		file_path: str,
+	) -> bool:
 		"""
 		Adds a file to the watch list.
 
@@ -2335,12 +3672,24 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.watch_file('/path/to/file.txt')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.watch_file(
+		...     '/path/to/file.txt'
+		... )
 		"""
-		return self.execute_command('watch_file', {'file_path': file_path})
+		return self.execute_command(
+			'watch_file',
+			{
+				'file_path': file_path
+			},
+		)
 
-	def watch_directory(self, dir_path: str) -> bool:
+	def watch_directory(
+		self,
+		dir_path: str,
+	) -> bool:
 		"""
 		Adds a directory to the watch list.
 
@@ -2356,12 +3705,24 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.watch_directory('/path/to/directory')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.watch_directory(
+		...     '/path/to/directory'
+		... )
 		"""
-		return self.execute_command('watch_directory', {'dir_path': dir_path})
+		return self.execute_command(
+			'watch_directory',
+			{
+				'dir_path': dir_path
+			},
+		)
 
-	def stop_watching(self, path: str) -> bool:
+	def stop_watching(
+		self,
+		path: str,
+	) -> bool:
 		"""
 		Removes a file or directory from the watch list.
 
@@ -2377,12 +3738,25 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.stop_watching('/path/to/file_or_directory')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.stop_watching(
+		...     '/path/to/file_or_directory'
+		... )
 		"""
-		return self.execute_command('stop_watching', {'path': path})
+		return self.execute_command(
+			'stop_watching',
+			{
+				'path': path
+			},
+		)
 
-	def get_watched_paths(self) -> List[str]:
+	def get_watched_paths(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched paths.
 
@@ -2393,13 +3767,22 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_paths()
 		['/path/to/file1.txt', '/path/to/directory']
 		"""
-		return self.execute_command('get_watched_paths', {})
+		return self.execute_command(
+			'get_watched_paths',
+			{},
+		)
 
-	def get_watched_files(self) -> List[str]:
+	def get_watched_files(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched files.
 
@@ -2410,13 +3793,22 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_files()
 		['/path/to/file1.txt', '/path/to/file2.txt']
 		"""
-		return self.execute_command('get_watched_files', {})
+		return self.execute_command(
+			'get_watched_files',
+			{},
+		)
 
-	def get_watched_directories(self) -> List[str]:
+	def get_watched_directories(
+		self,
+	) -> List[
+		str
+	]:
 		"""
 		Returns all currently watched directories.
 
@@ -2427,24 +3819,44 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.get_watched_directories()
 		['/path/to/directory1', '/path/to/directory2']
 		"""
-		return self.execute_command('get_watched_directories', {})
+		return self.execute_command(
+			'get_watched_directories',
+			{},
+		)
 
-	def remove_all_watched_paths(self) -> None:
+	def remove_all_watched_paths(
+		self,
+	) -> None:
 		"""
 		Removes all paths from the watch list.
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> app.remove_all_watched_paths()
 		"""
-		return self.execute_command('remove_all_watched_paths', {})
+		return self.execute_command(
+			'remove_all_watched_paths',
+			{},
+		)
 
-	def set_file_change_callback(self, callback: Callable[[str], None]) -> None:
+	def set_file_change_callback(
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
+	) -> None:
 		"""
 		Sets the callback function to be called when a file is changed.
 
@@ -2458,15 +3870,28 @@ class Pyloid(QObject):
 		>>> def on_file_change(file_path):
 		>>>     print(f"File changed: {file_path}")
 		>>>
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_file_change_callback(on_file_change)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_file_change_callback(
+		...     on_file_change
+		... )
 		"""
 		return self.execute_command(
-			'set_file_change_callback', {'callback': callback}
+			'set_file_change_callback',
+			{
+				'callback': callback
+			},
 		)
 
 	def set_directory_change_callback(
-		self, callback: Callable[[str], None]
+		self,
+		callback: Callable[
+			[
+				str
+			],
+			None,
+		],
 	) -> None:
 		"""
 		Sets the callback function to be called when a directory is changed.
@@ -2481,16 +3906,31 @@ class Pyloid(QObject):
 		>>> def on_directory_change(dir_path):
 		>>>     print(f"Directory changed: {dir_path}")
 		>>>
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> app.set_directory_change_callback(on_directory_change)
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> app.set_directory_change_callback(
+		...     on_directory_change
+		... )
 		"""
 		return self.execute_command(
-			'set_directory_change_callback', {'callback': callback}
+			'set_directory_change_callback',
+			{
+				'callback': callback
+			},
 		)
 
 	def open_file_dialog(
-		self, dir: Optional[str] = None, filter: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+		filter: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a file dialog to select a file to open.
 
@@ -2508,18 +3948,33 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> file_path = app.open_file_dialog(
-		...     dir='/home/user', filter='Text Files (*.txt)'
+		...     dir='/home/user',
+		...     filter='Text Files (*.txt)',
 		... )
 		"""
 		return self.execute_command(
-			'open_file_dialog', {'dir': dir, 'filter': filter}
+			'open_file_dialog',
+			{
+				'dir': dir,
+				'filter': filter,
+			},
 		)
 
 	def save_file_dialog(
-		self, dir: Optional[str] = None, filter: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+		filter: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a file dialog to select a file to save.
 
@@ -2537,18 +3992,30 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> file_path = app.save_file_dialog(
-		...     dir='/home/user', filter='Text Files (*.txt)'
+		...     dir='/home/user',
+		...     filter='Text Files (*.txt)',
 		... )
 		"""
 		return self.execute_command(
-			'save_file_dialog', {'dir': dir, 'filter': filter}
+			'save_file_dialog',
+			{
+				'dir': dir,
+				'filter': filter,
+			},
 		)
 
 	def select_directory_dialog(
-		self, dir: Optional[str] = None
-	) -> Optional[str]:
+		self,
+		dir: Optional[
+			str
+		] = None,
+	) -> Optional[
+		str
+	]:
 		"""
 		Opens a dialog to select a directory.
 
@@ -2564,14 +4031,25 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> directory_path = app.select_directory_dialog(dir='/home/user')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> directory_path = app.select_directory_dialog(
+		...     dir='/home/user'
+		... )
 		"""
-		return self.execute_command('select_directory_dialog', {'dir': dir})
+		return self.execute_command(
+			'select_directory_dialog',
+			{
+				'dir': dir
+			},
+		)
 
 	# --- Add platformdirs wrapper functions ---
 
-	def user_data_dir(self) -> str:
+	def user_data_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user data directory path.
 
@@ -2582,14 +4060,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> data_dir = app.user_data_dir()
-		>>> print(data_dir)
+		>>> print(
+		...     data_dir
+		... )
 		'/Users/user/Library/Application Support/Pyloid-App' # Example for macOS
 		"""
 		return self.app.user_data_dir()
 
-	def site_data_dir(self) -> str:
+	def site_data_dir(
+		self,
+	) -> str:
 		"""
 		Returns the site data directory path.
 
@@ -2600,14 +4084,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> site_data_dir = app.site_data_dir()
-		>>> print(site_data_dir)
+		>>> print(
+		...     site_data_dir
+		... )
 		'/Library/Application Support/Pyloid-App' # Example for macOS
 		"""
 		return self.app.site_data_dir()
 
-	def user_cache_dir(self) -> str:
+	def user_cache_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user cache directory path.
 
@@ -2618,14 +4108,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> cache_dir = app.user_cache_dir()
-		>>> print(cache_dir)
+		>>> print(
+		...     cache_dir
+		... )
 		'/Users/user/Library/Caches/Pyloid-App' # Example for macOS
 		"""
 		return self.app.user_cache_dir()
 
-	def user_log_dir(self) -> str:
+	def user_log_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user log directory path.
 
@@ -2636,14 +4132,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> log_dir = app.user_log_dir()
-		>>> print(log_dir)
+		>>> print(
+		...     log_dir
+		... )
 		'/Users/user/Library/Logs/Pyloid-App' # Example for macOS
 		"""
 		return self.app.user_log_dir()
 
-	def user_documents_dir(self) -> str:
+	def user_documents_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user documents directory path.
 
@@ -2654,14 +4156,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> documents_dir = app.user_documents_dir()
-		>>> print(documents_dir)
+		>>> print(
+		...     documents_dir
+		... )
 		'/Users/user/Documents' # Example for macOS
 		"""
 		return self.app.user_documents_dir()
 
-	def user_downloads_dir(self) -> str:
+	def user_downloads_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user downloads directory path.
 
@@ -2672,14 +4180,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> downloads_dir = app.user_downloads_dir()
-		>>> print(downloads_dir)
+		>>> print(
+		...     downloads_dir
+		... )
 		'/Users/user/Downloads' # Example for macOS
 		"""
 		return self.app.user_downloads_dir()
 
-	def user_pictures_dir(self) -> str:
+	def user_pictures_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user pictures directory path.
 
@@ -2690,14 +4204,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> pictures_dir = app.user_pictures_dir()
-		>>> print(pictures_dir)
+		>>> print(
+		...     pictures_dir
+		... )
 		'/Users/user/Pictures' # Example for macOS
 		"""
 		return self.app.user_pictures_dir()
 
-	def user_videos_dir(self) -> str:
+	def user_videos_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user videos directory path.
 
@@ -2708,14 +4228,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> videos_dir = app.user_videos_dir()
-		>>> print(videos_dir)
+		>>> print(
+		...     videos_dir
+		... )
 		'/Users/user/Movies' # Example for macOS
 		"""
 		return self.app.user_videos_dir()
 
-	def user_music_dir(self) -> str:
+	def user_music_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user music directory path.
 
@@ -2726,14 +4252,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> music_dir = app.user_music_dir()
-		>>> print(music_dir)
+		>>> print(
+		...     music_dir
+		... )
 		'/Users/user/Music' # Example for macOS
 		"""
 		return self.app.user_music_dir()
 
-	def user_desktop_dir(self) -> str:
+	def user_desktop_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user desktop directory path.
 
@@ -2744,14 +4276,20 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> desktop_dir = app.user_desktop_dir()
-		>>> print(desktop_dir)
+		>>> print(
+		...     desktop_dir
+		... )
 		'/Users/user/Desktop' # Example for macOS
 		"""
 		return self.app.user_desktop_dir()
 
-	def user_runtime_dir(self) -> str:
+	def user_runtime_dir(
+		self,
+	) -> str:
 		"""
 		Returns the user runtime directory path.
 
@@ -2762,16 +4300,24 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
 		>>> runtime_dir = app.user_runtime_dir()
-		>>> print(runtime_dir)
+		>>> print(
+		...     runtime_dir
+		... )
 		'/Users/user/Library/Caches/TemporaryItems/Pyloid-App' # Example for macOS
 		"""
 		return self.app.user_runtime_dir()
 
 	# --- Add store wrapper functions ---
 
-	def store(self, path: str, user_data_dir: bool = True) -> Store:
+	def store(
+		self,
+		path: str,
+		user_data_dir: bool = True,
+	) -> Store:
 		"""
 		Returns a Store instance for the given path.
 
@@ -2789,13 +4335,29 @@ class Pyloid(QObject):
 
 		Examples
 		--------
-		>>> app = Pyloid(app_name='Pyloid-App')
-		>>> store = app.store('store.json')
-		>>> store.set('key', 'value')
+		>>> app = Pyloid(
+		...     app_name='Pyloid-App'
+		... )
+		>>> store = app.store(
+		...     'store.json'
+		... )
+		>>> store.set(
+		...     'key',
+		...     'value',
+		... )
 		True
-		>>> print(store.get('key'))
+		>>> print(
+		...     store.get(
+		...         'key'
+		...     )
+		... )
 		'value'
 		"""
 		if user_data_dir:
-			path = os.path.join(self.app.user_data_dir(), path)
-		return Store(path)
+			path = os.path.join(
+				self.app.user_data_dir(),
+				path,
+			)
+		return Store(
+			path
+		)
