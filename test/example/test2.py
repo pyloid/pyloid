@@ -1,9 +1,9 @@
 from pyloid import Pyloid
 
-app = Pyloid(app_name="pyloid-app")
+app = Pyloid(app_name='pyloid-app')
 
 window = app.create_window(
-    "border-radius and transparent", frame=False, width=500, height=500
+	'border-radius and transparent', frame=False, width=500, height=500
 )
 
 html = """

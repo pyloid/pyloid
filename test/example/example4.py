@@ -2,7 +2,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-html = '''
+html = """
 <!DOCTYPE html>
 <html>
   <body>
@@ -10,7 +10,7 @@ html = '''
     <textarea rows="5" cols="50" placeholder="Type in Korean here..."></textarea>
   </body>
 </html>
-'''
+"""
 
 app = QApplication(sys.argv)
 view = QWebEngineView()
