@@ -39,7 +39,7 @@ npm create pyloid-app@latest
 
 ## Documentation 📚
 
-[Pyloid Documentation](https://docs.pyloid.com/)
+[Pyloid Documentation](https://pyloid.com/)
 
 ## License
 
