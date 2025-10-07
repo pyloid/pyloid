@@ -9,29 +9,18 @@
 ## 💡 Key Features
 
 - **All Frontend Frameworks** are supported
+- **All Backend Frameworks** are supported
 - **All features necessary** for a desktop application are implemented
-- Through thread-safe implementation, it seamlessly **integrates with any Python framework**
-- **RPC** between Python and JavaScript
-- Single Instance Application / Multi Instance Application Support
-- Multi-Window Application Support
-- Clean and Intuitive Code Structure
-- **Cross-Platform Support**
-- Window Customization
-- **Detailed Numpy-style Docstrings**
+- **Cross-Platform Support** (Windows, macOS, Linux)
+- **Many Built-in Tools** (Builder, Server, Tray, Store, Timer, Monitor, Optimizer, etc.)
 
-## 🚀 Getting Started
-
-### [Prerequisites](https://docs.pyloid.com/getting-started/prerequisites)
-
-- Node.js
-- Python
-- uv
-
-### [Create Project](https://docs.pyloid.com/getting-started/create-pyloid-app)
+## Getting Started
 
 ```bash
 npm create pyloid-app@latest
 ```
+
+go to [Pyloid](https://pyloid.com/) for more information.
 
 ## Discord 🎉
 
