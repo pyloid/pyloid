@@ -4,7 +4,7 @@
 
 ![example image](example.png)
 
-<h2 align="center" style="font-size: 28px;"><b>Pyloid: Electron for Python Developer • Web-based desktop app framework</b></h2>
+<h2 align="center" style="font-size: 28px;"><b>Pyloid: Electron for Python Developer • Modern Web-based desktop app framework</b></h2>
 
 ## 💡 Key Features
 
