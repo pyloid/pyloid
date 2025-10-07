@@ -44,8 +44,8 @@ from PySide6.QtWidgets import (
 from .custom.titlebar import (
 	CustomTitleBar,
 )
-from .js_api.base import (
-	BaseAPI,
+from .base_ipc.base import (
+	BaseIPC,
 )
 from PySide6.QtGui import (
 	QPixmap,
@@ -58,10 +58,14 @@ from PySide6.QtWidgets import (
 from typing import (
 	TYPE_CHECKING,
 	Any,
+	List,
 )
 from PySide6.QtWebEngineCore import (
 	QWebEngineSettings,
 	# QWebEngineDesktopMediaRequest, # 6.8.3 부터
+)
+from .ipc import (
+	PyloidIPC,
 )
 
 # from .url_interceptor import ServerUrlInterceptor
@@ -404,8 +408,8 @@ class _BrowserWindow:
 		frame: bool = True,
 		context_menu: bool = False,
 		dev_tools: bool = False,
-		# js_apis: List[PyloidAPI] = [],
-		transparent: bool = False,
+  		transparent: bool = False,
+		IPCs: List[PyloidIPC] = [],
 	):
 		###########################################################################################
 		self.id = str(uuid.uuid4())  # Generate unique ID
@@ -429,8 +433,9 @@ class _BrowserWindow:
 		self.context_menu = context_menu
 		self.dev_tools = dev_tools
 
-		self.js_apis = [
-			BaseAPI(
+		# Default IPC
+		self.IPCs = [
+			BaseIPC(
 				self.id,
 				self.app.data,
 				self.app,
@@ -438,8 +443,11 @@ class _BrowserWindow:
 			)
 		]
 
-		# for js_api in js_apis:
-		#     self.js_apis.append(js_api)
+		for ipc in IPCs:
+			ipc.window_id: str = self.id
+			ipc.window: 'BrowserWindow' = self
+			ipc.pyloid: 'Pyloid' = self.app.pyloid_wrapper
+			self.IPCs.append(ipc)
 
 		self.shortcuts = {}
 		self.close_on_load = True
@@ -639,18 +647,18 @@ class _BrowserWindow:
 		# Set up QWebChannel
 		self.channel = QWebChannel()
 
-		# Register additional JS APIs
-		if self.js_apis:
-			for js_api in self.js_apis:
-				if js_api.__class__.__name__ == 'BaseAPI':
+		# Register additional IPCs
+		if self.IPCs:
+			for ipc in self.IPCs:
+				if ipc.__class__.__name__ == 'BaseIPC':
 					self.channel.registerObject(
 						'__PYLOID__',
-						js_api,
+						ipc,
 					)
 				else:
 					self.channel.registerObject(
-						js_api.__class__.__name__,
-						js_api,
+						ipc.__class__.__name__,
+						ipc,
 					)
 
 		self.web_view.page().setWebChannel(self.channel)
@@ -673,7 +681,7 @@ class _BrowserWindow:
 		ok,
 	):
 		"""Handles the event when the web page finishes loading."""
-		if ok and self.js_apis:
+		if ok and self.IPCs:
 			# Load qwebchannel.js
 			qwebchannel_js = QFile('://qtwebchannel/qwebchannel.js')
 			if qwebchannel_js.open(QFile.ReadOnly):
@@ -722,6 +730,10 @@ class _BrowserWindow:
                     };
                     // console.log('pyloid.EventAPI object initialized:', window.pyloid.EventAPI);
                     
+                    window.ipc = {};
+                    
+                    %s
+                    
                     %s
                     
                     document.addEventListener('mousedown', function (e) {
@@ -738,18 +750,19 @@ class _BrowserWindow:
                 console.error('QWebChannel is not defined.');
             }
             """
-			# js_api_init = "\n".join(
-			#     [
-			#         f"window['{js_api.__class__.__name__}'] = channel.objects['{js_api.__class__.__name__}'];\n"
-			#         f"console.log('{js_api.__class__.__name__} object initialized:', window.pyloid['{js_api.__class__.__name__}']);"
-			#         for js_api in self.js_apis
-			#     ]
-			# )
+			ipcs_init_code = "\n".join(
+			    [
+			        f"window['ipc']['{ipc.__class__.__name__}'] = channel.objects['{ipc.__class__.__name__}'];\n"
+			        f"console.log('{ipc.__class__.__name__} object initialized:', window['ipc']['{ipc.__class__.__name__}']);"
+			        for ipc in self.IPCs
+			        if ipc.__class__.__name__ != "BaseIPC"
+			    ]
+			)
 
-			base_api_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
+			base_ipc_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
 
-			self.web_view.page().runJavaScript(js_code % base_api_init)
-
+			self.web_view.page().runJavaScript(js_code % (base_ipc_init, ipcs_init_code))
+            
 			# if splash screen is set, close it when the page is loaded
 			if self.close_on_load and self.splash_screen:
 				self.close_splash_screen()
@@ -2494,6 +2507,7 @@ class BrowserWindow(QObject):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		IPCs: List[PyloidIPC] = [],
 	):
 		super().__init__()
 		self._window = _BrowserWindow(
@@ -2508,6 +2522,7 @@ class BrowserWindow(QObject):
 			context_menu,
 			dev_tools,
 			transparent,
+			IPCs,
 		)
 		self.command_signal.connect(self._handle_command)
 

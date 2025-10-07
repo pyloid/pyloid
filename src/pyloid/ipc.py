@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 	)
 
 
-class PyloidAPI(QObject):
+class PyloidIPC(QObject):
 	"""
-	PyloidAPI class is derived from PySide6's QObject.
-	It enables communication between JavaScript and Python.
+	PyloidIPC class.
+	It enables communication between JavaScript and Python via IPC.
 
 	Usage Example
 	-------------
@@ -26,14 +26,16 @@ class PyloidAPI(QObject):
 	```python
 	from pyloid import (
 	    Pyloid,
-	    PyloidAPI,
+	)
+	from pyloid.ipc import (
+	    PyloidIPC,
 	    Bridge,
 	)
 
 	app = Pyloid('Pyloid-App')
 
 
-	class CustomAPI(PyloidAPI):
+	class CustomIPC(PyloidIPC):
 	    @Bridge(
 	        str,
 	        result=str,
@@ -48,7 +50,7 @@ class PyloidAPI(QObject):
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[CustomAPI()],
+	    ipc=[CustomIPC()],
 	)
 
 	window.load_file('index.html')
@@ -61,10 +63,8 @@ class PyloidAPI(QObject):
 	---
 	(JavaScript)
 	```javascript
-	document.addEventListener('pyloidReady', async function () {
-	    let result = await window.pyloid.CustomAPI.echo('Hello, Pyloid!');
-	    console.log(result);
-	});
+	let result = await window.pyloid.CustomIPC.echo('Hello, Pyloid!');
+	console.log(result);
 	```
 	"""
 
@@ -74,7 +74,7 @@ class PyloidAPI(QObject):
 		super().__init__()
 		self.window_id: str = None
 		self.window: 'BrowserWindow' = None
-		self.app: 'Pyloid' = None
+		self.pyloid: 'Pyloid' = None
 
 
 def Bridge(
@@ -82,7 +82,7 @@ def Bridge(
 	**kwargs,
 ):
 	"""
-	Bridge function creates a slot that can be called from JavaScript.
+	Bridge function creates a slot that can be IPC from JavaScript.
 
 	Parameters
 	----------
@@ -97,14 +97,14 @@ def Bridge(
 	```python
 	from pyloid import (
 	    Pyloid,
-	    PyloidAPI,
+	    PyloidIPC,
 	    Bridge,
 	)
 
 	app = Pyloid('Pyloid-App')
 
 
-	class CustomAPI(PyloidAPI):
+	class CustomIPC(PyloidIPC):
 	    @Bridge(
 	        str,
 	        result=str,
@@ -119,7 +119,7 @@ def Bridge(
 	# Create main window
 	window = app.create_window(
 	    title='Pyloid Browser',
-	    js_apis=[CustomAPI()],
+	    ipc=[CustomIPC()],
 	)
 
 	window.load_file('index.html')
@@ -132,10 +132,8 @@ def Bridge(
 	---
 	(JavaScript)
 	```javascript
-	document.addEventListener('pyloidReady', async function () {
-	    let result = await window.pyloid.CustomAPI.echo('Hello, Pyloid!');
-	    console.log(result);
-	});
+	let result = await window.pyloid.CustomIPC.echo('Hello, Pyloid!');
+	console.log(result);
 	```
 	"""
 	return Slot(

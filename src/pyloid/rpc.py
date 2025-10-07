@@ -514,11 +514,27 @@ class PyloidRPC:
 			try:
 				log.debug(f'Executing RPC method: {method_name}(params={params})')
 
-				# 함수의 서명 분석하여 ctx 매개변수 유무 확인
+				# Validate window_id for all RPC requests (security enhancement)
+				window = self.pyloid.get_window_by_id(request_id)
+				if not window:
+					error_resp = {
+						'jsonrpc': '2.0',
+						'error': {
+							'code': -32600,
+							'message': 'Invalid window ID.',
+						},
+						'id': request_id,
+					}
+					return web.json_response(
+						error_resp,
+						status=400,
+					)  # Bad Request
+
+				# Analyze function signature to check for ctx parameter
 				sig = inspect.signature(func)
 				has_ctx_param = 'ctx' in sig.parameters
 
-				# ctx 매개변수가 있으면 컨텍스트 객체 생성
+				# Create context object if ctx parameter exists
 				if (
 					has_ctx_param
 					and isinstance(
@@ -529,9 +545,9 @@ class PyloidRPC:
 				):
 					ctx = RPCContext(
 						pyloid=self.pyloid,
-						window=self.pyloid.get_window_by_id(request_id),
+						window=window,
 					)
-					# 딕셔너리 형태로 params 사용할 때
+					# Handle dictionary-like params when using keyword arguments
 					params = params.copy()  # 원본 params 복사
 					params['ctx'] = ctx
 
@@ -540,11 +556,11 @@ class PyloidRPC:
 					params,
 					list,
 				):
-					# 리스트 형태로 params 사용할 때 처리 필요
+					# Handle list-like params when using positional arguments
 					if has_ctx_param:
 						ctx = RPCContext(
 							pyloid=self.pyloid,
-							window=self.pyloid.get_window_by_id(request_id),
+							window=window,
 						)
 						result = await func(
 							ctx,
@@ -561,7 +577,7 @@ class PyloidRPC:
 					params = params.copy()
 					params['_pyloid_window_id'] = internal_window_id
 
-					# 함수 시그니처에 맞는 인자만 추려서 전달
+					# Filter parameters to only include allowed parameters
 					sig = inspect.signature(func)
 					allowed_params = set(sig.parameters.keys())
 					filtered_params = {k: v for k, v in params.items() if k in allowed_params}

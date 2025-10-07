@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyloid"
-version = "0.26.3"
+version = "0.27.0"
 description = ""
 authors = ["aesthetics-of-record <111675679+aesthetics-of-record@users.noreply.github.com>"]
 readme = "README.md"

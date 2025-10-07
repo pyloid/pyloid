@@ -3,8 +3,8 @@ from typing import (
 	Optional,
 )
 
-from ..api import (
-	PyloidAPI,
+from ..ipc import (
+	PyloidIPC,
 	Bridge,
 )
 from PySide6.QtCore import (
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 	)
 
 
-class BaseAPI(PyloidAPI):
+class BaseIPC(PyloidIPC):
 	def __init__(
 		self,
 		window_id: str,

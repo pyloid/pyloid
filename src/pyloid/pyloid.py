@@ -17,14 +17,10 @@ from PySide6.QtCore import (
 	Signal,
 	QObject,
 	QTimer,
-	QEvent,
 )
 from PySide6.QtNetwork import (
 	QLocalServer,
 	QLocalSocket,
-)
-from .api import (
-	PyloidAPI,
 )
 from typing import (
 	List,
@@ -32,7 +28,6 @@ from typing import (
 	Dict,
 	Callable,
 	Union,
-	Literal,
 )
 from PySide6.QtCore import (
 	qInstallMessageHandler,
@@ -69,10 +64,6 @@ import uuid
 from PySide6.QtCore import (
 	QEventLoop,
 )
-from typing import (
-	Any,
-	Set,
-)
 from platformdirs import (
 	PlatformDirs,
 )
@@ -81,6 +72,9 @@ from .store import (
 )
 import threading
 import signal
+from .ipc import (
+	PyloidIPC,
+)
 
 # software backend
 # os.environ["QT_QUICK_BACKEND"] = "software"
@@ -328,6 +322,7 @@ class _Pyloid(QApplication):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		IPCs: List[PyloidIPC] = [],
 	) -> BrowserWindow:
 		"""
 		Creates a new browser window.
@@ -352,6 +347,8 @@ class _Pyloid(QApplication):
 		    Whether to use developer tools (default is False)
 		transparent : bool, optional
 		    Whether the window is transparent (default is False)
+		IPCs : List[PyloidIPC], optional
+		    List of IPCs to be used in the window (default is [])
 
 		Returns
 		-------
@@ -379,6 +376,7 @@ class _Pyloid(QApplication):
 			context_menu,
 			dev_tools,
 			transparent,
+			IPCs,
 		)
 		self.windows_dict[window._window.id] = window
 		# latest_window_id = list(self.windows_dict.keys())[-1]
@@ -2079,6 +2077,10 @@ class Pyloid(QObject):
 					'transparent',
 					False,
 				),
+				IPCs=params.get(
+					'IPCs',
+					[],
+				),
 			)
 			result = window
 
@@ -2289,6 +2291,7 @@ class Pyloid(QObject):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		IPCs: List[PyloidIPC] = [],
 	) -> BrowserWindow:
 		"""
 		Creates a new browser window.
@@ -2338,6 +2341,7 @@ class Pyloid(QObject):
 			'context_menu': context_menu,
 			'dev_tools': dev_tools,
 			'transparent': transparent,
+			'IPCs': IPCs,
 		}
 		return self.execute_command(
 			'create_window',
