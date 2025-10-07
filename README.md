@@ -30,6 +30,15 @@ go to [Pyloid](https://pyloid.com/) for more information.
 
 [Pyloid Documentation](https://pyloid.com/)
 
+## Repositories
+
+- [pyloid](https://github.com/pyloid/pyloid)
+- [pyloid-builder](https://github.com/pyloid/pyloid-builder)
+- [pyloid-adapter](https://github.com/pyloid/pyloid-adapter)
+- [pyloid-js](https://github.com/pyloid/pyloid-js)
+- [create-pyloid-app](https://github.com/pyloid/create-pyloid-app)
+- [website](https://github.com/pyloid/website)
+
 ## License
 
 This project is licensed under the terms of the Apache License 2.0. See the [LICENSE](./LICENSE) file for details.
