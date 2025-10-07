@@ -408,7 +408,7 @@ class _BrowserWindow:
 		frame: bool = True,
 		context_menu: bool = False,
 		dev_tools: bool = False,
-  		transparent: bool = False,
+		transparent: bool = False,
 		IPCs: List[PyloidIPC] = [],
 	):
 		###########################################################################################
@@ -750,19 +750,19 @@ class _BrowserWindow:
                 console.error('QWebChannel is not defined.');
             }
             """
-			ipcs_init_code = "\n".join(
-			    [
-			        f"window['ipc']['{ipc.__class__.__name__}'] = channel.objects['{ipc.__class__.__name__}'];\n"
-			        f"console.log('{ipc.__class__.__name__} object initialized:', window['ipc']['{ipc.__class__.__name__}']);"
-			        for ipc in self.IPCs
-			        if ipc.__class__.__name__ != "BaseIPC"
-			    ]
+			ipcs_init_code = '\n'.join(
+				[
+					f"window['ipc']['{ipc.__class__.__name__}'] = channel.objects['{ipc.__class__.__name__}'];\n"
+					f"console.log('{ipc.__class__.__name__} object initialized:', window['ipc']['{ipc.__class__.__name__}']);"
+					for ipc in self.IPCs
+					if ipc.__class__.__name__ != 'BaseIPC'
+				]
 			)
 
 			base_ipc_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
 
 			self.web_view.page().runJavaScript(js_code % (base_ipc_init, ipcs_init_code))
-            
+
 			# if splash screen is set, close it when the page is loaded
 			if self.close_on_load and self.splash_screen:
 				self.close_splash_screen()
