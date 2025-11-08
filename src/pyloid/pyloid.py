@@ -78,6 +78,7 @@ from .ipc import (
 
 # software backend
 # os.environ["QT_QUICK_BACKEND"] = "software"
+# os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-pinch'
 
 #########################################################################
 # for linux debug
@@ -322,6 +323,7 @@ class _Pyloid(QApplication):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		zoomable: bool = False,
 		IPCs: List[PyloidIPC] = [],
 	) -> BrowserWindow:
 		"""
@@ -347,6 +349,8 @@ class _Pyloid(QApplication):
 		    Whether to use developer tools (default is False)
 		transparent : bool, optional
 		    Whether the window is transparent (default is False)
+		zoomable : bool, optional
+		    Whether the window is zoomable (default is False)
 		IPCs : List[PyloidIPC], optional
 		    List of IPCs to be used in the window (default is [])
 
@@ -376,6 +380,7 @@ class _Pyloid(QApplication):
 			context_menu,
 			dev_tools,
 			transparent,
+			zoomable,
 			IPCs,
 		)
 		self.windows_dict[window._window.id] = window
@@ -2077,6 +2082,10 @@ class Pyloid(QObject):
 					'transparent',
 					False,
 				),
+				zoomable=params.get(
+					'zoomable',
+					False,
+				),
 				IPCs=params.get(
 					'IPCs',
 					[],
@@ -2291,6 +2300,7 @@ class Pyloid(QObject):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		zoomable: bool = False,
 		IPCs: List[PyloidIPC] = [],
 	) -> BrowserWindow:
 		"""
@@ -2316,7 +2326,8 @@ class Pyloid(QObject):
 		    Whether to use developer tools (default is False)
 		transparent : bool, optional
 		    Whether the window is transparent (default is False)
-
+		zoomable : bool, optional
+		    Whether the window is zoomable (default is False)
 		Returns
 		-------
 		BrowserWindow
@@ -2341,12 +2352,10 @@ class Pyloid(QObject):
 			'context_menu': context_menu,
 			'dev_tools': dev_tools,
 			'transparent': transparent,
+			'zoomable': zoomable,
 			'IPCs': IPCs,
 		}
-		return self.execute_command(
-			'create_window',
-			params,
-		)
+		return self.execute_command('create_window', params)
 
 	def run(
 		self,

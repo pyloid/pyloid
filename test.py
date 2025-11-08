@@ -14,9 +14,9 @@ from src.pyloid.tray import (
 from asyncio import (
 	sleep,
 )
+import os
 
 rpc = PyloidRPC(client_max_size=1024 * 1024 * 10)
-
 
 @rpc.method()
 async def hello(
@@ -61,6 +61,7 @@ print(
 window = app_instance.create_window(
 	'Pyloid-App',
 	transparent=True,
+	zoomable=True,
 )
 # window.load_url("chrome://gpu")
 # window.load_url("https://www.google.com/earth/")

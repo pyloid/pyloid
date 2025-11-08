@@ -76,7 +76,6 @@ if TYPE_CHECKING:
 		Pyloid,
 	)
 
-
 class CustomWebPage(QWebEnginePage):
 	def __init__(
 		self,
@@ -409,6 +408,7 @@ class _BrowserWindow:
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		zoomable: bool = False,
 		IPCs: List[PyloidIPC] = [],
 	):
 		###########################################################################################
@@ -432,6 +432,7 @@ class _BrowserWindow:
 		self.transparent = transparent
 		self.context_menu = context_menu
 		self.dev_tools = dev_tools
+		self.zoomable = zoomable
 
 		# Default IPC
 		self.IPCs = [
@@ -541,82 +542,8 @@ class _BrowserWindow:
 			self.y,
 		)
 
-		# allow local file access to remote urls and screen capture
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ScreenCaptureEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AutoLoadImages,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.LocalStorageEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ErrorPageEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AutoLoadIconsForPage,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.ShowScrollBars,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.DnsPrefetchEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.PdfViewerEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.FullScreenSupportEnabled,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard,
-			True,
-		)
-		self.web_view.settings().setUnknownUrlSchemePolicy(
-			QWebEngineSettings.UnknownUrlSchemePolicy.AllowAllUnknownUrlSchemes
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AllowRunningInsecureContent,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AllowGeolocationOnInsecureOrigins,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.AllowWindowActivationFromJavaScript,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.JavascriptCanPaste,
-			True,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly,
-			False,
-		)
-		self.web_view.settings().setAttribute(
-			QWebEngineSettings.WebAttribute.WebGLEnabled,
-			True,
-		)
+		# Configure web engine settings
+		self._configure_web_settings()
 
 		# Set icon
 		if self.app.icon:
@@ -695,16 +622,16 @@ class _BrowserWindow:
                     window.pyloid = {
                         EventAPI: {
                             _listeners: {},  // object to store the callback functions
-                            
+
                             listen: function(eventName, callback) {
                                 // if the callback array for the event is not present, create it
                                 if (!this._listeners[eventName]) {
                                     this._listeners[eventName] = [];
                                 }
-                                
+
                                 // save the callback function
                                 this._listeners[eventName].push(callback);
-                                
+
                                 document.addEventListener(eventName, function(event) {
                                     let eventData;
                                     try {
@@ -715,7 +642,7 @@ class _BrowserWindow:
                                     callback(eventData);
                                 });
                             },
-                            
+
                             unlisten: function(eventName) {
                                 // remove all listeners for the event
                                 if (this._listeners[eventName]) {
@@ -726,22 +653,24 @@ class _BrowserWindow:
                                     delete this._listeners[eventName];
                                 }
                             }
-                        }   
+                        }
                     };
                     // console.log('pyloid.EventAPI object initialized:', window.pyloid.EventAPI);
-                    
+
                     window.ipc = {};
-                    
+
                     %s
-                    
+
                     %s
-                    
+
                     document.addEventListener('mousedown', function (e) {
                         if (e.target.hasAttribute('data-pyloid-drag-region')) {
                             window.__PYLOID__.startSystemDrag();
                         }
                     });
-                    
+
+                    %s
+
                     // Dispatch a custom event to signal that the initialization is ready
                     const event = new CustomEvent('pyloidReady');
                     document.dispatchEvent(event);
@@ -761,7 +690,18 @@ class _BrowserWindow:
 
 			base_ipc_init = "window['__PYLOID__'] = channel.objects['__PYLOID__'];\n"
 
-			self.web_view.page().runJavaScript(js_code % (base_ipc_init, ipcs_init_code))
+			# Add zoom blocking code if zoomable is False
+			zoom_code = ""
+			if not self.zoomable:
+				zoom_code = """
+                    window.addEventListener('wheel', function (e) {
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                        }
+                    }, { passive: false });
+                """
+
+			self.web_view.page().runJavaScript(js_code % (base_ipc_init, ipcs_init_code, zoom_code))
 
 			# if splash screen is set, close it when the page is loaded
 			if self.close_on_load and self.splash_screen:
@@ -1618,6 +1558,7 @@ class _BrowserWindow:
 			'transparent': self.transparent,  # Add transparent to properties
 			'context_menu': self.context_menu,
 			'dev_tools': self.dev_tools,
+			'zoomable': self.zoomable,
 		}
 
 	def get_id(
@@ -1808,6 +1749,31 @@ class _BrowserWindow:
 		```
 		"""
 		return self.frame
+
+	def get_zoomable(
+		self,
+	) -> bool:
+		"""
+		Returns the zoomable state of the window.
+
+		Returns
+		-------
+		bool
+		    True if zooming is enabled, False otherwise
+
+		Examples
+		--------
+		```python
+		app = Pyloid(app_name='Pyloid-App')
+
+		window = app.create_window('pyloid-window')
+		zoomable = window.get_zoomable()
+		print(zoomable)
+
+		app.run()
+		```
+		"""
+		return self.zoomable
 
 	###########################################################################################
 	# Resize
@@ -2053,6 +2019,89 @@ class _BrowserWindow:
 	#     ```
 	#     """
 	#     return self.web_view
+
+	###########################################################################################
+	# WebEngine Settings
+	###########################################################################################
+
+	def _configure_web_settings(self):
+		"""
+		Configure QWebEngineSettings attributes for the web view.
+
+		This method sets various web engine attributes to enable/disable specific features.
+		"""
+		settings = self.web_view.settings()
+
+		# Define web attributes configuration
+		web_attributes = [
+			# (Attribute, Enabled, Description)
+			(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True, "Allow local content to access remote URLs"),
+			(QWebEngineSettings.WebAttribute.ScreenCaptureEnabled, True, "Enable screen capture"),
+			(QWebEngineSettings.WebAttribute.AutoLoadImages, True, "Automatically load images"),
+			(QWebEngineSettings.WebAttribute.JavascriptEnabled, True, "Enable JavaScript"),
+			(QWebEngineSettings.WebAttribute.LocalStorageEnabled, True, "Enable local storage"),
+			(QWebEngineSettings.WebAttribute.ErrorPageEnabled, True, "Show error pages"),
+			(QWebEngineSettings.WebAttribute.AutoLoadIconsForPage, True, "Auto-load page icons"),
+			(QWebEngineSettings.WebAttribute.ShowScrollBars, True, "Show scroll bars"),
+			(QWebEngineSettings.WebAttribute.DnsPrefetchEnabled, True, "Enable DNS prefetching"),
+			(QWebEngineSettings.WebAttribute.PdfViewerEnabled, True, "Enable PDF viewer"),
+			(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True, "Enable full screen support"),
+			(QWebEngineSettings.WebAttribute.JavascriptCanAccessClipboard, True, "Allow JS clipboard access"),
+			(QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True, "Allow insecure content"),
+			(QWebEngineSettings.WebAttribute.AllowGeolocationOnInsecureOrigins, True, "Allow geolocation on insecure origins"),
+			(QWebEngineSettings.WebAttribute.AllowWindowActivationFromJavaScript, True, "Allow JS window activation"),
+			(QWebEngineSettings.WebAttribute.JavascriptCanPaste, True, "Allow JS paste"),
+			(QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, False, "WebRTC public interfaces only"),
+			(QWebEngineSettings.WebAttribute.WebGLEnabled, True, "Enable WebGL"),
+		]
+
+		# Apply all web attributes
+		for attribute, enabled, description in web_attributes:
+			settings.setAttribute(attribute, enabled)
+
+		# Set unknown URL scheme policy
+		settings.setUnknownUrlSchemePolicy(
+			QWebEngineSettings.UnknownUrlSchemePolicy.AllowAllUnknownUrlSchemes
+		)
+
+	def set_web_attribute(self, attribute: QWebEngineSettings.WebAttribute, enabled: bool):
+		"""
+		Set a specific web engine attribute.
+
+		Parameters
+		----------
+		attribute : QWebEngineSettings.WebAttribute
+		    The web attribute to set
+		enabled : bool
+		    True to enable, False to disable the attribute
+
+		Examples
+		--------
+		>>> window.set_web_attribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, False)
+		"""
+		self.web_view.settings().setAttribute(attribute, enabled)
+
+	def get_web_attribute(self, attribute: QWebEngineSettings.WebAttribute) -> bool:
+		"""
+		Get the current state of a web engine attribute.
+
+		Parameters
+		----------
+		attribute : QWebEngineSettings.WebAttribute
+		    The web attribute to check
+
+		Returns
+		-------
+		bool
+		    True if the attribute is enabled, False otherwise
+
+		Examples
+		--------
+		>>> enabled = window.get_web_attribute(QWebEngineSettings.WebAttribute.JavascriptEnabled)
+		>>> print(enabled)
+		True
+		"""
+		return self.web_view.settings().testAttribute(attribute)
 
 	###########################################################################################
 	# QMainWindow flags
@@ -2507,6 +2556,7 @@ class BrowserWindow(QObject):
 		context_menu: bool = False,
 		dev_tools: bool = False,
 		transparent: bool = False,
+		zoomable: bool = False,
 		IPCs: List[PyloidIPC] = [],
 	):
 		super().__init__()
@@ -2522,6 +2572,7 @@ class BrowserWindow(QObject):
 			context_menu,
 			dev_tools,
 			transparent,
+			zoomable,
 			IPCs,
 		)
 		self.command_signal.connect(self._handle_command)
@@ -2650,6 +2701,8 @@ class BrowserWindow(QObject):
 			result = self._window.get_visible()
 		elif command_type == 'get_frame':
 			result = self._window.get_frame()
+		elif command_type == 'get_zoomable':
+			result = self._window.get_zoomable()
 		elif command_type == 'set_resizable':
 			result = self._window.set_resizable(params['resizable'])
 		elif command_type == 'set_minimum_size':
@@ -2710,6 +2763,13 @@ class BrowserWindow(QObject):
 			)
 		elif command_type == 'close_splash_screen':
 			result = self._window.close_splash_screen()
+		elif command_type == 'set_web_attribute':
+			result = self._window.set_web_attribute(
+				params['attribute'],
+				params['enabled'],
+			)
+		elif command_type == 'get_web_attribute':
+			result = self._window.get_web_attribute(params['attribute'])
 		else:
 			return None
 
@@ -3649,6 +3709,34 @@ class BrowserWindow(QObject):
 			{},
 		)
 
+	def get_zoomable(
+		self,
+	) -> bool:
+		"""
+		Returns the zoomable state of the window.
+
+		Returns
+		-------
+		bool
+		    True if zooming is enabled, False otherwise
+
+		Examples
+		--------
+		```python
+		app = Pyloid(app_name='Pyloid-App')
+
+		window = app.create_window('pyloid-window')
+		zoomable = window.get_zoomable()
+		print(zoomable)
+
+		app.run()
+		```
+		"""
+		return self.execute_command(
+			'get_zoomable',
+			{},
+		)
+
 	def set_resizable(
 		self,
 		resizable: bool,
@@ -3912,4 +4000,49 @@ class BrowserWindow(QObject):
 		return self.execute_command(
 			'close_splash_screen',
 			{},
+		)
+
+	def set_web_attribute(self, attribute: QWebEngineSettings.WebAttribute, enabled: bool):
+		"""
+		Set a specific web engine attribute.
+
+		Parameters
+		----------
+		attribute : QWebEngineSettings.WebAttribute
+		    The web attribute to set
+		enabled : bool
+		    True to enable, False to disable the attribute
+
+		Examples
+		--------
+		>>> window.set_web_attribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, False)
+		"""
+		return self.execute_command(
+			'set_web_attribute',
+			{'attribute': attribute, 'enabled': enabled},
+		)
+
+	def get_web_attribute(self, attribute: QWebEngineSettings.WebAttribute) -> bool:
+		"""
+		Get the current state of a web engine attribute.
+
+		Parameters
+		----------
+		attribute : QWebEngineSettings.WebAttribute
+		    The web attribute to check
+
+		Returns
+		-------
+		bool
+		    True if the attribute is enabled, False otherwise
+
+		Examples
+		--------
+		>>> enabled = window.get_web_attribute(QWebEngineSettings.WebAttribute.JavascriptEnabled)
+		>>> print(enabled)
+		True
+		"""
+		return self.execute_command(
+			'get_web_attribute',
+			{'attribute': attribute},
 		)
